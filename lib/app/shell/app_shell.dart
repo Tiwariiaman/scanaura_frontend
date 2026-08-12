@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../theme/app_colors.dart';
 
-class AppShell extends StatelessWidget {
+
+class AppShell extends ConsumerWidget {
   const AppShell({
     required this.child,
     super.key,
@@ -72,7 +75,10 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      WidgetRef ref,
+      ) {
     final location = GoRouterState.of(context).uri.path;
     final selectedIndex = _selectedIndex(location);
 
@@ -123,7 +129,7 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class _DesktopNavigation extends StatelessWidget {
+class _DesktopNavigation extends ConsumerWidget {
   const _DesktopNavigation({
     required this.items,
     required this.selectedIndex,
@@ -135,7 +141,7 @@ class _DesktopNavigation extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 250,
       decoration: const BoxDecoration(
@@ -262,11 +268,11 @@ class _DesktopNavigation extends StatelessWidget {
   }
 }
 
-class _DesktopHeader extends StatelessWidget {
+class _DesktopHeader extends ConsumerWidget {
   const _DesktopHeader();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(
@@ -283,6 +289,23 @@ class _DesktopHeader extends StatelessWidget {
       child: Row(
         children: [
           const Spacer(),
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: ()  async {
+              await ref
+                  .read(authNotifierProvider.notifier)
+                  .logout();
+
+              if (context.mounted) {
+                context.go('/login');
+              }
+            },
+            icon: const Icon(
+              Icons.logout,
+            ),
+          ),
+
+          const SizedBox(width: 8,),
 
           IconButton(
             tooltip: 'Notifications',
@@ -309,7 +332,7 @@ class _DesktopHeader extends StatelessWidget {
   }
 }
 
-class _MobileHeader extends StatelessWidget
+class _MobileHeader extends ConsumerWidget
     implements PreferredSizeWidget {
   const _MobileHeader();
 
@@ -317,7 +340,7 @@ class _MobileHeader extends StatelessWidget
   Size get preferredSize => const Size.fromHeight(64);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       titleSpacing: 20,
       title: Row(
@@ -345,6 +368,23 @@ class _MobileHeader extends StatelessWidget
         ],
       ),
       actions: [
+        IconButton(
+          tooltip: 'Logout',
+          onPressed: ()  async {
+            await ref
+                .read(authNotifierProvider.notifier)
+                .logout();
+
+            if (context.mounted) {
+              context.go('/login');
+            }
+          },
+          icon: const Icon(
+            Icons.logout,
+          ),
+        ),
+
+        const SizedBox(width: 8,),
         IconButton(
           tooltip: 'Notifications',
           onPressed: () {},

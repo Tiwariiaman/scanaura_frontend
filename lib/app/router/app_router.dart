@@ -1,10 +1,20 @@
+
 import 'package:go_router/go_router.dart';
 
+
+import '../../features/auth/presentation/ai_import_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
 import '../../features/business/presentation/business_screen.dart';
-import '../../features/ai/presentation/ai_import_screen.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/auth/presentation/providers/auth_state.dart';
+
 import '../../features/qr/presentation/qr_screen.dart';
 import '../../features/subscription/presentation/subscription_screen.dart';
 import '../shell/app_shell.dart';
@@ -12,67 +22,105 @@ import '../shell/app_shell.dart';
 class AppRouter {
   AppRouter._();
 
-  static final GoRouter router = GoRouter(
-    initialLocation: '/dashboard',
+  static GoRouter createRouter(ProviderContainer container,) {
+    return GoRouter(
+      initialLocation: '/login',
 
-    routes: [
-      ShellRoute(
-        builder: (context, state, child) {
-          return AppShell(
-            child: child,
-          );
-        },
-        routes: [
-          GoRoute(
-            path: '/dashboard',
-            builder: (context, state) {
-              return const DashboardScreen();
-            },
-          ),
+      redirect: (context, state) {
+        final authState =
+        container.read(authNotifierProvider);
 
-          GoRoute(
-            path: '/business',
-            builder: (context, state) {
-              return const BusinessScreen();
-            },
-          ),
+        final isAuthenticated =
+            authState.status == AuthStatus.authenticated;
 
-          GoRoute(
-            path: '/menu',
-            builder: (context, state) {
-              return const MenuScreen();
-            },
-          ),
+        final isAuthRoute =
+            state.matchedLocation == '/login' ||
+                state.matchedLocation == '/register';
 
-          GoRoute(
-            path: '/ai-import',
-            builder: (context, state) {
-              return const AiImportScreen();
-            },
-          ),
+        if (!isAuthenticated && !isAuthRoute) {
+          return '/login';
+        }
 
-          GoRoute(
-            path: '/qr',
-            builder: (context, state) {
-              return const QrScreen();
-            },
-          ),
+        if (isAuthenticated && isAuthRoute) {
+          return '/dashboard';
+        }
 
-          GoRoute(
-            path: '/subscription',
-            builder: (context, state) {
-              return const SubscriptionScreen();
-            },
-          ),
+        return null;
+      },
 
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) {
-              return const ProfileScreen();
-            },
-          ),
-        ],
-      ),
-    ],
-  );
+      routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) {
+            return const LoginScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/register',
+          builder: (context, state) {
+            return const RegisterScreen();
+          },
+        ),
+
+        ShellRoute(
+          builder: (context, state, child) {
+            return AppShell(
+              child: child,
+            );
+          },
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) {
+                return const DashboardScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/business',
+              builder: (context, state) {
+                return const BusinessScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/menu',
+              builder: (context, state) {
+                return const MenuScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/ai-import',
+              builder: (context, state) {
+                return const AiImportScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/qr',
+              builder: (context, state) {
+                return const QrScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/subscription',
+              builder: (context, state) {
+                return const SubscriptionScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) {
+                return const ProfileScreen();
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
