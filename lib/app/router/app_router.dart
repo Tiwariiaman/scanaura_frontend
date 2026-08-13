@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/ai_import_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/business/presentation/business_onboarding_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
@@ -60,6 +61,12 @@ class AppRouter {
           path: '/register',
           builder: (context, state) {
             return const RegisterScreen();
+          },
+        ),
+        GoRoute(
+          path: '/business-onboarding',
+          builder: (context, state) {
+            return const BusinessOnboardingScreen();
           },
         ),
 

@@ -13,4 +13,8 @@ class ApiConstants {
   // Authentication
   static const String authRegister = '/api/v1/auth/register';
   static const String authLogin = '/api/v1/auth/login';
+
+  static const String businessBase = '/api/v1/business';
+
+  static const String businessMine = '/api/v1/business/me';
 }
