@@ -63,12 +63,7 @@ class AppRouter {
             return const RegisterScreen();
           },
         ),
-        GoRoute(
-          path: '/business-onboarding',
-          builder: (context, state) {
-            return const BusinessOnboardingScreen();
-          },
-        ),
+
 
         ShellRoute(
           builder: (context, state, child) {
@@ -88,6 +83,12 @@ class AppRouter {
               path: '/business',
               builder: (context, state) {
                 return const BusinessScreen();
+              },
+            ),
+            GoRoute(
+              path: '/business-onboarding',
+              builder: (context, state) {
+                return const BusinessOnboardingScreen();
               },
             ),
 
