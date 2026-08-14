@@ -62,9 +62,11 @@ class BusinessNotifier extends Notifier<BusinessState> {
         clearError: true,
       );
     } catch (e) {
+      final message = _messageFromException(e);
+
       state = state.copyWith(
         status: BusinessStatus.error,
-        errorMessage: _messageFromException(e),
+        errorMessage: message,
       );
     }
   }

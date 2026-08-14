@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:scanaura_frontend/features/business/data/models/business_request.dart';
 
 import 'business_review_screen.dart';
 
@@ -13,7 +14,7 @@ class BusinessDetailsScreen extends StatefulWidget {
   });
 
   final String businessName;
-  final String businessType;
+  final BusinessType businessType;
   final String phone;
   final String whatsapp;
   final String email;
@@ -479,7 +480,7 @@ class _BusinessDetailsScreenState
           const SizedBox(height: 8),
           _summaryRow(
             Icons.category_outlined,
-            widget.businessType,
+            widget.businessType.displayName,
           ),
           const SizedBox(height: 8),
           _summaryRow(

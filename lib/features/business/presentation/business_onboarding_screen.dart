@@ -54,7 +54,7 @@ class _BusinessOnboardingScreenState
       MaterialPageRoute(
         builder: (_) => BusinessDetailsScreen(
           businessName: _businessNameController.text.trim(),
-          businessType: _businessType!.displayName,
+          businessType: _businessType!,
           phone: _phoneController.text.trim(),
           whatsapp: _whatsappController.text.trim(),
           email: _emailController.text.trim(),

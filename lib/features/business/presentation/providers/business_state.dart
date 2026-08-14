@@ -4,6 +4,7 @@ enum BusinessStatus {
   initial,
   loading,
   success,
+  noBusiness,
   error,
 }
 

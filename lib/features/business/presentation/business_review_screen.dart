@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class BusinessReviewScreen extends StatelessWidget {
+import 'package:scanaura_frontend/features/business/presentation/providers/business_notifier.dart';
+import 'package:scanaura_frontend/features/business/presentation/providers/business_state.dart';
+
+import '../data/models/business_request.dart';
+
+class BusinessReviewScreen extends ConsumerStatefulWidget {
   const BusinessReviewScreen({
     super.key,
     required this.businessName,
@@ -19,7 +26,7 @@ class BusinessReviewScreen extends StatelessWidget {
   });
 
   final String businessName;
-  final String businessType;
+  final BusinessType businessType;
   final String phone;
   final String whatsapp;
   final String email;
@@ -31,6 +38,92 @@ class BusinessReviewScreen extends StatelessWidget {
   final String website;
   final String description;
   final String upiId;
+
+  @override
+  ConsumerState<BusinessReviewScreen> createState() =>
+      _BusinessReviewScreenState();
+}
+
+class _BusinessReviewScreenState
+    extends ConsumerState<BusinessReviewScreen> {
+  bool _isCreating = false;
+
+  Future<void> _createBusiness() async {
+    if (_isCreating) {
+      return;
+    }
+
+    setState(() {
+      _isCreating = true;
+    });
+
+    final request = BusinessRequest(
+      businessName: widget.businessName,
+      businessType: widget.businessType,
+      phone: widget.phone,
+      whatsapp:
+      widget.whatsapp.isEmpty ? null : widget.whatsapp,
+      email:
+      widget.email.isEmpty ? null : widget.email,
+      address:
+      widget.address.isEmpty ? null : widget.address,
+      city:
+      widget.city.isEmpty ? null : widget.city,
+      state:
+      widget.state.isEmpty ? null : widget.state,
+      country:
+      widget.country.isEmpty ? null : widget.country,
+      pincode:
+      widget.pincode.isEmpty ? null : widget.pincode,
+      website:
+      widget.website.isEmpty ? null : widget.website,
+      description:
+      widget.description.isEmpty ? null : widget.description,
+      upiId:
+      widget.upiId.isEmpty ? null : widget.upiId,
+    );
+
+
+    await ref
+        .read(businessNotifierProvider.notifier)
+        .createBusiness(request);
+
+    if (!mounted) {
+      return;
+    }
+
+    final businessState =
+    ref.read(businessNotifierProvider);
+
+    // SUCCESS
+    if (businessState.status == BusinessStatus.success &&
+        businessState.business != null) {
+      setState(() {
+        _isCreating = false;
+      });
+
+      // IMPORTANT:
+      // The POST response already contains the created business.
+      // Do not call loadMyBusiness().
+      context.go('/dashboard');
+
+      return;
+    }
+
+    setState(() {
+      _isCreating = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          businessState.errorMessage ??
+              'Business creation failed. Please try again.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +142,13 @@ class BusinessReviewScreen extends StatelessWidget {
                 maxWidth: 700,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Almost there!',
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style:
+                    theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -62,8 +157,10 @@ class BusinessReviewScreen extends StatelessWidget {
 
                   Text(
                     'Review your business information before creating your ScanAura business.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style:
+                    theme.textTheme.bodyLarge?.copyWith(
+                      color:
+                      theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
 
@@ -77,12 +174,12 @@ class BusinessReviewScreen extends StatelessWidget {
                       _infoRow(
                         context,
                         'Business name',
-                        businessName,
+                        widget.businessName,
                       ),
                       _infoRow(
                         context,
                         'Business type',
-                        businessType,
+                        widget.businessType.displayName,
                       ),
                     ],
                   ),
@@ -97,19 +194,19 @@ class BusinessReviewScreen extends StatelessWidget {
                       _infoRow(
                         context,
                         'Phone',
-                        phone,
+                        widget.phone,
                       ),
-                      if (whatsapp.isNotEmpty)
+                      if (widget.whatsapp.isNotEmpty)
                         _infoRow(
                           context,
                           'WhatsApp',
-                          whatsapp,
+                          widget.whatsapp,
                         ),
-                      if (email.isNotEmpty)
+                      if (widget.email.isNotEmpty)
                         _infoRow(
                           context,
                           'Email',
-                          email,
+                          widget.email,
                         ),
                     ],
                   ),
@@ -121,35 +218,35 @@ class BusinessReviewScreen extends StatelessWidget {
                     title: 'Location',
                     icon: Icons.location_on_outlined,
                     children: [
-                      if (address.isNotEmpty)
+                      if (widget.address.isNotEmpty)
                         _infoRow(
                           context,
                           'Address',
-                          address,
+                          widget.address,
                         ),
-                      if (city.isNotEmpty)
+                      if (widget.city.isNotEmpty)
                         _infoRow(
                           context,
                           'City',
-                          city,
+                          widget.city,
                         ),
-                      if (state.isNotEmpty)
+                      if (widget.state.isNotEmpty)
                         _infoRow(
                           context,
                           'State',
-                          state,
+                          widget.state,
                         ),
-                      if (country.isNotEmpty)
+                      if (widget.country.isNotEmpty)
                         _infoRow(
                           context,
                           'Country',
-                          country,
+                          widget.country,
                         ),
-                      if (pincode.isNotEmpty)
+                      if (widget.pincode.isNotEmpty)
                         _infoRow(
                           context,
                           'Pincode',
-                          pincode,
+                          widget.pincode,
                         ),
                     ],
                   ),
@@ -161,23 +258,23 @@ class BusinessReviewScreen extends StatelessWidget {
                     title: 'Additional Information',
                     icon: Icons.info_outline_rounded,
                     children: [
-                      if (website.isNotEmpty)
+                      if (widget.website.isNotEmpty)
                         _infoRow(
                           context,
                           'Website',
-                          website,
+                          widget.website,
                         ),
-                      if (description.isNotEmpty)
+                      if (widget.description.isNotEmpty)
                         _infoRow(
                           context,
                           'Description',
-                          description,
+                          widget.description,
                         ),
-                      if (upiId.isNotEmpty)
+                      if (widget.upiId.isNotEmpty)
                         _infoRow(
                           context,
                           'UPI ID',
-                          upiId,
+                          widget.upiId,
                         ),
                     ],
                   ),
@@ -188,23 +285,28 @@ class BusinessReviewScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(16),
+                      color:
+                      theme.colorScheme.primaryContainer,
+                      borderRadius:
+                      BorderRadius.circular(16),
                     ),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.check_circle_outline_rounded,
-                          color: theme.colorScheme.onPrimaryContainer,
+                          color: theme.colorScheme
+                              .onPrimaryContainer,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Your business will be created using the information shown above.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                              theme.colorScheme.onPrimaryContainer,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(
+                              color: theme.colorScheme
+                                  .onPrimaryContainer,
                             ),
                           ),
                         ),
@@ -218,14 +320,24 @@ class BusinessReviewScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 54,
                     child: FilledButton.icon(
-                      onPressed: () {
-                        // API connection comes in the next step.
-                      },
-                      icon: const Icon(
+                      onPressed:
+                      _isCreating ? null : _createBusiness,
+                      icon: _isCreating
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child:
+                        CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                          : const Icon(
                         Icons.check_rounded,
                       ),
-                      label: const Text(
-                        'Create Business',
+                      label: Text(
+                        _isCreating
+                            ? 'Creating business...'
+                            : 'Create My Business',
                       ),
                     ),
                   ),
@@ -236,7 +348,9 @@ class BusinessReviewScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 48,
                     child: OutlinedButton(
-                      onPressed: () {
+                      onPressed: _isCreating
+                          ? null
+                          : () {
                         Navigator.of(context).pop();
                       },
                       child: const Text('Back'),
@@ -266,7 +380,8 @@ class BusinessReviewScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -274,13 +389,16 @@ class BusinessReviewScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style:
+                  theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
+
             ...children,
           ],
         ),
@@ -296,23 +414,29 @@ class BusinessReviewScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding:
+      const EdgeInsets.only(bottom: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
             child: Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style:
+              theme.textTheme.bodyMedium?.copyWith(
+                color: theme
+                    .colorScheme.onSurfaceVariant,
               ),
             ),
           ),
+
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style:
+              theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
