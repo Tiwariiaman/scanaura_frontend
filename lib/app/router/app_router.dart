@@ -7,6 +7,9 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/business/presentation/business_onboarding_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/menu/presentation/add_menu_item_screen.dart';
+import '../../features/menu/presentation/category_management_screen.dart';
+import '../../features/menu/presentation/menu_edit_loader_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
 import '../../features/business/presentation/business_screen.dart';
@@ -126,6 +129,40 @@ class AppRouter {
                 return const ProfileScreen();
               },
             ),
+
+            GoRoute(
+              path: '/qr',
+              builder: (context, state) {
+                return const QrScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/menu/add',
+              builder: (context, state) {
+                return const AddMenuItemScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/menu/edit/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id'];
+
+                return MenuEditLoaderScreen(
+                  catalogId: id!,
+                );
+              },
+            ),
+
+            GoRoute(
+              path: '/menu/categories',
+              builder: (context, state) {
+                return const CategoryManagementScreen();
+              },
+            ),
+
+
           ],
         ),
       ],

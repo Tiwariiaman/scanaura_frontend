@@ -1,7 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/business/data/business_repository.dart';
+import '../../features/menu/data/menu_repository.dart';
+import '../../features/qr/data/qr_repository.dart';
+import '../../features/subscription/data/subscription_repository.dart';
 import '../network/api_client.dart';
+import '../network/image_upload_service.dart';
 import '../storage/secure_storage_service.dart';
 import '../../features/auth/data/auth_repository.dart';
 
@@ -31,5 +35,32 @@ Provider<BusinessRepository>((ref) {
 
   return BusinessRepository(
     apiClient: apiClient,
+  );
+});
+
+final subscriptionRepositoryProvider =
+Provider<SubscriptionRepository>((ref) {
+  return SubscriptionRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final imageUploadServiceProvider =
+Provider<ImageUploadService>((ref) {
+  return ImageUploadService(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final qrRepositoryProvider = Provider<QrRepository>((ref) {
+  return QrRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final menuRepositoryProvider =
+Provider<MenuRepository>((ref) {
+  return MenuRepository(
+    apiClient: ref.read(apiClientProvider),
   );
 });
