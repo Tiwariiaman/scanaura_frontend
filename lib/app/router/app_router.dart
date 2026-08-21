@@ -1,8 +1,10 @@
 
 import 'package:go_router/go_router.dart';
+import 'package:scanaura_frontend/features/ai/presentation/ai_import_review_screen.dart';
 
 
-import '../../features/auth/presentation/ai_import_screen.dart';
+import '../../features/ai/presentation/ai_import_review_screen.dart';
+import '../../features/ai/presentation/ai_import_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/business/presentation/business_onboarding_screen.dart';

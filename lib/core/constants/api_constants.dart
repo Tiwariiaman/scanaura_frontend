@@ -56,4 +56,13 @@ class ApiConstants {
   static const String categories =
       '/api/v1/categories';
 
+  static const String aiMenuBase =
+      '/api/v1/ai/menu';
+
+  static const String aiMenuAnalyze =
+      '$aiMenuBase/analyze';
+
+  static const String aiMenuImport =
+      '$aiMenuBase/import'; 
+
 }
