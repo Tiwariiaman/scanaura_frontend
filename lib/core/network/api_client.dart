@@ -62,6 +62,15 @@ class ApiClient {
       queryParameters: queryParameters,
     );
   }
+  Future<Response<T>> patch<T>(
+      String path, {
+        dynamic data,
+      }) {
+    return _dio.patch<T>(
+      path,
+      data: data,
+    );
+  }
 
   Future<Response<T>> post<T>(
       String path, {

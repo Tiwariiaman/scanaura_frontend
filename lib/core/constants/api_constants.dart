@@ -63,6 +63,77 @@ class ApiConstants {
       '$aiMenuBase/analyze';
 
   static const String aiMenuImport =
-      '$aiMenuBase/import'; 
+      '$aiMenuBase/import';
+
+  // Public Business
+  static const String publicBase = '/api/public';
+
+  static const String publicLanding =
+      '$publicBase/q';
+
+  static const String publicMenu =
+      '$publicBase/q';
+
+  static const String publicPayment =
+      '$publicBase/q';
+
+  // Admin
+  static const String adminBase =
+      '/api/v1/admin';
+
+  static const String adminDashboard =
+      '$adminBase/dashboard';
+
+  static const String adminBusinesses =
+      '$adminBase/businesses';
+
+  static const String adminBusinessSearch =
+      '$adminBusinesses/search';
+
+  static String adminActivateBusiness(
+      String businessId,
+      ) {
+    return '$adminBusinesses/$businessId/activate';
+  }
+
+  static String adminDeactivateBusiness(
+      String businessId,
+      ) {
+    return '$adminBusinesses/$businessId/deactivate';
+  }
+
+  static const String adminQrInventory =
+      '$adminBase/qr/inventory';
+
+  static String adminGenerateQr(
+      int count,
+      ) {
+    return '$adminBase/qr/generate/$count';
+  }
+
+  static String adminDeactivateQr(
+      String qrCode,
+      ) {
+    return '$adminBase/qr/deactivate/$qrCode';
+  }
+
+  // Admin Subscription Requests
+  static const String adminSubscriptionRequests =
+      '/api/v1/admin/subscription-requests';
+
+  static const String adminPendingSubscriptions =
+      '$adminSubscriptionRequests/pending';
+
+  static String adminApproveSubscription(
+      String requestId,
+      ) {
+    return '$adminSubscriptionRequests/$requestId/approve';
+  }
+
+  static String adminRejectSubscription(
+      String requestId,
+      ) {
+    return '$adminSubscriptionRequests/$requestId/reject';
+  }
 
 }

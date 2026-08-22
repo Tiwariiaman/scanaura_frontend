@@ -1,28 +1,33 @@
-import 'dart:html' as html;
+import 'dart:js_interop';
 import 'dart:typed_data';
+
+import 'package:web/web.dart' as web;
 
 Future<void> downloadQr(
     List<int> bytes,
     String fileName,
     ) async {
-  final blob = html.Blob(
-    [
-      Uint8List.fromList(bytes),
-    ],
-    'image/png',
+  final data = Uint8List.fromList(bytes);
+
+  final blob = web.Blob(
+    [data.buffer.toJS].toJS,
+    web.BlobPropertyBag(
+      type: 'image/png',
+    ),
   );
 
-  final url = html.Url.createObjectUrlFromBlob(blob);
+  final url = web.URL.createObjectURL(blob);
 
-  final anchor = html.AnchorElement(href: url)
-    ..setAttribute('download', fileName)
+  final anchor = web.HTMLAnchorElement()
+    ..href = url
+    ..download = fileName
     ..style.display = 'none';
 
-  html.document.body?.children.add(anchor);
+  web.document.body?.append(anchor);
 
   anchor.click();
 
   anchor.remove();
 
-  html.Url.revokeObjectUrl(url);
+  web.URL.revokeObjectURL(url);
 }

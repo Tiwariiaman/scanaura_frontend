@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scanaura_frontend/features/subscription/presentation/subscription_request_screen.dart';
 
 import '../data/models/subscription_history_response.dart';
-import '../data/models/subscription_request.dart';
+
 import 'providers/subscription_notifier.dart';
 import 'providers/subscription_state.dart';
 
@@ -435,7 +435,9 @@ class _SubscriptionScreenState
                 )
                     .loadHistory();
 
-                if (!mounted) return;
+                if (!context.mounted) {
+                  return;
+                }
 
                 showModalBottomSheet(
                   context: context,
@@ -463,7 +465,7 @@ class _SubscriptionScreenState
                         shrinkWrap: true,
                         padding: const EdgeInsets.all(20),
                         itemCount: history.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                         const SizedBox(height: 12),
                         itemBuilder: (_, index) {
                           final item = history[index];

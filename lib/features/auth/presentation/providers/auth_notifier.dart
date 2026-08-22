@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 import '../../../../core/providers/app_providers.dart';
 import '../../../auth/data/models/login_request.dart';
 import '../../../auth/data/models/register_request.dart';
-
+import '../../data/models/user_role.dart';
 import 'auth_state.dart';
 
 class AuthNotifier extends Notifier<AuthState> {
@@ -13,14 +15,17 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> initialize() async {
+    // This should only be called once during app startup.
     state = const AuthState(
       status: AuthStatus.loading,
     );
 
     try {
-      final storage = ref.read(secureStorageProvider);
+      final storage =
+      ref.read(secureStorageProvider);
 
-      final token = await storage.getAccessToken();
+      final token =
+      await storage.getAccessToken();
 
       if (token == null || token.isEmpty) {
         state = const AuthState(
@@ -29,12 +34,23 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      state = const AuthState(
+      final role = _extractRole(token);
+
+      state = AuthState(
         status: AuthStatus.authenticated,
+        role: role,
       );
-    } catch (_) {
+
+      debugPrint(
+        'AUTH INITIALIZED: role=$role',
+      );
+    } catch (e) {
       state = const AuthState(
         status: AuthStatus.unauthenticated,
+      );
+
+      debugPrint(
+        'AUTH INITIALIZE FAILED: $e',
       );
     }
   }
@@ -48,28 +64,49 @@ class AuthNotifier extends Notifier<AuthState> {
     );
 
     try {
-      final repository = ref.read(authRepositoryProvider);
-      final storage = ref.read(secureStorageProvider);
+      final repository =
+      ref.read(authRepositoryProvider);
 
-      final response = await repository.login(
+      final storage =
+      ref.read(secureStorageProvider);
+
+      final response =
+      await repository.login(
         LoginRequest(
           email: email.trim(),
           password: password,
         ),
       );
 
+      final role =
+      _extractRole(response.accessToken);
+
       await storage.saveAccessToken(
         response.accessToken,
       );
 
       state = AuthState(
-        status: AuthStatus.authenticated,
-        userEmail: email.trim(),
+        status:
+        AuthStatus.authenticated,
+        userEmail:
+        email.trim(),
+        role: role,
+      );
+
+      debugPrint(
+        'LOGIN SUCCESS: '
+            'email=${email.trim()} '
+            'role=$role',
       );
     } catch (e) {
       state = AuthState(
         status: AuthStatus.error,
-        errorMessage: _cleanErrorMessage(e),
+        errorMessage:
+        _cleanErrorMessage(e),
+      );
+
+      debugPrint(
+        'LOGIN FAILED: $e',
       );
     }
   }
@@ -85,7 +122,8 @@ class AuthNotifier extends Notifier<AuthState> {
     );
 
     try {
-      final repository = ref.read(authRepositoryProvider);
+      final repository =
+      ref.read(authRepositoryProvider);
 
       await repository.register(
         RegisterRequest(
@@ -97,14 +135,16 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       state = const AuthState(
-        status: AuthStatus.unauthenticated,
+        status:
+        AuthStatus.unauthenticated,
       );
 
       return true;
     } catch (e) {
       state = AuthState(
         status: AuthStatus.error,
-        errorMessage: _cleanErrorMessage(e),
+        errorMessage:
+        _cleanErrorMessage(e),
       );
 
       return false;
@@ -112,26 +152,64 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    final storage = ref.read(secureStorageProvider);
+    final storage =
+    ref.read(secureStorageProvider);
 
     await storage.deleteAccessToken();
 
+    // Explicitly clear the previous user's
+    // role and identity.
     state = const AuthState(
-      status: AuthStatus.unauthenticated,
+      status:
+      AuthStatus.unauthenticated,
+      role: UserRole.unknown,
     );
+
+    debugPrint(
+      'LOGOUT COMPLETE',
+    );
+  }
+
+  UserRole _extractRole(
+      String token,
+      ) {
+    try {
+      final decoded =
+      JwtDecoder.decode(token);
+
+      final role =
+      decoded['role'];
+
+      if (role is String) {
+        return UserRole.fromString(role);
+      }
+    } catch (e) {
+      debugPrint(
+        'ROLE EXTRACTION FAILED: $e',
+      );
+    }
+
+    return UserRole.unknown;
   }
 
   void clearError() {
     state = state.copyWith(
-      status: AuthStatus.unauthenticated,
+      status:
+      AuthStatus.unauthenticated,
       clearError: true,
+      role: UserRole.unknown,
     );
   }
 
-  String _cleanErrorMessage(Object error) {
-    final message = error.toString();
+  String _cleanErrorMessage(
+      Object error,
+      ) {
+    final message =
+    error.toString();
 
-    if (message.startsWith('Exception: ')) {
+    if (message.startsWith(
+      'Exception: ',
+    )) {
       return message.substring(
         'Exception: '.length,
       );
@@ -142,6 +220,8 @@ class AuthNotifier extends Notifier<AuthState> {
 }
 
 final authNotifierProvider =
-NotifierProvider<AuthNotifier, AuthState>(
+NotifierProvider<
+    AuthNotifier,
+    AuthState>(
   AuthNotifier.new,
 );

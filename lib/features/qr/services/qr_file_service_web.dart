@@ -1,45 +1,43 @@
-import 'dart:html' as html;
+import 'dart:js_interop';
 import 'dart:typed_data';
+
+import 'package:web/web.dart' as web;
 
 class QrFileService {
   static Future<void> downloadQr(
       Uint8List bytes,
       String fileName,
       ) async {
-    final blob = html.Blob(
-      [bytes],
-      'image/png',
+    final blob = web.Blob(
+      [bytes.buffer.toJS].toJS,
+      web.BlobPropertyBag(
+        type: 'image/png',
+      ),
     );
 
-    final url = html.Url.createObjectUrlFromBlob(blob);
+    final url = web.URL.createObjectURL(blob);
 
-    final anchor = html.AnchorElement(
-      href: url,
-    )
-      ..setAttribute(
-        'download',
-        fileName,
-      )
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
+      ..download = fileName
       ..style.display = 'none';
 
-    html.document.body?.children.add(anchor);
+    web.document.body?.append(anchor);
 
     anchor.click();
 
     anchor.remove();
 
-    html.Url.revokeObjectUrl(url);
+    web.URL.revokeObjectURL(url);
   }
 
   static Future<void> shareQr(
       Uint8List bytes,
       String fileName,
       ) async {
-    // Browser file sharing is not available
-    // consistently across all browsers.
-    //
-    // Therefore we provide a reliable browser
-    // download as the fallback.
+    // Browser sharing is not consistently available
+    // across all browsers, so download is used as
+    // the reliable web fallback.
 
     await downloadQr(
       bytes,

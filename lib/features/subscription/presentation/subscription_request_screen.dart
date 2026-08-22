@@ -38,7 +38,6 @@ class _SubscriptionRequestScreenState
 
   bool _submitting = false;
   String? _uploadedScreenshotUrl;
-  String? _uploadedScreenshotPublicId;
 
   @override
   void dispose() {
@@ -80,8 +79,6 @@ class _SubscriptionRequestScreenState
       _uploadedScreenshotUrl =
           uploaded.imageUrl;
 
-      _uploadedScreenshotPublicId =
-          uploaded.publicId;
 
       // 2. Submit subscription request
       // using the real Cloudinary URL.

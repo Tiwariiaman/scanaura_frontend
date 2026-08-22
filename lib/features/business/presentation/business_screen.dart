@@ -200,7 +200,7 @@ class _BusinessScreenState
                           business.logoUrl!,
                           fit: BoxFit.cover,
                           errorBuilder:
-                              (_, __, ___) {
+                              (_, _, _) {
                             return Icon(
                               Icons.storefront_rounded,
                               size: 36,

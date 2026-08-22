@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/admin/data/admin_repository.dart';
+import '../../features/admin/data/admin_subscription_repository.dart';
 import '../../features/business/data/business_repository.dart';
 import '../../features/menu/data/menu_repository.dart';
+import '../../features/public_menu/data/public_repository.dart';
 import '../../features/qr/data/qr_repository.dart';
 import '../../features/subscription/data/subscription_repository.dart';
 import '../network/api_client.dart';
@@ -61,6 +64,27 @@ final qrRepositoryProvider = Provider<QrRepository>((ref) {
 final menuRepositoryProvider =
 Provider<MenuRepository>((ref) {
   return MenuRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final publicRepositoryProvider =
+Provider<PublicRepository>((ref) {
+  return PublicRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final adminRepositoryProvider =
+Provider<AdminRepository>((ref) {
+  return AdminRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final adminSubscriptionRepositoryProvider =
+Provider<AdminSubscriptionRepository>((ref) {
+  return AdminSubscriptionRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });

@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/app_providers.dart';
 import '../../data/ai_import_repository.dart';
-import '../../data/models/ai_category.dart';
+
 import '../../data/models/ai_import_request.dart';
-import '../../data/models/ai_menu_item.dart';
+
 import '../../data/models/ai_menu_response.dart';
 import 'ai_import_state.dart';
 

@@ -33,12 +33,12 @@ class AppShell extends ConsumerWidget {
       selectedIcon: Icons.restaurant_menu_rounded,
       route: '/menu',
     ),
-    _NavigationItem(
-      label: 'AI Import',
-      icon: Icons.auto_awesome_outlined,
-      selectedIcon: Icons.auto_awesome,
-      route: '/ai-import',
-    ),
+    // _NavigationItem(
+    //   label: 'AI Import',
+    //   icon: Icons.auto_awesome_outlined,
+    //   selectedIcon: Icons.auto_awesome,
+    //   route: '/ai-import',
+    // ),
     _NavigationItem(
       label: 'QR',
       icon: Icons.qr_code_2_outlined,

@@ -270,7 +270,7 @@ class _AddMenuItemScreenState
     }
 
     return DropdownButtonFormField<String?>(
-      value: _categoryId,
+      initialValue: _categoryId,
       decoration: const InputDecoration(
         labelText: 'Category',
         border: OutlineInputBorder(),
@@ -323,7 +323,7 @@ class _AddMenuItemScreenState
           _imageUrl!,
           fit: BoxFit.cover,
           errorBuilder:
-              (_, __, ___) {
+              (_, _, _) {
             return _emptyImage();
           },
         )

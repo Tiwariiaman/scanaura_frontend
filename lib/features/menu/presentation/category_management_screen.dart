@@ -102,7 +102,7 @@ class _CategoryManagementScreenState
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: state.categories.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final category = state.categories[index];
 
@@ -258,7 +258,7 @@ class _CategoryManagementScreenState
 
                 if (isEditing) {
                   await notifier.updateCategory(
-                    categoryId!,
+                    categoryId,
                     CategoryRequest(
                       name: name,
                       displayOrder: order,

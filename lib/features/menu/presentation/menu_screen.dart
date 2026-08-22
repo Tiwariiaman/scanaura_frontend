@@ -350,7 +350,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         .read(menuNotifierProvider.notifier)
         .deleteCatalog(item.id);
 
-    if (!mounted) {
+    if (!context.mounted) {
       return;
     }
 
