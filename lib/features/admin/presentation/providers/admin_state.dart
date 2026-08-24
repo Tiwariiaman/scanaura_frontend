@@ -1,4 +1,6 @@
+import '../../../qr/data/models/qr_response.dart';
 import '../../data/model/admin_dashboard_response.dart';
+import '../../data/model/admin_qr_details_response.dart';
 import '../../data/model/business_summary_response.dart';
 import '../../data/model/qr_inventory_response.dart';
 
@@ -16,9 +18,12 @@ class AdminState {
     this.dashboard,
     this.businesses = const [],
     this.qrInventory,
+    this.qrDetails,
     this.errorMessage,
     this.businessSearchQuery = '',
     this.businessActionInProgress = false,
+    this.generatedPhysicalQrs = const [],
+
   });
 
   final AdminStatus status;
@@ -35,6 +40,10 @@ class AdminState {
 
   final bool businessActionInProgress;
 
+  final AdminQrDetailsResponse? qrDetails;
+
+  final List<QrResponse> generatedPhysicalQrs;
+
   bool get isLoading =>
       status == AdminStatus.loading;
 
@@ -46,12 +55,15 @@ class AdminState {
     AdminDashboardResponse? dashboard,
     List<BusinessSummaryResponse>? businesses,
     QrInventoryResponse? qrInventory,
+    AdminQrDetailsResponse? qrDetails,
     String? errorMessage,
     String? businessSearchQuery,
     bool? businessActionInProgress,
     bool clearError = false,
     bool clearDashboard = false,
     bool clearQrInventory = false,
+    bool clearQrDetails = false,
+    List<QrResponse>? generatedPhysicalQrs,
   }) {
     return AdminState(
       status: status ?? this.status,
@@ -67,6 +79,10 @@ class AdminState {
           ? null
           : qrInventory ?? this.qrInventory,
 
+      qrDetails: clearQrDetails
+          ? null
+          : qrDetails ?? this.qrDetails,
+
       errorMessage: clearError
           ? null
           : errorMessage ?? this.errorMessage,
@@ -78,6 +94,10 @@ class AdminState {
       businessActionInProgress:
       businessActionInProgress ??
           this.businessActionInProgress,
+
+      generatedPhysicalQrs:
+      generatedPhysicalQrs ??
+          this.generatedPhysicalQrs,
     );
   }
 }

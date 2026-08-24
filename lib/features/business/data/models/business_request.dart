@@ -43,6 +43,7 @@ class BusinessRequest {
     required this.businessName,
     required this.businessType,
     required this.phone,
+    this.logoUrl,
     this.whatsapp,
     this.email,
     this.address,
@@ -68,6 +69,7 @@ class BusinessRequest {
   final String? website;
   final String? description;
   final String? upiId;
+  final String? logoUrl;
 
   Map<String, dynamic> toJson() {
     return {
@@ -84,6 +86,7 @@ class BusinessRequest {
       'website': website,
       'description': description,
       'upiId': upiId,
+      'logoUrl': logoUrl,
     };
   }
 }

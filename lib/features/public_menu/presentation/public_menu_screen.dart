@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -366,46 +368,46 @@ class _PublicMenuScreenState
     )
         .toList();
 
-    return SizedBox(
-      height: 42,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Row(
-          children: [
-            FilterChip(
-              label: const Text('All'),
+    return ScrollConfiguration(
+      behavior: const _PublicMenuScrollBehavior(),
+      child: SizedBox(
+        height: 44,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: categoryNames.length + 1,
+          separatorBuilder: (_, index) =>
+          const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            // ALL
+            if (index == 0) {
+              return FilterChip(
+                label: const Text('All'),
+                selected:
+                _selectedCategory == null,
+                onSelected: (_) {
+                  _toggleCategory(null);
+                },
+              );
+            }
+
+            final category =
+            categoryNames[index - 1];
+
+            return FilterChip(
+              label: Text(
+                category,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               selected:
-              _selectedCategory == null,
+              _selectedCategory == category,
               onSelected: (_) {
-                _toggleCategory(null);
+                _toggleCategory(category);
               },
-            ),
-
-            const SizedBox(width: 8),
-
-            ...categoryNames.map(
-                  (category) {
-                return Padding(
-                  padding:
-                  const EdgeInsets.only(
-                    right: 8,
-                  ),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected:
-                    _selectedCategory ==
-                        category,
-                    onSelected: (_) {
-                      _toggleCategory(
-                        category,
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -865,4 +867,17 @@ class _Tag extends StatelessWidget {
       ),
     );
   }
+
+}
+class _PublicMenuScrollBehavior
+    extends MaterialScrollBehavior {
+  const _PublicMenuScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }

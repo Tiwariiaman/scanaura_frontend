@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../qr/data/models/qr_response.dart';
 import 'model/admin_dashboard_response.dart';
+import 'model/admin_qr_details_response.dart';
 import 'model/business_summary_response.dart';
 import 'model/qr_inventory_response.dart';
 
@@ -221,7 +223,7 @@ class AdminRepository {
     }
   }
 
-  Future<void> generatePhysicalQr(
+  Future<List<QrResponse>> generatePhysicalQr(
       int count,
       ) async {
     if (count <= 0) {
@@ -231,9 +233,32 @@ class AdminRepository {
     }
 
     try {
+      final response =
       await apiClient.post<Map<String, dynamic>>(
         ApiConstants.adminGenerateQr(count),
       );
+
+      final body = response.data;
+
+      if (body == null) {
+        throw Exception(
+          'Empty response from server.',
+        );
+      }
+
+      final data = body['data'];
+
+      if (data is! List) {
+        throw Exception(
+          body['message'] ??
+              'Unable to generate QR codes.',
+        );
+      }
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(QrResponse.fromJson)
+          .toList();
     } on DioException catch (e) {
       throw _handleError(
         e,
@@ -255,8 +280,7 @@ class AdminRepository {
     } on DioException catch (e) {
       throw _handleError(
         e,
-        fallback:
-        'Unable to deactivate QR code.',
+        fallback: 'Unable to deactivate QR code.',
       );
     }
   }
@@ -318,6 +342,65 @@ class AdminRepository {
         }
 
         return Exception(fallback);
+    }
+  }
+
+  Future<AdminQrDetailsResponse> getQrDetails(
+      String qrCode,
+      ) async {
+    try {
+      final response =
+      await apiClient.get<Map<String, dynamic>>(
+        '/api/v1/admin/qr/$qrCode',
+      );
+
+      final body = response.data;
+
+      if (body == null) {
+        throw Exception(
+          'Empty response from server.',
+        );
+      }
+
+      final data = body['data'];
+
+      if (data is! Map<String, dynamic>) {
+        throw Exception(
+          body['message'] ??
+              'Unable to load QR details.',
+        );
+      }
+
+      return AdminQrDetailsResponse.fromJson(data);
+    } on DioException catch (e) {
+      throw _handleError(
+        e,
+        fallback: 'Unable to load QR details.',
+      );
+    }
+  }
+
+
+  Future<void> assignQrToBusiness({
+    required String businessId,
+    required String qrCode,
+  }) async {
+    try {
+      await apiClient.post<Map<String, dynamic>>(
+        '/api/v1/qr/assign',
+        data: {
+          'businessId': businessId,
+          'qrCodes': [
+            qrCode,
+          ],
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(
+        e,
+        fallback:
+        'Unable to assign QR code.',
+      );
     }
   }
 }

@@ -27,6 +27,95 @@ class AdminNotifier
     return const AdminState();
   }
 
+  Future<bool> loadQrDetails(
+      String qrCode,
+      ) async {
+    final code = qrCode.trim();
+
+    if (code.isEmpty) {
+      state = state.copyWith(
+        errorMessage: 'Invalid QR code.',
+        clearQrDetails: true,
+      );
+
+      return false;
+    }
+
+    state = state.copyWith(
+      status: AdminStatus.loading,
+      clearError: true,
+      clearQrDetails: true,
+    );
+
+    try {
+      final details =
+      await _repository.getQrDetails(code);
+
+      state = state.copyWith(
+        status: AdminStatus.success,
+        qrDetails: details,
+        clearError: true,
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AdminStatus.error,
+        errorMessage:
+        _messageFromException(e),
+        clearQrDetails: true,
+      );
+
+      return false;
+    }
+  }
+
+  void clearQrDetails() {
+    state = state.copyWith(
+      clearQrDetails: true,
+    );
+  }
+
+  Future<bool> assignQrToBusiness({
+    required String businessId,
+    required String qrCode,
+  }) async {
+    state = state.copyWith(
+      businessActionInProgress: true,
+      clearError: true,
+    );
+
+    try {
+      await _repository.assignQrToBusiness(
+        businessId: businessId,
+        qrCode: qrCode,
+      );
+
+      // Refresh QR details so the details page
+      // immediately shows the assigned business.
+      await loadQrDetails(qrCode);
+
+      // Refresh inventory/dashboard counts.
+      await loadQrInventory();
+      await loadDashboard();
+
+      state = state.copyWith(
+        businessActionInProgress: false,
+        clearError: true,
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        businessActionInProgress: false,
+        errorMessage:
+        _messageFromException(e),
+      );
+
+      return false;
+    }
+  }
+
   Future<void> loadDashboard() async {
     state = state.copyWith(
       status: AdminStatus.loading,
@@ -184,8 +273,14 @@ class AdminNotifier
       int count,
       ) async {
     try {
+      final generated =
       await _repository.generatePhysicalQr(
         count,
+      );
+
+      state = state.copyWith(
+        generatedPhysicalQrs: generated,
+        clearError: true,
       );
 
       await loadQrInventory();

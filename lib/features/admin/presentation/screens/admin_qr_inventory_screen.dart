@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+
+import '../../services/admin_qr_pack_downloader.dart';
+import '../../services/admin_qr_pack_service.dart';
 import '../providers/admin_notifier.dart';
 import '../providers/admin_state.dart';
 
@@ -24,6 +28,8 @@ class _AdminQrInventoryScreenState
 
   bool _isGenerating = false;
 
+  bool _isDownloadingPack = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +45,77 @@ class _AdminQrInventoryScreenState
   void dispose() {
     _countController.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _downloadQrPack() async {
+    if (_isDownloadingPack) {
+      return;
+    }
+
+    final state =
+    ref.read(adminNotifierProvider);
+
+    final qrCodes =
+        state.generatedPhysicalQrs;
+
+    if (qrCodes.isEmpty) {
+      _showMessage(
+        'Generate physical QR codes first.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isDownloadingPack = true;
+    });
+
+    try {
+      _showMessage(
+        'Preparing ${qrCodes.length} QR cards...',
+      );
+
+      final zipBytes =
+      await AdminQrPackService.generateZip(
+        context: context,
+        qrCodes: qrCodes,
+      );
+
+      await downloadQrPack(
+        zipBytes,
+        'scanaura_physical_qr_pack.zip',
+      );
+
+      if (!mounted) return;
+
+      _showMessage(
+        '${qrCodes.length} QR cards downloaded successfully.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'Unable to create QR pack: ${_cleanError(e)}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloadingPack = false;
+        });
+      }
+    }
+  }
+
+  String _cleanError(Object error) {
+    final message = error.toString();
+
+    if (message.startsWith('Exception: ')) {
+      return message.substring(
+        'Exception: '.length,
+      );
+    }
+
+    return message;
   }
 
   Future<void> _generateQr() async {
@@ -166,6 +243,19 @@ class _AdminQrInventoryScreenState
           ),
         ),
         actions: [
+          FilledButton.icon(
+            onPressed: () async {
+              await context.push(
+                '/admin/qr/scan',
+              );
+            },
+            icon: const Icon(
+              Icons.qr_code_scanner_rounded,
+            ),
+            label: const Text(
+              'Scan QR to Assign',
+            ),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: state.isLoading
@@ -229,6 +319,14 @@ class _AdminQrInventoryScreenState
                     context,
                   ),
 
+                  if (state.generatedPhysicalQrs.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _buildGeneratedQrResult(
+                      context,
+                      state,
+                    ),
+                  ],
+
                   if (state.errorMessage !=
                       null) ...[
                     const SizedBox(
@@ -242,6 +340,105 @@ class _AdminQrInventoryScreenState
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneratedQrResult(
+      BuildContext context,
+      AdminState state,
+      ) {
+    final qrs =
+        state.generatedPhysicalQrs;
+
+    return Card(
+      child: Padding(
+        padding:
+        const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${qrs.length} QR codes generated',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight:
+                FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            const Text(
+              'These QR codes are available for printing and assignment.',
+            ),
+
+            const SizedBox(height: 16),
+
+            Container(
+              constraints:
+              const BoxConstraints(
+                maxHeight: 260,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: qrs.length,
+                separatorBuilder:
+                    (_, _) =>
+                const Divider(),
+                itemBuilder:
+                    (context, index) {
+                  final qr =
+                  qrs[index];
+
+                  return ListTile(
+                    leading:
+                    const Icon(
+                      Icons
+                          .qr_code_2_rounded,
+                    ),
+                    title:
+                    Text(qr.qrCode),
+                    subtitle:
+                    const Text(
+                      'Physical • Available',
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(
+              height: 16,
+            ),
+
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _isDownloadingPack
+                ? null
+                : _downloadQrPack,
+            icon: _isDownloadingPack
+                ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+              ),
+            )
+                : const Icon(
+              Icons.download_rounded,
+            ),
+            label: Text(
+              _isDownloadingPack
+                  ? 'Preparing QR Pack...'
+                  : 'Download QR Pack',
+            ),
+          ),
+        ),
+          ],
         ),
       ),
     );

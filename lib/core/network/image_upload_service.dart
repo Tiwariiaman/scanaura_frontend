@@ -43,6 +43,20 @@ class ImageUploadService {
     );
   }
 
+  // Business Logo
+  Future<ImageUploadResponse> uploadBusinessLogo(
+      Uint8List bytes,
+      String fileName,
+      ) async {
+    return _upload(
+      bytes: bytes,
+      fileName: fileName,
+      type: 'BUSINESS',
+      errorMessage:
+      'Business logo upload failed.',
+    );
+  }
+
   Future<ImageUploadResponse> uploadPaymentScreenshot(
       Uint8List bytes,
       String fileName,

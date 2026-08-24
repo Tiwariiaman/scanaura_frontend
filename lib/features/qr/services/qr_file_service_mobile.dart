@@ -9,6 +9,18 @@ class QrFileService {
       Uint8List bytes,
       String fileName,
       ) async {
+    await downloadFile(
+      bytes,
+      fileName,
+      mimeType: 'image/png',
+    );
+  }
+
+  static Future<void> downloadFile(
+      Uint8List bytes,
+      String fileName, {
+        String mimeType = 'application/octet-stream',
+      }) async {
     final directory =
     await getApplicationDocumentsDirectory();
 
@@ -22,10 +34,12 @@ class QrFileService {
     );
   }
 
-  static Future<void> shareQr(
-      Uint8List bytes,
-      String fileName,
-      ) async {
+  static Future<void> shareQr({
+    required Uint8List bytes,
+    required String fileName,
+    required String text,
+    String? subject,
+  }) async {
     final directory =
     await getTemporaryDirectory();
 
@@ -40,10 +54,14 @@ class QrFileService {
 
     await SharePlus.instance.share(
       ShareParams(
+        text: text,
+        subject: subject,
         files: [
-          XFile(file.path),
+          XFile(
+            file.path,
+            mimeType: 'image/png',
+          ),
         ],
-        text: 'ScanAura Digital QR',
       ),
     );
   }

@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/business/presentation/providers/business_notifier.dart';
+import '../../features/business/presentation/providers/business_state.dart';
 import '../theme/app_colors.dart';
 
-
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({
     required this.child,
     super.key,
@@ -14,6 +15,13 @@ class AppShell extends ConsumerWidget {
 
   final Widget child;
 
+  @override
+  ConsumerState<AppShell> createState() =>
+      _AppShellState();
+}
+
+class _AppShellState
+    extends ConsumerState<AppShell> {
   static const List<_NavigationItem> _items = [
     _NavigationItem(
       label: 'Dashboard',
@@ -33,12 +41,6 @@ class AppShell extends ConsumerWidget {
       selectedIcon: Icons.restaurant_menu_rounded,
       route: '/menu',
     ),
-    // _NavigationItem(
-    //   label: 'AI Import',
-    //   icon: Icons.auto_awesome_outlined,
-    //   selectedIcon: Icons.auto_awesome,
-    //   route: '/ai-import',
-    // ),
     _NavigationItem(
       label: 'QR',
       icon: Icons.qr_code_2_outlined,
@@ -51,13 +53,26 @@ class AppShell extends ConsumerWidget {
       selectedIcon: Icons.credit_card_rounded,
       route: '/subscription',
     ),
-    _NavigationItem(
-      label: 'Profile',
-      icon: Icons.person_outline_rounded,
-      selectedIcon: Icons.person_rounded,
-      route: '/profile',
-    ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final businessState =
+      ref.read(businessNotifierProvider);
+
+      if (businessState.status ==
+          BusinessStatus.initial) {
+        ref
+            .read(
+          businessNotifierProvider.notifier,
+        )
+            .loadMyBusiness();
+      }
+    });
+  }
 
   int _selectedIndex(String location) {
     final index = _items.indexWhere(
@@ -71,20 +86,50 @@ class AppShell extends ConsumerWidget {
       BuildContext context,
       int index,
       ) {
-    context.go(_items[index].route);
+    context.go(
+      _items[index].route,
+    );
+  }
+
+  Future<void> _logout() async {
+    await ref
+        .read(
+      authNotifierProvider.notifier,
+    )
+        .logout();
+
+    if (mounted) {
+      context.go('/login');
+    }
   }
 
   @override
-  Widget build(
-      BuildContext context,
-      WidgetRef ref,
-      ) {
-    final location = GoRouterState.of(context).uri.path;
-    final selectedIndex = _selectedIndex(location);
+  Widget build(BuildContext context) {
+    final location =
+        GoRouterState.of(context).uri.path;
+
+    final selectedIndex =
+    _selectedIndex(location);
+
+    final businessState =
+    ref.watch(
+      businessNotifierProvider,
+    );
+
+    final business =
+        businessState.business;
 
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+      builder: (
+          context,
+          constraints,
+          ) {
+        final isDesktop =
+            constraints.maxWidth >= 900;
+
+        // =====================================================
+        // DESKTOP
+        // =====================================================
 
         if (isDesktop) {
           return Scaffold(
@@ -92,18 +137,30 @@ class AppShell extends ConsumerWidget {
               children: [
                 _DesktopNavigation(
                   items: _items,
-                  selectedIndex: selectedIndex,
+                  selectedIndex:
+                  selectedIndex,
+                  logoUrl:
+                  business?.logoUrl,
                   onSelected: (index) {
-                    _navigate(context, index);
+                    _navigate(
+                      context,
+                      index,
+                    );
                   },
+                  onLogout: _logout,
                 ),
 
                 Expanded(
                   child: Column(
                     children: [
-                      const _DesktopHeader(),
+                      _DesktopHeader(
+                        logoUrl:
+                        business?.logoUrl,
+                        onLogout: _logout,
+                      ),
+
                       Expanded(
-                        child: child,
+                        child: widget.child,
                       ),
                     ],
                   ),
@@ -113,14 +170,27 @@ class AppShell extends ConsumerWidget {
           );
         }
 
+        // =====================================================
+        // MOBILE / TABLET
+        // =====================================================
+
         return Scaffold(
-          appBar: const _MobileHeader(),
-          body: child,
-          bottomNavigationBar: _MobileNavigation(
+          appBar: _MobileHeader(
+            logoUrl:
+            business?.logoUrl,
+            onLogout: _logout,
+          ),
+          body: widget.child,
+          bottomNavigationBar:
+          _MobileNavigation(
             items: _items,
-            selectedIndex: selectedIndex,
+            selectedIndex:
+            selectedIndex,
             onSelected: (index) {
-              _navigate(context, index);
+              _navigate(
+                context,
+                index,
+              );
             },
           ),
         );
@@ -129,19 +199,28 @@ class AppShell extends ConsumerWidget {
   }
 }
 
-class _DesktopNavigation extends ConsumerWidget {
+// ============================================================
+// DESKTOP NAVIGATION
+// ============================================================
+
+class _DesktopNavigation
+    extends StatelessWidget {
   const _DesktopNavigation({
     required this.items,
     required this.selectedIndex,
+    required this.logoUrl,
     required this.onSelected,
+    required this.onLogout,
   });
 
   final List<_NavigationItem> items;
   final int selectedIndex;
+  final String? logoUrl;
   final ValueChanged<int> onSelected;
+  final VoidCallback onLogout;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       width: 250,
       decoration: const BoxDecoration(
@@ -155,8 +234,13 @@ class _DesktopNavigation extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
+            // ==================================================
+            // SCANAURA BRAND
+            // ==================================================
+
             Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding:
+              const EdgeInsets.fromLTRB(
                 24,
                 24,
                 24,
@@ -164,51 +248,69 @@ class _DesktopNavigation extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.restaurant_menu_rounded,
-                      color: AppColors.primary,
-                    ),
+                  Image.asset(
+                    'assets/images/scanaura_logo.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
                   ),
-                  const SizedBox(width: 12),
+
+                  const SizedBox(
+                    width: 12,
+                  ),
+
                   const Text(
                     'ScanAura',
                     style: TextStyle(
                       fontSize: 21,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      fontWeight:
+                      FontWeight.w700,
+                      color:
+                      AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
             ),
 
+            // ==================================================
+            // NAVIGATION
+            // ==================================================
+
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(
+                padding:
+                const EdgeInsets.symmetric(
                   horizontal: 12,
                 ),
                 itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  final selected = index == selectedIndex;
+                itemBuilder:
+                    (context, index) {
+                  final item =
+                  items[index];
+
+                  final selected =
+                      index ==
+                          selectedIndex;
 
                   return Padding(
-                    padding: const EdgeInsets.only(
+                    padding:
+                    const EdgeInsets.only(
                       bottom: 4,
                     ),
                     child: ListTile(
-                      onTap: () => onSelected(index),
+                      onTap: () =>
+                          onSelected(index),
                       selected: selected,
-                      selectedTileColor: AppColors.primaryLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      selectedTileColor:
+                      AppColors
+                          .primaryLight,
+                      shape:
+                      RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.circular(
+                          12,
+                        ),
                       ),
                       leading: Icon(
                         selected
@@ -216,7 +318,8 @@ class _DesktopNavigation extends ConsumerWidget {
                             : item.icon,
                         color: selected
                             ? AppColors.primary
-                            : AppColors.textSecondary,
+                            : AppColors
+                            .textSecondary,
                       ),
                       title: Text(
                         item.label,
@@ -226,7 +329,8 @@ class _DesktopNavigation extends ConsumerWidget {
                               : FontWeight.w400,
                           color: selected
                               ? AppColors.primary
-                              : AppColors.textSecondary,
+                              : AppColors
+                              .textSecondary,
                         ),
                       ),
                     ),
@@ -235,29 +339,86 @@ class _DesktopNavigation extends ConsumerWidget {
               ),
             ),
 
+            // ==================================================
+            // BUSINESS FOOTER
+            // ==================================================
+
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.primaryLight,
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: AppColors.primary,
-                  ),
+              padding:
+              const EdgeInsets.all(16),
+              child: Container(
+                width: double.infinity,
+                padding:
+                const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                  AppColors.primaryLight,
+                  borderRadius:
+                  BorderRadius.circular(14),
                 ),
-                title: const Text(
-                  'Restaurant Owner',
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: const Text(
-                  'Account',
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textSecondary,
-                ),
-                onTap: () => onSelected(
-                  items.length - 1,
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _BusinessAvatar(
+                          logoUrl: logoUrl,
+                          size: 42,
+                        ),
+
+                        const SizedBox(
+                          width: 10,
+                        ),
+
+                        const Expanded(
+                          child: Text(
+                            'Business',
+                            style: TextStyle(
+                              fontWeight:
+                              FontWeight.w700,
+                              color: AppColors
+                                  .textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    const Text(
+                      'Powered by ScanAura',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                        FontWeight.w500,
+                        color: AppColors
+                            .textSecondary,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child:
+                      OutlinedButton.icon(
+                        onPressed: onLogout,
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Logout',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -268,17 +429,30 @@ class _DesktopNavigation extends ConsumerWidget {
   }
 }
 
-class _DesktopHeader extends ConsumerWidget {
-  const _DesktopHeader();
+// ============================================================
+// DESKTOP HEADER
+// ============================================================
+
+class _DesktopHeader
+    extends StatelessWidget {
+  const _DesktopHeader({
+    required this.logoUrl,
+    required this.onLogout,
+  });
+
+  final String? logoUrl;
+  final VoidCallback onLogout;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       height: 72,
-      padding: const EdgeInsets.symmetric(
+      padding:
+      const EdgeInsets.symmetric(
         horizontal: 28,
       ),
-      decoration: const BoxDecoration(
+      decoration:
+      const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           bottom: BorderSide(
@@ -289,41 +463,21 @@ class _DesktopHeader extends ConsumerWidget {
       child: Row(
         children: [
           const Spacer(),
+
+          _BusinessAvatar(
+            logoUrl: logoUrl,
+            size: 38,
+          ),
+
+          const SizedBox(
+            width: 12,
+          ),
+
           IconButton(
             tooltip: 'Logout',
-            onPressed: ()  async {
-              await ref
-                  .read(authNotifierProvider.notifier)
-                  .logout();
-
-              if (context.mounted) {
-                context.go('/login');
-              }
-            },
+            onPressed: onLogout,
             icon: const Icon(
-              Icons.logout,
-            ),
-          ),
-
-          const SizedBox(width: 8,),
-
-          IconButton(
-            tooltip: 'Notifications',
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(
-              Icons.person_rounded,
-              size: 20,
-              color: AppColors.primary,
+              Icons.logout_rounded,
             ),
           ),
         ],
@@ -332,72 +486,85 @@ class _DesktopHeader extends ConsumerWidget {
   }
 }
 
-class _MobileHeader extends ConsumerWidget
+// ============================================================
+// MOBILE HEADER
+// ============================================================
+
+class _MobileHeader
+    extends StatelessWidget
     implements PreferredSizeWidget {
-  const _MobileHeader();
+  const _MobileHeader({
+    required this.logoUrl,
+    required this.onLogout,
+  });
+
+  final String? logoUrl;
+  final VoidCallback onLogout;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize =>
+      const Size.fromHeight(64);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return AppBar(
       titleSpacing: 20,
+
       title: Row(
         children: [
-          Container(
+          Image.asset(
+            'assets/images/scanaura_logo.png',
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.restaurant_menu_rounded,
-              size: 20,
-              color: AppColors.primary,
-            ),
+            fit: BoxFit.contain,
           ),
-          const SizedBox(width: 10),
+
+          const SizedBox(
+            width: 10,
+          ),
+
           const Text(
             'ScanAura',
             style: TextStyle(
-              fontWeight: FontWeight.w700,
+              fontWeight:
+              FontWeight.w700,
             ),
           ),
         ],
       ),
+
       actions: [
+        _BusinessAvatar(
+          logoUrl: logoUrl,
+          size: 36,
+        ),
+
+        const SizedBox(
+          width: 4,
+        ),
+
         IconButton(
           tooltip: 'Logout',
-          onPressed: ()  async {
-            await ref
-                .read(authNotifierProvider.notifier)
-                .logout();
-
-            if (context.mounted) {
-              context.go('/login');
-            }
-          },
+          onPressed: onLogout,
           icon: const Icon(
-            Icons.logout,
+            Icons.logout_rounded,
           ),
         ),
 
-        const SizedBox(width: 8,),
-        IconButton(
-          tooltip: 'Notifications',
-          onPressed: () {},
-          icon: const Icon(
-            Icons.notifications_none_rounded,
-          ),
+        const SizedBox(
+          width: 8,
         ),
       ],
     );
   }
 }
 
-class _MobileNavigation extends StatelessWidget {
+// ============================================================
+// MOBILE NAVIGATION
+// ============================================================
+
+class _MobileNavigation
+    extends StatelessWidget {
   const _MobileNavigation({
     required this.items,
     required this.selectedIndex,
@@ -410,23 +577,96 @@ class _MobileNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleItems = items.take(5).toList();
-
     return NavigationBar(
-      selectedIndex: selectedIndex >= 5 ? 0 : selectedIndex,
-      onDestinationSelected: onSelected,
-      destinations: visibleItems
+      selectedIndex:
+      selectedIndex >= items.length
+          ? 0
+          : selectedIndex,
+      onDestinationSelected:
+      onSelected,
+      destinations: items
           .map(
-            (item) => NavigationDestination(
-          icon: Icon(item.icon),
-          selectedIcon: Icon(item.selectedIcon),
-          label: item.label,
-        ),
+            (item) =>
+            NavigationDestination(
+              icon: Icon(
+                item.icon,
+              ),
+              selectedIcon: Icon(
+                item.selectedIcon,
+              ),
+              label: item.label,
+            ),
       )
           .toList(),
     );
   }
 }
+
+// ============================================================
+// BUSINESS AVATAR
+// ============================================================
+
+class _BusinessAvatar
+    extends StatelessWidget {
+  const _BusinessAvatar({
+    required this.logoUrl,
+    required this.size,
+  });
+
+  final String? logoUrl;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLogo =
+        logoUrl != null &&
+            logoUrl!.trim().isNotEmpty;
+
+    if (hasLogo) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius:
+          BorderRadius.circular(
+            size * 0.22,
+          ),
+          child: Image.network(
+            logoUrl!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (
+                context,
+                error,
+                stackTrace,
+                ) {
+              return Icon(
+                Icons.storefront_rounded,
+                size: size * 0.55,
+                color: AppColors.primary,
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Icon(
+        Icons.storefront_rounded,
+        size: size * 0.55,
+        color: AppColors.primary,
+      ),
+    );
+  }
+}
+
+// ============================================================
+// NAVIGATION ITEM
+// ============================================================
 
 class _NavigationItem {
   const _NavigationItem({

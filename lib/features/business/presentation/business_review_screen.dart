@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:scanaura_frontend/features/business/presentation/providers/business_notifier.dart';
-import 'package:scanaura_frontend/features/business/presentation/providers/business_state.dart';
-
 import '../data/models/business_request.dart';
+import '../presentation/providers/business_notifier.dart';
+import '../presentation/providers/business_state.dart';
 
-class BusinessReviewScreen extends ConsumerStatefulWidget {
+class BusinessReviewScreen
+    extends ConsumerStatefulWidget {
   const BusinessReviewScreen({
     super.key,
     required this.businessName,
@@ -23,6 +23,7 @@ class BusinessReviewScreen extends ConsumerStatefulWidget {
     required this.website,
     required this.description,
     required this.upiId,
+    this.isEditMode = false,
   });
 
   final String businessName;
@@ -39,106 +40,169 @@ class BusinessReviewScreen extends ConsumerStatefulWidget {
   final String description;
   final String upiId;
 
+  final bool isEditMode;
+
   @override
-  ConsumerState<BusinessReviewScreen> createState() =>
+  ConsumerState<BusinessReviewScreen>
+  createState() =>
       _BusinessReviewScreenState();
 }
 
 class _BusinessReviewScreenState
     extends ConsumerState<BusinessReviewScreen> {
-  bool _isCreating = false;
+  bool _isSaving = false;
 
-  Future<void> _createBusiness() async {
-    if (_isCreating) {
+  Future<void> _saveBusiness() async {
+    if (_isSaving) {
       return;
     }
 
     setState(() {
-      _isCreating = true;
+      _isSaving = true;
     });
 
     final request = BusinessRequest(
-      businessName: widget.businessName,
-      businessType: widget.businessType,
-      phone: widget.phone,
+      businessName:
+      widget.businessName,
+      businessType:
+      widget.businessType,
+      phone:
+      widget.phone,
       whatsapp:
-      widget.whatsapp.isEmpty ? null : widget.whatsapp,
+      widget.whatsapp.isEmpty
+          ? null
+          : widget.whatsapp,
       email:
-      widget.email.isEmpty ? null : widget.email,
+      widget.email.isEmpty
+          ? null
+          : widget.email,
       address:
-      widget.address.isEmpty ? null : widget.address,
+      widget.address.isEmpty
+          ? null
+          : widget.address,
       city:
-      widget.city.isEmpty ? null : widget.city,
+      widget.city.isEmpty
+          ? null
+          : widget.city,
       state:
-      widget.state.isEmpty ? null : widget.state,
+      widget.state.isEmpty
+          ? null
+          : widget.state,
       country:
-      widget.country.isEmpty ? null : widget.country,
+      widget.country.isEmpty
+          ? null
+          : widget.country,
       pincode:
-      widget.pincode.isEmpty ? null : widget.pincode,
+      widget.pincode.isEmpty
+          ? null
+          : widget.pincode,
       website:
-      widget.website.isEmpty ? null : widget.website,
+      widget.website.isEmpty
+          ? null
+          : widget.website,
       description:
-      widget.description.isEmpty ? null : widget.description,
+      widget.description.isEmpty
+          ? null
+          : widget.description,
       upiId:
-      widget.upiId.isEmpty ? null : widget.upiId,
+      widget.upiId.isEmpty
+          ? null
+          : widget.upiId,
     );
 
+    final notifier =
+    ref.read(
+      businessNotifierProvider.notifier,
+    );
 
-    await ref
-        .read(businessNotifierProvider.notifier)
-        .createBusiness(request);
+    if (widget.isEditMode) {
+      await notifier.updateBusiness(
+        request,
+      );
+    } else {
+      await notifier.createBusiness(
+        request,
+      );
+    }
 
     if (!mounted) {
       return;
     }
 
-    final businessState =
-    ref.read(businessNotifierProvider);
+    final state =
+    ref.read(
+      businessNotifierProvider,
+    );
 
-    // SUCCESS
-    if (businessState.status == BusinessStatus.success &&
-        businessState.business != null) {
+    if (state.status ==
+        BusinessStatus.success &&
+        state.business != null) {
       setState(() {
-        _isCreating = false;
+        _isSaving = false;
       });
 
-      // IMPORTANT:
-      // The POST response already contains the created business.
-      // Do not call loadMyBusiness().
-      context.go('/dashboard');
+      if (widget.isEditMode) {
+        // Editing:
+        // return to the Business page.
+        context.go('/business');
+      } else {
+        // Creating:
+        // continue to Dashboard.
+        context.go('/dashboard');
+      }
 
       return;
     }
 
     setState(() {
-      _isCreating = false;
+      _isSaving = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
         content: Text(
-          businessState.errorMessage ??
-              'Business creation failed. Please try again.',
+          state.errorMessage ??
+              (widget.isEditMode
+                  ? 'Business update failed. Please try again.'
+                  : 'Business creation failed. Please try again.'),
         ),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
+
+    final title =
+    widget.isEditMode
+        ? 'Review Changes'
+        : 'Review Business';
+
+    final description =
+    widget.isEditMode
+        ? 'Review your updated business information before saving.'
+        : 'Review your business information before creating your ScanAura business.';
+
+    final buttonText =
+    widget.isEditMode
+        ? 'Save Changes'
+        : 'Create My Business';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review Business'),
+        title: Text(title),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding:
+            const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
+              constraints:
+              const BoxConstraints(
                 maxWidth: 700,
               ),
               child: Column(
@@ -146,30 +210,43 @@ class _BusinessReviewScreenState
                 CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Almost there!',
-                    style:
-                    theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    widget.isEditMode
+                        ? 'Review Your Changes'
+                        : 'Almost there!',
+                    style: theme
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
                   Text(
-                    'Review your business information before creating your ScanAura business.',
-                    style:
-                    theme.textTheme.bodyLarge?.copyWith(
-                      color:
-                      theme.colorScheme.onSurfaceVariant,
+                    description,
+                    style: theme
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   _section(
                     context,
                     title: 'Business',
-                    icon: Icons.storefront_outlined,
+                    icon: Icons
+                        .storefront_outlined,
                     children: [
                       _infoRow(
                         context,
@@ -179,30 +256,36 @@ class _BusinessReviewScreenState
                       _infoRow(
                         context,
                         'Business type',
-                        widget.businessType.displayName,
+                        widget.businessType
+                            .displayName,
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 16,
+                  ),
 
                   _section(
                     context,
                     title: 'Contact',
-                    icon: Icons.contact_phone_outlined,
+                    icon: Icons
+                        .contact_phone_outlined,
                     children: [
                       _infoRow(
                         context,
                         'Phone',
                         widget.phone,
                       ),
-                      if (widget.whatsapp.isNotEmpty)
+                      if (widget.whatsapp
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'WhatsApp',
                           widget.whatsapp,
                         ),
-                      if (widget.email.isNotEmpty)
+                      if (widget.email
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Email',
@@ -211,38 +294,46 @@ class _BusinessReviewScreenState
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 16,
+                  ),
 
                   _section(
                     context,
                     title: 'Location',
-                    icon: Icons.location_on_outlined,
+                    icon: Icons
+                        .location_on_outlined,
                     children: [
-                      if (widget.address.isNotEmpty)
+                      if (widget.address
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Address',
                           widget.address,
                         ),
-                      if (widget.city.isNotEmpty)
+                      if (widget.city
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'City',
                           widget.city,
                         ),
-                      if (widget.state.isNotEmpty)
+                      if (widget.state
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'State',
                           widget.state,
                         ),
-                      if (widget.country.isNotEmpty)
+                      if (widget.country
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Country',
                           widget.country,
                         ),
-                      if (widget.pincode.isNotEmpty)
+                      if (widget.pincode
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Pincode',
@@ -251,26 +342,33 @@ class _BusinessReviewScreenState
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 16,
+                  ),
 
                   _section(
                     context,
-                    title: 'Additional Information',
-                    icon: Icons.info_outline_rounded,
+                    title:
+                    'Additional Information',
+                    icon: Icons
+                        .info_outline_rounded,
                     children: [
-                      if (widget.website.isNotEmpty)
+                      if (widget.website
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Website',
                           widget.website,
                         ),
-                      if (widget.description.isNotEmpty)
+                      if (widget.description
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'Description',
                           widget.description,
                         ),
-                      if (widget.upiId.isNotEmpty)
+                      if (widget.upiId
+                          .isNotEmpty)
                         _infoRow(
                           context,
                           'UPI ID',
@@ -279,33 +377,53 @@ class _BusinessReviewScreenState
                     ],
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color:
-                      theme.colorScheme.primaryContainer,
+                    width:
+                    double.infinity,
+                    padding:
+                    const EdgeInsets.all(
+                      16,
+                    ),
+                    decoration:
+                    BoxDecoration(
+                      color: theme
+                          .colorScheme
+                          .primaryContainer,
                       borderRadius:
-                      BorderRadius.circular(16),
+                      BorderRadius.circular(
+                        16,
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      CrossAxisAlignment
+                          .start,
                       children: [
                         Icon(
-                          Icons.check_circle_outline_rounded,
-                          color: theme.colorScheme
+                          Icons
+                              .check_circle_outline_rounded,
+                          color: theme
+                              .colorScheme
                               .onPrimaryContainer,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(
+                          width: 12,
+                        ),
                         Expanded(
                           child: Text(
-                            'Your business will be created using the information shown above.',
-                            style: theme.textTheme.bodyMedium
+                            widget.isEditMode
+                                ? 'Your existing business information will be updated with the changes shown above.'
+                                : 'Your business will be created using the information shown above.',
+                            style: theme
+                                .textTheme
+                                .bodyMedium
                                 ?.copyWith(
-                              color: theme.colorScheme
+                              color: theme
+                                  .colorScheme
                                   .onPrimaryContainer,
                             ),
                           ),
@@ -314,50 +432,74 @@ class _BusinessReviewScreenState
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                    double.infinity,
                     height: 54,
-                    child: FilledButton.icon(
+                    child:
+                    FilledButton.icon(
                       onPressed:
-                      _isCreating ? null : _createBusiness,
-                      icon: _isCreating
+                      _isSaving
+                          ? null
+                          : _saveBusiness,
+                      icon: _isSaving
                           ? const SizedBox(
                         width: 20,
                         height: 20,
                         child:
                         CircularProgressIndicator(
-                          strokeWidth: 2.5,
+                          strokeWidth:
+                          2.5,
                         ),
                       )
-                          : const Icon(
-                        Icons.check_rounded,
+                          : Icon(
+                        widget.isEditMode
+                            ? Icons
+                            .save_outlined
+                            : Icons
+                            .check_rounded,
                       ),
                       label: Text(
-                        _isCreating
-                            ? 'Creating business...'
-                            : 'Create My Business',
+                        _isSaving
+                            ? widget.isEditMode
+                            ? 'Saving Changes...'
+                            : 'Creating Business...'
+                            : buttonText,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                    double.infinity,
                     height: 48,
-                    child: OutlinedButton(
-                      onPressed: _isCreating
+                    child:
+                    OutlinedButton(
+                      onPressed:
+                      _isSaving
                           ? null
                           : () {
-                        Navigator.of(context).pop();
+                        Navigator.of(
+                          context,
+                        ).pop();
                       },
-                      child: const Text('Back'),
+                      child: const Text(
+                        'Back',
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(
+                    height: 24,
+                  ),
                 ],
               ),
             ),
@@ -373,12 +515,14 @@ class _BusinessReviewScreenState
         required IconData icon,
         required List<Widget> children,
       }) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -386,19 +530,24 @@ class _BusinessReviewScreenState
             Row(
               children: [
                 Icon(icon),
-                const SizedBox(width: 10),
+                const SizedBox(
+                  width: 10,
+                ),
                 Text(
                   title,
-                  style:
-                  theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: theme
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(
+                    fontWeight:
+                    FontWeight.w700,
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
+            const SizedBox(
+              height: 16,
+            ),
             ...children,
           ],
         ),
@@ -411,11 +560,14 @@ class _BusinessReviewScreenState
       String label,
       String value,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Padding(
       padding:
-      const EdgeInsets.only(bottom: 12),
+      const EdgeInsets.only(
+        bottom: 12,
+      ),
       child: Row(
         crossAxisAlignment:
         CrossAxisAlignment.start,
@@ -424,20 +576,27 @@ class _BusinessReviewScreenState
             width: 120,
             child: Text(
               label,
-              style:
-              theme.textTheme.bodyMedium?.copyWith(
+              style: theme
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
                 color: theme
-                    .colorScheme.onSurfaceVariant,
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
             ),
           ),
-
           Expanded(
             child: Text(
-              value,
-              style:
-              theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+              value.isEmpty
+                  ? '—'
+                  : value,
+              style: theme
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
+                fontWeight:
+                FontWeight.w600,
               ),
             ),
           ),

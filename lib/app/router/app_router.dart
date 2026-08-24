@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/presentation/screens/admin_businesses_screen.dart';
 import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/screens/admin_qr_details_screen.dart';
 import '../../features/admin/presentation/screens/admin_qr_inventory_screen.dart';
+import '../../features/admin/presentation/screens/admin_qr_scanner_screen.dart';
 import '../../features/admin/presentation/screens/admin_subscriptions_screen.dart';
 import '../../features/ai/presentation/ai_import_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -15,7 +17,7 @@ import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/menu/presentation/add_menu_item_screen.dart';
 import '../../features/menu/presentation/category_management_screen.dart';
 import '../../features/menu/presentation/menu_edit_loader_screen.dart';
-import '../../features/profile/presentation/profile_screen.dart';
+
 import '../../features/menu/presentation/menu_screen.dart';
 import '../../features/business/presentation/business_screen.dart';
 
@@ -227,6 +229,36 @@ class AppRouter {
                 return const AdminSubscriptionsScreen();
               },
             ),
+            GoRoute(
+              path: '/admin/qr/scan',
+              builder: (context, state) {
+                return const AdminQrScannerScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/admin/qr/details',
+              builder: (context, state) {
+                final qrCode =
+                state.extra as String?;
+
+                if (qrCode == null ||
+                    qrCode.isEmpty) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text(
+                        'Invalid QR code.',
+                      ),
+                    ),
+                  );
+                }
+
+                return AdminQrDetailsScreen(
+                  qrCode: qrCode,
+                );
+              },
+            ),
+
           ],
         ),
 
@@ -254,7 +286,13 @@ class AppRouter {
             GoRoute(
               path: '/business-onboarding',
               builder: (context, state) {
-                return const BusinessOnboardingScreen();
+                final isEditMode =
+                    state.uri.queryParameters['edit'] ==
+                        'true';
+
+                return BusinessOnboardingScreen(
+                  isEditMode: isEditMode,
+                );
               },
             ),
 
@@ -283,13 +321,6 @@ class AppRouter {
               path: '/subscription',
               builder: (context, state) {
                 return const SubscriptionScreen();
-              },
-            ),
-
-            GoRoute(
-              path: '/profile',
-              builder: (context, state) {
-                return const ProfileScreen();
               },
             ),
 

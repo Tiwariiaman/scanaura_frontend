@@ -7,6 +7,7 @@ class QrResponse {
     required this.active,
     this.businessId,
     this.businessName,
+
   });
 
   final String id;
@@ -16,6 +17,7 @@ class QrResponse {
   final bool active;
   final String? businessId;
   final String? businessName;
+
 
   factory QrResponse.fromJson(Map<String, dynamic> json) {
     return QrResponse(

@@ -1,7 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/image_compression_helper.dart';
+import '../data/models/business_request.dart';
 import 'providers/business_notifier.dart';
 import 'providers/business_state.dart';
 
@@ -84,6 +88,163 @@ class _BusinessScreenState
     await _checkBusiness();
   }
 
+  Future<void> _pickAndUploadLogo() async {
+    final business =
+        ref.read(businessNotifierProvider).business;
+
+    if (business == null) {
+      _showMessage('Business details are not available.');
+      return;
+    }
+
+    final result =
+    await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null ||
+        result.files.isEmpty) {
+      return;
+    }
+
+    final file = result.files.single;
+
+    final bytes = file.bytes;
+
+    if (bytes == null || bytes.isEmpty) {
+      _showMessage('Unable to read the selected image.');
+      return;
+    }
+
+    try {
+      _showLogoLoading(true);
+
+      final compressed =
+      await ImageCompressionHelper.compressLogo(
+        bytes,
+      );
+
+      final uploadService =
+      ref.read(imageUploadServiceProvider);
+
+      final upload =
+      await uploadService.uploadBusinessLogo(
+        compressed,
+        file.name,
+      );
+
+      final updatedRequest =
+      BusinessRequest(
+        businessName:
+        business.businessName,
+        businessType:
+        _parseBusinessType(
+          business.businessType,
+        ),
+        phone:
+        business.phone,
+        logoUrl:
+        upload.imageUrl,
+        whatsapp:
+        business.whatsapp,
+        email:
+        business.email,
+        address:
+        business.address,
+        city:
+        business.city,
+        state:
+        business.state,
+        country:
+        business.country,
+        pincode:
+        business.pincode,
+        website:
+        business.website,
+        description:
+        business.description,
+        upiId:
+        business.upiId,
+      );
+
+      await ref
+          .read(
+        businessNotifierProvider.notifier,
+      )
+          .updateBusiness(
+        updatedRequest,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final state =
+      ref.read(businessNotifierProvider);
+
+      if (state.status ==
+          BusinessStatus.success &&
+          state.business != null) {
+        _showMessage(
+          'Business logo updated successfully.',
+        );
+      } else {
+        _showMessage(
+          state.errorMessage ??
+              'Unable to save business logo.',
+        );
+      }
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+    } finally {
+      if (mounted) {
+        _showLogoLoading(false);
+      }
+    }
+  }
+
+  bool _logoUploading = false;
+
+  void _showLogoLoading(bool value) {
+    setState(() {
+      _logoUploading = value;
+    });
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  BusinessType _parseBusinessType(
+      String value,
+      ) {
+    final normalized =
+    value.trim().toUpperCase();
+
+    for (final type in BusinessType.values) {
+      if (type.apiValue == normalized) {
+        return type;
+      }
+    }
+
+    return BusinessType.restaurant;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(businessNotifierProvider);
@@ -145,7 +306,9 @@ class _BusinessScreenState
           IconButton(
             tooltip: 'Edit Business',
             onPressed: () {
-              context.push('/business-onboarding');
+              context.push(
+                '/business-onboarding?edit=true',
+              );
             },
             icon: const Icon(
               Icons.edit_outlined,
@@ -176,47 +339,92 @@ class _BusinessScreenState
               color: colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(20),
+
                 child: Row(
                   crossAxisAlignment:
                   CrossAxisAlignment.center,
+
                   children: [
                     // LOGO
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius:
-                        BorderRadius.circular(18),
-                      ),
-                      child: business.logoUrl != null &&
-                          business.logoUrl!
-                              .toString()
-                              .isNotEmpty
-                          ? ClipRRect(
-                        borderRadius:
-                        BorderRadius.circular(18),
-                        child: Image.network(
-                          business.logoUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder:
-                              (_, _, _) {
-                            return Icon(
-                              Icons.storefront_rounded,
-                              size: 36,
-                              color:
-                              colorScheme.primary,
-                            );
-                          },
-                        ),
-                      )
-                          : Icon(
-                        Icons.storefront_rounded,
-                        size: 36,
-                        color: colorScheme.primary,
-                      ),
-                    ),
 
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: _logoUploading
+                              ? null
+                              : _pickAndUploadLogo,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 72,
+                                height: 72,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius:
+                                  BorderRadius.circular(18),
+                                ),
+                                child: business.logoUrl != null &&
+                                    business.logoUrl!
+                                        .trim()
+                                        .isNotEmpty
+                                    ? ClipRRect(
+                                  borderRadius:
+                                  BorderRadius.circular(18),
+                                  child: Image.network(
+                                    business.logoUrl!,
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (_, _, _) {
+                                      return Icon(
+                                        Icons.storefront_rounded,
+                                        size: 36,
+                                        color:
+                                        colorScheme.primary,
+                                      );
+                                    },
+                                  ),
+                                )
+                                    : Icon(
+                                  Icons.storefront_rounded,
+                                  size: 36,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+
+                              if (_logoUploading)
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius:
+                                    BorderRadius.circular(18),
+                                  ),
+                                  child: const Center(
+                                    child:
+                                    CircularProgressIndicator(),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          'Tap logo to change',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                     const SizedBox(width: 16),
 
                     // NAME + TYPE
@@ -468,7 +676,9 @@ class _BusinessScreenState
               height: 52,
               child: FilledButton.icon(
                 onPressed: () {
-                  context.push('/business-onboarding');
+                  context.push(
+                    '/business-onboarding?edit=true',
+                  );
                 },
                 icon: const Icon(
                   Icons.edit_outlined,
