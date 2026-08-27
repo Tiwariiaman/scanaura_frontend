@@ -21,15 +21,15 @@ class MenuEmptyState extends StatelessWidget {
           Icon(
             searching
                 ? Icons.search_off
-                : Icons.restaurant_menu,
+                : Icons.inventory,
             size: 56,
             color: Colors.grey,
           ),
           const SizedBox(height: 16),
           Text(
             searching
-                ? 'No menu items found'
-                : 'Your menu is empty',
+                ? 'No Catalog items found'
+                : 'Your Catalog is empty',
             style:
             const TextStyle(
               fontSize: 18,
@@ -41,7 +41,7 @@ class MenuEmptyState extends StatelessWidget {
           Text(
             searching
                 ? 'Try a different search or filter.'
-                : 'Add your first menu item to get started.',
+                : 'Add your first Catalog item to get started.',
             textAlign:
             TextAlign.center,
           ),

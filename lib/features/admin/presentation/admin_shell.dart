@@ -40,15 +40,21 @@ class AdminShell extends ConsumerWidget {
   ];
 
   int _selectedIndex(String location) {
-    if (location.startsWith('/admin/businesses')) {
+    if (location.startsWith(
+      '/admin/businesses',
+    )) {
       return 1;
     }
 
-    if (location.startsWith('/admin/subscriptions')) {
+    if (location.startsWith(
+      '/admin/subscriptions',
+    )) {
       return 2;
     }
 
-    if (location.startsWith('/admin/qr')) {
+    if (location.startsWith(
+      '/admin/qr',
+    )) {
       return 3;
     }
 
@@ -66,9 +72,12 @@ class AdminShell extends ConsumerWidget {
       BuildContext context,
       WidgetRef ref,
       ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+    await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (
+          dialogContext,
+          ) {
         return AlertDialog(
           title: const Text(
             'Logout?',
@@ -79,7 +88,9 @@ class AdminShell extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(false);
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
               },
               child: const Text(
                 'Cancel',
@@ -87,7 +98,9 @@ class AdminShell extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(true);
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
               },
               child: const Text(
                 'Logout',
@@ -98,12 +111,16 @@ class AdminShell extends ConsumerWidget {
       },
     );
 
-    if (confirmed != true || !context.mounted) {
+    if (confirmed != true ||
+        !context.mounted) {
       return;
     }
 
     await ref
-        .read(authNotifierProvider.notifier)
+        .read(
+      authNotifierProvider
+          .notifier,
+    )
         .logout();
 
     if (!context.mounted) {
@@ -119,117 +136,233 @@ class AdminShell extends ConsumerWidget {
       WidgetRef ref,
       ) {
     final location =
-        GoRouterState.of(context).matchedLocation;
+        GoRouterState.of(context)
+            .matchedLocation;
 
     final selectedIndex =
     _selectedIndex(location);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ScanAura Admin',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () {
-              _logout(context, ref);
-            },
-            icon: const Icon(
-              Icons.logout,
+    return LayoutBuilder(
+      builder: (
+          context,
+          constraints,
+          ) {
+        final width =
+            constraints.maxWidth;
+
+        final isMobile =
+            width < 700;
+
+        final isCompactDesktop =
+            width >= 700 &&
+                width < 1000;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                if (isMobile)
+                  Padding(
+                    padding:
+                    const EdgeInsets
+                        .only(
+                      right: 10,
+                    ),
+                    child:
+                    Image.asset(
+                      'assets/images/scanaura_logo.png',
+                      width: 30,
+                      height: 30,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (
+                          context,
+                          error,
+                          stackTrace,
+                          ) {
+                        return const Icon(
+                          Icons
+                              .qr_code_rounded,
+                          size: 30,
+                        );
+                      },
+                    ),
+                  ),
+                Expanded(
+                  child: Text(
+                    'ScanAura Admin',
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Row(
-        children: [
-          _buildRail(
-            context,
-            selectedIndex,
-          ),
-          if (MediaQuery.sizeOf(context).width >= 700)
-            const VerticalDivider(
-              width: 1,
-            ),
-          Expanded(
-            child: child,
-          ),
-        ],
-      ),
-      bottomNavigationBar:
-      MediaQuery.sizeOf(context).width < 700
-          ? NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) {
-          _navigate(
-            context,
-            _items[index].route,
-          );
-        },
-        destinations: _items
-            .map(
-              (item) =>
-              NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon:
-                Icon(item.selectedIcon),
-                label: item.label,
+            actions: [
+              IconButton(
+                tooltip:
+                'Logout',
+                onPressed: () {
+                  _logout(
+                    context,
+                    ref,
+                  );
+                },
+                icon:
+                const Icon(
+                  Icons.logout,
+                ),
               ),
-        )
-            .toList(),
-      )
-          : null,
+              SizedBox(
+                width:
+                isMobile ? 4 : 8,
+              ),
+            ],
+          ),
+
+          body: Row(
+            children: [
+              if (!isMobile)
+                _buildRail(
+                  context,
+                  selectedIndex,
+                  isCompactDesktop,
+                ),
+
+              if (!isMobile)
+                const VerticalDivider(
+                  width: 1,
+                ),
+
+              Expanded(
+                child: child,
+              ),
+            ],
+          ),
+
+          bottomNavigationBar:
+          isMobile
+              ? NavigationBar(
+            selectedIndex:
+            selectedIndex,
+            onDestinationSelected:
+                (index) {
+              _navigate(
+                context,
+                _items[index]
+                    .route,
+              );
+            },
+            labelBehavior:
+            NavigationDestinationLabelBehavior
+                .alwaysShow,
+            destinations:
+            _items.map(
+                  (item) {
+                return NavigationDestination(
+                  icon:
+                  Icon(
+                    item.icon,
+                  ),
+                  selectedIcon:
+                  Icon(
+                    item.selectedIcon,
+                  ),
+                  label:
+                  item.label,
+                );
+              },
+            ).toList(),
+          )
+              : null,
+        );
+      },
     );
   }
 
   Widget _buildRail(
       BuildContext context,
       int selectedIndex,
+      bool compactDesktop,
       ) {
-    final width =
-        MediaQuery.sizeOf(context).width;
-
-    if (width < 700) {
-      return const SizedBox.shrink();
-    }
-
     return NavigationRail(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: (index) {
+      selectedIndex:
+      selectedIndex,
+      onDestinationSelected:
+          (index) {
         _navigate(
           context,
           _items[index].route,
         );
       },
-      labelType:
-      NavigationRailLabelType.all,
+      labelType: compactDesktop
+          ? NavigationRailLabelType
+          .selected
+          : NavigationRailLabelType
+          .all,
+      minWidth:
+      compactDesktop
+          ? 72
+          : 88,
+      minExtendedWidth:
+      compactDesktop
+          ? 72
+          : 88,
       leading: Padding(
-        padding: const EdgeInsets.only(
+        padding:
+        const EdgeInsets.only(
           top: 12,
           bottom: 20,
         ),
-        child: Icon(
-          Icons.admin_panel_settings_outlined,
-          size: 30,
-          color: Theme.of(context)
-              .colorScheme
-              .primary,
+        child: Image.asset(
+          'assets/images/scanaura_logo.png',
+          width: 34,
+          height: 34,
+          fit: BoxFit.contain,
+          errorBuilder: (
+              context,
+              error,
+              stackTrace,
+              ) {
+            return Icon(
+              Icons
+                  .admin_panel_settings_outlined,
+              size: 30,
+              color: Theme.of(
+                context,
+              )
+                  .colorScheme
+                  .primary,
+            );
+          },
         ),
       ),
-      destinations: _items
-          .map(
-            (item) => NavigationRailDestination(
-          icon: Icon(item.icon),
-          selectedIcon:
-          Icon(item.selectedIcon),
-          label: Text(item.label),
-        ),
-      )
-          .toList(),
+      destinations:
+      _items.map(
+            (item) {
+          return NavigationRailDestination(
+            icon: Icon(
+              item.icon,
+            ),
+            selectedIcon:
+            Icon(
+              item.selectedIcon,
+            ),
+            label: Text(
+              item.label,
+              maxLines: 2,
+              overflow:
+              TextOverflow.ellipsis,
+              textAlign:
+              TextAlign.center,
+            ),
+          );
+        },
+      ).toList(),
     );
   }
 }

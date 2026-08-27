@@ -1,39 +1,54 @@
 enum BusinessType {
-  restaurant,
-  cafe,
-  bakery,
-  grocery,
-  foodOutlet,
+  food,
+  retail,
+  ecommerce,
+  services,
+  personalBrand,
+  other,
 }
 
 extension BusinessTypeExtension on BusinessType {
   String get apiValue {
     switch (this) {
-      case BusinessType.restaurant:
-        return 'RESTAURANT';
-      case BusinessType.cafe:
-        return 'CAFE';
-      case BusinessType.bakery:
-        return 'BAKERY';
-      case BusinessType.grocery:
-        return 'GROCERY';
-      case BusinessType.foodOutlet:
-        return 'FOOD_OUTLET';
+      case BusinessType.food:
+        return 'FOOD';
+
+      case BusinessType.retail:
+        return 'RETAIL';
+
+      case BusinessType.ecommerce:
+        return 'ECOMMERCE';
+
+      case BusinessType.services:
+        return 'SERVICES';
+
+      case BusinessType.personalBrand:
+        return 'PERSONAL_BRAND';
+
+      case BusinessType.other:
+        return 'OTHER';
     }
   }
 
   String get displayName {
     switch (this) {
-      case BusinessType.restaurant:
-        return 'Restaurant';
-      case BusinessType.cafe:
-        return 'Cafe';
-      case BusinessType.bakery:
-        return 'Bakery';
-      case BusinessType.grocery:
-        return 'Grocery';
-      case BusinessType.foodOutlet:
-        return 'Food Outlet';
+      case BusinessType.food:
+        return 'Food';
+
+      case BusinessType.retail:
+        return 'Retail';
+
+      case BusinessType.ecommerce:
+        return 'E-commerce';
+
+      case BusinessType.services:
+        return 'Services';
+
+      case BusinessType.personalBrand:
+        return 'Personal Brand';
+
+      case BusinessType.other:
+        return 'Other';
     }
   }
 }

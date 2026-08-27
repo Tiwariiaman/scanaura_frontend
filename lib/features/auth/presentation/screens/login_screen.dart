@@ -87,15 +87,49 @@ class _LoginScreenState
     ref.listen<AuthState>(
       authNotifierProvider,
           (previous, next) {
-        if (next.status == AuthStatus.error &&
-            next.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        if (next.status != AuthStatus.error ||
+            next.errorMessage == null) {
+          return;
+        }
+
+        final message = next.errorMessage!;
+
+        if (message ==
+            'Please verify your email before signing in.') {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                behavior:
+                SnackBarBehavior.floating,
+                content: const Text(
+                  'Please verify your email before signing in.',
+                ),
+                action: SnackBarAction(
+                  label: 'Verify',
+                  onPressed: () {
+                    context.go(
+                      '/verify-email?email=${Uri.encodeComponent(
+                        _emailController.text.trim(),
+                      )}',
+                    );
+                  },
+                ),
+              ),
+            );
+
+          return;
+        }
+
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
             SnackBar(
-              content: Text(next.errorMessage!),
-              behavior: SnackBarBehavior.floating,
+              content: Text(message),
+              behavior:
+              SnackBarBehavior.floating,
             ),
           );
-        }
       },
     );
 
@@ -200,6 +234,22 @@ class _LoginScreenState
 
                     const SizedBox(height: 28),
 
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                          context.go(
+                            '/forgot-password',
+                          );
+                        },
+                        child: const Text(
+                          'Forgot password?',
+                        ),
+                      ),
+                    ),
+
                     SizedBox(
                       height: 52,
                       child: FilledButton(
@@ -254,27 +304,32 @@ class _LoginScreenState
   }
 
   Widget _buildBranding(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-
     return Column(
       children: [
-        Container(
+        Image.asset(
+          'assets/images/scanaura_logo.png',
           width: 68,
           height: 68,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius:
-            BorderRadius.circular(20),
-          ),
-          child: Icon(
-            Icons.restaurant_menu_rounded,
-            size: 34,
-            color: colorScheme.primary,
-          ),
+          fit: BoxFit.contain,
+          errorBuilder: (
+              context,
+              error,
+              stackTrace,
+              ) {
+            return const SizedBox(
+              width: 68,
+              height: 68,
+              child: Icon(
+                Icons.qr_code_rounded,
+                size: 42,
+              ),
+            );
+          },
         ),
 
-        const SizedBox(height: 14),
+        const SizedBox(
+          height: 14,
+        ),
 
         Text(
           'ScanAura',
@@ -282,7 +337,8 @@ class _LoginScreenState
               .textTheme
               .titleLarge
               ?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
       ],

@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/admin_notifier.dart';
 import '../providers/admin_state.dart';
 
-class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({super.key});
+class AdminDashboardScreen
+    extends ConsumerStatefulWidget {
+  const AdminDashboardScreen({
+    super.key,
+  });
 
   @override
-  ConsumerState<AdminDashboardScreen> createState() =>
+  ConsumerState<AdminDashboardScreen>
+  createState() =>
       _AdminDashboardScreenState();
 }
 
@@ -20,21 +24,30 @@ class _AdminDashboardScreenState
 
     Future.microtask(() {
       ref
-          .read(adminNotifierProvider.notifier)
+          .read(
+        adminNotifierProvider
+            .notifier,
+      )
           .refreshAll();
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(adminNotifierProvider);
+  Widget build(
+      BuildContext context,
+      ) {
+    final state =
+    ref.watch(
+      adminNotifierProvider,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Admin Dashboard',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
         actions: [
@@ -54,6 +67,9 @@ class _AdminDashboardScreenState
               Icons.refresh,
             ),
           ),
+          const SizedBox(
+            width: 4,
+          ),
         ],
       ),
       body: _buildBody(
@@ -63,6 +79,10 @@ class _AdminDashboardScreenState
     );
   }
 
+  // ============================================================
+  // BODY
+  // ============================================================
+
   Widget _buildBody(
       BuildContext context,
       AdminState state,
@@ -70,7 +90,8 @@ class _AdminDashboardScreenState
     if (state.status ==
         AdminStatus.loading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child:
+        CircularProgressIndicator(),
       );
     }
 
@@ -83,7 +104,8 @@ class _AdminDashboardScreenState
       );
     }
 
-    final dashboard = state.dashboard;
+    final dashboard =
+        state.dashboard;
 
     if (dashboard == null) {
       return _buildError(
@@ -101,59 +123,99 @@ class _AdminDashboardScreenState
         )
             .refreshAll();
       },
-      child: SingleChildScrollView(
-        physics:
-        const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          32,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
-              maxWidth: 1200,
+      child: LayoutBuilder(
+        builder: (
+            context,
+            constraints,
+            ) {
+          final width =
+              constraints.maxWidth;
+
+          final horizontalPadding =
+          width < 360
+              ? 12.0
+              : width < 600
+              ? 16.0
+              : width < 1000
+              ? 20.0
+              : 24.0;
+
+          final maxWidth =
+          width >= 1400
+              ? 1250.0
+              : 1200.0;
+
+          return SingleChildScrollView(
+            physics:
+            const AlwaysScrollableScrollPhysics(),
+            padding:
+            EdgeInsets.fromLTRB(
+              horizontalPadding,
+              16,
+              horizontalPadding,
+              32,
             ),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(context),
-
-                const SizedBox(height: 20),
-
-                _buildBusinessStats(
-                  context,
-                  dashboard,
+            child: Center(
+              child: ConstrainedBox(
+                constraints:
+                BoxConstraints(
+                  maxWidth:
+                  maxWidth,
                 ),
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .stretch,
+                  children: [
+                    _buildHeader(
+                      context,
+                    ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(
+                      height: 20,
+                    ),
 
-                _buildSubscriptionStats(
-                  context,
-                  dashboard,
+                    _buildBusinessStats(
+                      context,
+                      dashboard,
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _buildSubscriptionStats(
+                      context,
+                      dashboard,
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _buildQrStats(
+                      context,
+                      dashboard,
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                _buildQrStats(
-                  context,
-                  dashboard,
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
+  // ============================================================
+  // HEADER
+  // ============================================================
+
   Widget _buildHeader(
       BuildContext context,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Column(
       crossAxisAlignment:
@@ -169,7 +231,11 @@ class _AdminDashboardScreenState
             FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 6),
+
+        const SizedBox(
+          height: 6,
+        ),
+
         Text(
           'Monitor ScanAura businesses, subscriptions and QR inventory.',
           style: theme
@@ -179,19 +245,25 @@ class _AdminDashboardScreenState
             color: theme
                 .colorScheme
                 .onSurfaceVariant,
+            height: 1.4,
           ),
         ),
       ],
     );
   }
 
+  // ============================================================
+  // BUSINESS STATS
+  // ============================================================
+
   Widget _buildBusinessStats(
       BuildContext context,
-      dashboard,
+      dynamic dashboard,
       ) {
     return _SectionCard(
       title: 'Businesses',
-      icon: Icons.storefront_outlined,
+      icon: Icons
+          .storefront_outlined,
       children: [
         _buildStatsGrid(
           context,
@@ -200,22 +272,22 @@ class _AdminDashboardScreenState
               title: 'Total',
               value:
               '${dashboard.totalBusinesses}',
-              icon:
-              Icons.business_outlined,
+              icon: Icons
+                  .business_outlined,
             ),
             _AdminStat(
               title: 'Active',
               value:
               '${dashboard.activeBusinesses}',
-              icon:
-              Icons.check_circle_outline,
+              icon: Icons
+                  .check_circle_outline,
             ),
             _AdminStat(
               title: 'Inactive',
               value:
               '${dashboard.inactiveBusinesses}',
-              icon:
-              Icons.pause_circle_outline,
+              icon: Icons
+                  .pause_circle_outline,
             ),
           ],
         ),
@@ -223,14 +295,18 @@ class _AdminDashboardScreenState
     );
   }
 
+  // ============================================================
+  // SUBSCRIPTION STATS
+  // ============================================================
+
   Widget _buildSubscriptionStats(
       BuildContext context,
-      dashboard,
+      dynamic dashboard,
       ) {
     return _SectionCard(
       title: 'Subscriptions',
-      icon:
-      Icons.card_membership_outlined,
+      icon: Icons
+          .card_membership_outlined,
       children: [
         _buildStatsGrid(
           context,
@@ -239,29 +315,29 @@ class _AdminDashboardScreenState
               title: 'Trial',
               value:
               '${dashboard.trialSubscriptions}',
-              icon:
-              Icons.hourglass_empty,
+              icon: Icons
+                  .hourglass_empty,
             ),
             _AdminStat(
               title: 'Active',
               value:
               '${dashboard.activeSubscriptions}',
-              icon:
-              Icons.verified_outlined,
+              icon: Icons
+                  .verified_outlined,
             ),
             _AdminStat(
               title: 'Expired',
               value:
               '${dashboard.expiredSubscriptions}',
-              icon:
-              Icons.event_busy_outlined,
+              icon: Icons
+                  .event_busy_outlined,
             ),
             _AdminStat(
               title: 'Pending Requests',
               value:
               '${dashboard.pendingSubscriptionRequests}',
-              icon:
-              Icons.pending_actions_outlined,
+              icon: Icons
+                  .pending_actions_outlined,
             ),
           ],
         ),
@@ -269,81 +345,107 @@ class _AdminDashboardScreenState
     );
   }
 
+  // ============================================================
+  // QR STATS
+  // ============================================================
+
   Widget _buildQrStats(
       BuildContext context,
-      dashboard,
+      dynamic dashboard,
       ) {
     return _SectionCard(
       title: 'QR Inventory',
-      icon: Icons.qr_code_2_outlined,
+      icon:
+      Icons.qr_code_2_outlined,
       children: [
         _buildStatsGrid(
           context,
           [
             _AdminStat(
-              title: 'Available Physical',
+              title:
+              'Available Physical',
               value:
               '${dashboard.availablePhysicalQr}',
-              icon:
-              Icons.inventory_2_outlined,
+              icon: Icons
+                  .inventory_2_outlined,
             ),
             _AdminStat(
-              title: 'Assigned Physical',
+              title:
+              'Assigned Physical',
               value:
               '${dashboard.assignedPhysicalQr}',
-              icon:
-              Icons.assignment_outlined,
+              icon: Icons
+                  .assignment_outlined,
             ),
             _AdminStat(
-              title: 'Digital Generated',
+              title:
+              'Digital Generated',
               value:
               '${dashboard.digitalQrGenerated}',
-              icon:
-              Icons.qr_code_outlined,
+              icon: Icons
+                  .qr_code_outlined,
             ),
           ],
         ),
       ],
     );
   }
+
+  // ============================================================
+  // STATS GRID
+  // ============================================================
 
   Widget _buildStatsGrid(
       BuildContext context,
       List<_AdminStat> stats,
       ) {
     return LayoutBuilder(
-      builder:
-          (context, constraints) {
+      builder: (
+          context,
+          constraints,
+          ) {
+        final width =
+            constraints.maxWidth;
+
         final columns =
-        constraints.maxWidth >=
-            900
+        width >= 900
             ? 3
-            : constraints.maxWidth >=
-            600
+            : width >= 600
             ? 2
             : 1;
+
+        final compact =
+            width < 400;
+
+        final childAspectRatio =
+        columns == 1
+            ? 3.5
+            : columns == 2
+            ? 2.25
+            : 2.15;
 
         return GridView.builder(
           shrinkWrap: true,
           physics:
           const NeverScrollableScrollPhysics(),
-          itemCount: stats.length,
+          itemCount:
+          stats.length,
           gridDelegate:
           SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
+            crossAxisCount:
+            columns,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             childAspectRatio:
-            columns == 1
-                ? 3.2
-                : 2.2,
+            childAspectRatio,
           ),
           itemBuilder:
               (context, index) {
-            final stat = stats[index];
-
             return _AdminStatCard(
-              stat: stat,
+              stat:
+              stats[index],
+              compact:
+              compact,
             );
           },
         );
@@ -351,51 +453,97 @@ class _AdminDashboardScreenState
     );
   }
 
+  // ============================================================
+  // ERROR
+  // ============================================================
+
   Widget _buildError(
       BuildContext context,
       AdminState state,
       ) {
-    return Center(
-      child: Padding(
-        padding:
-        const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize:
-          MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 48,
+    return SafeArea(
+      child: Center(
+        child:
+        SingleChildScrollView(
+          padding:
+          const EdgeInsets.all(
+            24,
+          ),
+          child: ConstrainedBox(
+            constraints:
+            const BoxConstraints(
+              maxWidth: 420,
             ),
-            const SizedBox(height: 16),
-            Text(
-              state.errorMessage ??
-                  'Unable to load admin dashboard.',
-              textAlign:
-              TextAlign.center,
+            child: Column(
+              mainAxisSize:
+              MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons
+                      .error_outline_rounded,
+                  size: 52,
+                  color: Theme.of(
+                    context,
+                  )
+                      .colorScheme
+                      .error,
+                ),
+
+                const SizedBox(
+                  height: 16,
+                ),
+
+                Text(
+                  state.errorMessage ??
+                      'Unable to load admin dashboard.',
+                  textAlign:
+                  TextAlign.center,
+                ),
+
+                const SizedBox(
+                  height: 18,
+                ),
+
+                SizedBox(
+                  width:
+                  double.infinity,
+                  child:
+                  FilledButton
+                      .icon(
+                    onPressed: () {
+                      ref
+                          .read(
+                        adminNotifierProvider
+                            .notifier,
+                      )
+                          .refreshAll();
+                    },
+                    icon:
+                    const Icon(
+                      Icons
+                          .refresh_rounded,
+                    ),
+                    label:
+                    const Text(
+                      'Retry',
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                ref
-                    .read(
-                  adminNotifierProvider
-                      .notifier,
-                )
-                    .refreshAll();
-              },
-              child: const Text(
-                'Retry',
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _SectionCard extends StatelessWidget {
+// ================================================================
+// SECTION CARD
+// ================================================================
+
+class _SectionCard
+    extends StatelessWidget {
   const _SectionCard({
     required this.title,
     required this.icon,
@@ -410,29 +558,51 @@ class _SectionCard extends StatelessWidget {
   Widget build(
       BuildContext context,
       ) {
+    final theme =
+    Theme.of(context);
+
     return Card(
+      elevation: 0,
       child: Padding(
         padding:
-        const EdgeInsets.all(20),
+        const EdgeInsets.all(
+          18,
+        ),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
             Row(
               children: [
-                Icon(icon),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight:
-                    FontWeight.w700,
+                Icon(
+                  icon,
+                  size: 22,
+                ),
+
+                const SizedBox(
+                  width: 10,
+                ),
+
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(
+              height: 16,
+            ),
+
             ...children,
           ],
         ),
@@ -440,6 +610,10 @@ class _SectionCard extends StatelessWidget {
     );
   }
 }
+
+// ================================================================
+// STAT MODEL
+// ================================================================
 
 class _AdminStat {
   const _AdminStat({
@@ -453,13 +627,19 @@ class _AdminStat {
   final IconData icon;
 }
 
+// ================================================================
+// STAT CARD
+// ================================================================
+
 class _AdminStatCard
     extends StatelessWidget {
   const _AdminStatCard({
     required this.stat,
+    required this.compact,
   });
 
   final _AdminStat stat;
+  final bool compact;
 
   @override
   Widget build(
@@ -469,18 +649,24 @@ class _AdminStatCard
     Theme.of(context);
 
     return Card(
+      elevation: 0,
       color: theme
           .colorScheme
           .surfaceContainerHighest,
-      elevation: 0,
       child: Padding(
         padding:
-        const EdgeInsets.all(16),
+        EdgeInsets.all(
+          compact ? 12 : 16,
+        ),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width:
+              compact ? 42 : 46,
+              height:
+              compact ? 42 : 46,
+              alignment:
+              Alignment.center,
               decoration:
               BoxDecoration(
                 color: theme
@@ -488,47 +674,68 @@ class _AdminStatCard
                     .primaryContainer,
                 borderRadius:
                 BorderRadius.circular(
-                  12,
+                  compact ? 10 : 12,
                 ),
               ),
               child: Icon(
                 stat.icon,
+                size:
+                compact ? 20 : 22,
                 color: theme
                     .colorScheme
                     .onPrimaryContainer,
               ),
             ),
-            const SizedBox(width: 12),
+
+            SizedBox(
+              width:
+              compact ? 10 : 12,
+            ),
+
             Expanded(
               child: Column(
                 mainAxisAlignment:
-                MainAxisAlignment.center,
+                MainAxisAlignment
+                    .center,
                 crossAxisAlignment:
-                CrossAxisAlignment.start,
+                CrossAxisAlignment
+                    .start,
                 children: [
                   Text(
                     stat.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow:
-                    TextOverflow.ellipsis,
-                    style: TextStyle(
+                    TextOverflow
+                        .ellipsis,
+                    style: theme
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(
                       color: theme
                           .colorScheme
                           .onSurfaceVariant,
-                      fontSize: 13,
+                      fontSize:
+                      compact
+                          ? 12
+                          : 13,
                     ),
                   ),
+
                   const SizedBox(
                     height: 4,
                   ),
+
                   Text(
                     stat.value,
                     maxLines: 1,
                     overflow:
-                    TextOverflow.ellipsis,
-                    style:
-                    const TextStyle(
-                      fontSize: 22,
+                    TextOverflow
+                        .ellipsis,
+                    style: TextStyle(
+                      fontSize:
+                      compact
+                          ? 21
+                          : 22,
                       fontWeight:
                       FontWeight.w800,
                     ),

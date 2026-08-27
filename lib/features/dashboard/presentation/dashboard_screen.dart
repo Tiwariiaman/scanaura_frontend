@@ -22,7 +22,9 @@ class _DashboardScreenState
 
     Future.microtask(() {
       ref
-          .read(dashboardNotifierProvider.notifier)
+          .read(
+        dashboardNotifierProvider.notifier,
+      )
           .loadDashboard();
     });
   }
@@ -54,9 +56,10 @@ class _DashboardScreenState
                   .refreshDashboard();
             },
             icon: const Icon(
-              Icons.refresh,
+              Icons.refresh_rounded,
             ),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: _buildBody(
@@ -65,6 +68,10 @@ class _DashboardScreenState
       ),
     );
   }
+
+  // ============================================================
+  // BODY
+  // ============================================================
 
   Widget _buildBody(
       BuildContext context,
@@ -98,61 +105,87 @@ class _DashboardScreenState
         )
             .refreshDashboard();
       },
-      child: SingleChildScrollView(
-        physics:
-        const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          32,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
-              maxWidth: 1100,
+      child: LayoutBuilder(
+        builder:
+            (context, constraints) {
+          return SingleChildScrollView(
+            physics:
+            const AlwaysScrollableScrollPhysics(),
+            padding:
+            const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              32,
             ),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-              children: [
-                _buildWelcome(context),
-
-                const SizedBox(height: 20),
-
-                _buildOverviewCards(
-                  context,
-                  state,
+            child: Center(
+              child: ConstrainedBox(
+                constraints:
+                const BoxConstraints(
+                  maxWidth: 1200,
                 ),
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .stretch,
+                  children: [
+                    _buildWelcome(
+                      context,
+                    ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(
+                      height: 20,
+                    ),
 
-                _buildSubscriptionCard(
-                  context,
-                  state.subscription,
+                    _buildOverviewCards(
+                      context,
+                      state,
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    _buildSubscriptionCard(
+                      context,
+                      state.subscription,
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    _buildQuickActions(
+                      context,
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    _buildAiUsageCard(
+                      context,
+                      state,
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                _buildQuickActions(context),
-
-                const SizedBox(height: 20),
-
-                _buildAiUsageCard(
-                  context,
-                  state,
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildWelcome(BuildContext context) {
-    final theme = Theme.of(context);
+  // ============================================================
+  // WELCOME
+  // ============================================================
+
+  Widget _buildWelcome(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
 
     return Column(
       crossAxisAlignment:
@@ -160,14 +193,22 @@ class _DashboardScreenState
       children: [
         Text(
           'Business Overview',
+          maxLines: 2,
+          overflow:
+          TextOverflow.ellipsis,
           style: theme
               .textTheme
               .headlineSmall
               ?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight:
+            FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 6),
+
+        const SizedBox(
+          height: 6,
+        ),
+
         Text(
           'Here is a quick look at your ScanAura business.',
           style: theme
@@ -183,21 +224,33 @@ class _DashboardScreenState
     );
   }
 
+  // ============================================================
+  // OVERVIEW CARDS
+  // ============================================================
+
   Widget _buildOverviewCards(
       BuildContext context,
       DashboardState state,
       ) {
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder:
+          (context, constraints) {
         final width =
             constraints.maxWidth;
 
-        final crossAxisCount =
-        width >= 900
-            ? 4
-            : width >= 600
-            ? 2
-            : 2;
+        int crossAxisCount;
+        double aspectRatio;
+
+        if (width >= 1000) {
+          crossAxisCount = 4;
+          aspectRatio = 1.75;
+        } else if (width >= 700) {
+          crossAxisCount = 2;
+          aspectRatio = 2.05;
+        } else {
+          crossAxisCount = 2;
+          aspectRatio = 1.55;
+        }
 
         return GridView.count(
           crossAxisCount:
@@ -208,32 +261,32 @@ class _DashboardScreenState
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio:
-          width >= 600
-              ? 1.8
-              : 1.45,
+          aspectRatio,
           children: [
             _StatCard(
-              icon:
-              Icons.restaurant_menu_outlined,
+              icon: Icons
+                  .restaurant_menu_outlined,
               title: 'Menu Items',
               value:
               '${state.menuItemCount}',
             ),
             _StatCard(
-              icon:
-              Icons.category_outlined,
+              icon: Icons
+                  .category_outlined,
               title: 'Categories',
               value:
               '${state.categoryCount}',
             ),
             _StatCard(
-              icon: Icons.qr_code_2_outlined,
+              icon: Icons
+                  .qr_code_2_outlined,
               title: 'QR Codes',
               value:
               '${state.qrCount}',
             ),
             _StatCard(
-              icon: Icons.auto_awesome,
+              icon:
+              Icons.auto_awesome,
               title: 'AI Imports',
               value:
               '${state.aiImportUsed} / ${state.aiImportLimit}',
@@ -244,11 +297,17 @@ class _DashboardScreenState
     );
   }
 
+  // ============================================================
+  // SUBSCRIPTION
+  // ============================================================
+
   Widget _buildSubscriptionCard(
       BuildContext context,
-      SubscriptionResponse? subscription,
+      SubscriptionResponse?
+      subscription,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     if (subscription == null) {
       return Card(
@@ -257,7 +316,8 @@ class _DashboardScreenState
           const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment:
-            CrossAxisAlignment.start,
+            CrossAxisAlignment
+                .start,
             children: [
               const Text(
                 'Subscription',
@@ -267,9 +327,19 @@ class _DashboardScreenState
                   FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              const SizedBox(
+                height: 8,
+              ),
+              Text(
                 'Subscription information is unavailable.',
+                style: theme
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
+                  color: theme
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -287,71 +357,95 @@ class _DashboardScreenState
         const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (
+                  context,
+                  constraints,
+                  ) {
+                final compact =
+                    constraints.maxWidth <
+                        420;
+
+                if (compact) {
+                  return Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    CrossAxisAlignment
+                        .start,
                     children: [
-                      const Text(
-                        'Subscription',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight:
-                          FontWeight.w700,
-                        ),
+                      _subscriptionTitle(
+                        context,
+                        subscription,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        subscription.planName,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight:
-                          FontWeight.w800,
-                          color: theme
-                              .colorScheme
-                              .primary,
-                        ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      _StatusChip(
+                        label:
+                        statusLabel,
                       ),
                     ],
-                  ),
-                ),
+                  );
+                }
 
-                _StatusChip(
-                  label: statusLabel,
-                ),
-              ],
+                return Row(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+                  children: [
+                    Expanded(
+                      child:
+                      _subscriptionTitle(
+                        context,
+                        subscription,
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 12,
+                    ),
+                    _StatusChip(
+                      label:
+                      statusLabel,
+                    ),
+                  ],
+                );
+              },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 16,
+            ),
 
             Wrap(
               spacing: 16,
               runSpacing: 10,
               children: [
                 _InfoRow(
-                  icon:
-                  Icons.calendar_today_outlined,
+                  icon: Icons
+                      .calendar_today_outlined,
                   text:
                   'Ends ${_formatDate(subscription.endDate)}',
                 ),
                 _InfoRow(
-                  icon:
-                  Icons.autorenew_outlined,
-                  text:
-                  subscription.billingCycle.name
+                  icon: Icons
+                      .autorenew_outlined,
+                  text: subscription
+                      .billingCycle
+                      .name
                       .toUpperCase(),
                 ),
               ],
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(
+              height: 18,
+            ),
 
             SizedBox(
-              width: double.infinity,
+              width:
+              double.infinity,
               child: OutlinedButton(
                 onPressed: () {
                   context.push(
@@ -369,6 +463,53 @@ class _DashboardScreenState
     );
   }
 
+  Widget _subscriptionTitle(
+      BuildContext context,
+      SubscriptionResponse
+      subscription,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Subscription',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight:
+            FontWeight.w700,
+          ),
+        ),
+
+        const SizedBox(
+          height: 6,
+        ),
+
+        Text(
+          subscription.planName,
+          maxLines: 1,
+          overflow:
+          TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight:
+            FontWeight.w800,
+            color: theme
+                .colorScheme
+                .primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // QUICK ACTIONS
+  // ============================================================
+
   Widget _buildQuickActions(
       BuildContext context,
       ) {
@@ -378,7 +519,8 @@ class _DashboardScreenState
         const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
             const Text(
               'Quick Actions',
@@ -389,101 +531,237 @@ class _DashboardScreenState
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             LayoutBuilder(
               builder:
                   (context, constraints) {
-                final isWide =
-                    constraints.maxWidth >=
-                        650;
+                final width =
+                    constraints.maxWidth;
 
-                final children = [
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.menu_book_outlined,
-                      label: 'Manage Menu',
-                      onPressed: () {
-                        context.push(
-                          '/menu',
-                        );
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.qr_code_2_outlined,
-                      label: 'Manage QR',
-                      onPressed: () {
-                        context.push(
-                          '/qr',
-                        );
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.auto_awesome,
-                      label: 'AI Import',
-                      onPressed: () {
-                        context.push(
-                          '/ai-import',
-                        );
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: _ActionButton(
-                      icon:
-                      Icons.storefront_outlined,
-                      label: 'Business',
-                      onPressed: () {
-                        context.push(
-                          '/business',
-                        );
-                      },
-                    ),
-                  ),
-                ];
-
-                if (isWide) {
+                if (width >= 850) {
                   return Row(
                     children: [
-                      for (int i = 0;
-                      i < children.length;
-                      i++) ...[
-                        if (i > 0)
+                      Expanded(
+                        child:
+                        _ActionButton(
+                          icon: Icons
+                              .menu_book_outlined,
+                          label:
+                          'Manage Menu',
+                          onPressed: () {
+                            context.push(
+                              '/menu',
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Expanded(
+                        child:
+                        _ActionButton(
+                          icon: Icons
+                              .qr_code_2_outlined,
+                          label:
+                          'Manage QR',
+                          onPressed: () {
+                            context.push(
+                              '/qr',
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Expanded(
+                        child:
+                        _ActionButton(
+                          icon: Icons
+                              .auto_awesome,
+                          label: 'AI Import',
+                          onPressed: () {
+                            context.push(
+                              '/ai-import',
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Expanded(
+                        child:
+                        _ActionButton(
+                          icon: Icons
+                              .storefront_outlined,
+                          label: 'Business',
+                          onPressed: () {
+                            context.push(
+                              '/business',
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                if (width >= 520) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child:
+                            _ActionButton(
+                              icon: Icons
+                                  .menu_book_outlined,
+                              label:
+                              'Manage Menu',
+                              onPressed: () {
+                                context.push(
+                                  '/menu',
+                                );
+                              },
+                            ),
+                          ),
                           const SizedBox(
                             width: 10,
                           ),
-                        children[i],
-                      ],
+                          Expanded(
+                            child:
+                            _ActionButton(
+                              icon: Icons
+                                  .qr_code_2_outlined,
+                              label:
+                              'Manage QR',
+                              onPressed: () {
+                                context.push(
+                                  '/qr',
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child:
+                            _ActionButton(
+                              icon: Icons
+                                  .auto_awesome,
+                              label:
+                              'AI Import',
+                              onPressed: () {
+                                context.push(
+                                  '/ai-import',
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Expanded(
+                            child:
+                            _ActionButton(
+                              icon: Icons
+                                  .storefront_outlined,
+                              label:
+                              'Business',
+                              onPressed: () {
+                                context.push(
+                                  '/business',
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   );
                 }
 
                 return Column(
                   children: [
-                    Row(
-                      children: [
-                        children[0],
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        children[1],
-                      ],
+                    SizedBox(
+                      width:
+                      double.infinity,
+                      child:
+                      _ActionButton(
+                        icon: Icons
+                            .menu_book_outlined,
+                        label:
+                        'Manage Menu',
+                        onPressed: () {
+                          context.push(
+                            '/menu',
+                          );
+                        },
+                      ),
                     ),
                     const SizedBox(
                       height: 10,
                     ),
-                    Row(
-                      children: [
-                        children[2],
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        children[3],
-                      ],
+                    SizedBox(
+                      width:
+                      double.infinity,
+                      child:
+                      _ActionButton(
+                        icon: Icons
+                            .qr_code_2_outlined,
+                        label: 'Manage QR',
+                        onPressed: () {
+                          context.push(
+                            '/qr',
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    SizedBox(
+                      width:
+                      double.infinity,
+                      child:
+                      _ActionButton(
+                        icon: Icons
+                            .auto_awesome,
+                        label: 'AI Import',
+                        onPressed: () {
+                          context.push(
+                            '/ai-import',
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    SizedBox(
+                      width:
+                      double.infinity,
+                      child:
+                      _ActionButton(
+                        icon: Icons
+                            .storefront_outlined,
+                        label: 'Business',
+                        onPressed: () {
+                          context.push(
+                            '/business',
+                          );
+                        },
+                      ),
                     ),
                   ],
                 );
@@ -495,11 +773,16 @@ class _DashboardScreenState
     );
   }
 
+  // ============================================================
+  // AI USAGE
+  // ============================================================
+
   Widget _buildAiUsageCard(
       BuildContext context,
       DashboardState state,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     final limit =
         state.aiImportLimit;
@@ -522,51 +805,117 @@ class _DashboardScreenState
         const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                const Expanded(
-                  child: Text(
-                    'AI Import Usage',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                      FontWeight.w700,
+            LayoutBuilder(
+              builder: (
+                  context,
+                  constraints,
+                  ) {
+                final compact =
+                    constraints.maxWidth <
+                        420;
+
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons
+                                .auto_awesome,
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'AI Import Usage',
+                              style:
+                              TextStyle(
+                                fontSize: 18,
+                                fontWeight:
+                                FontWeight
+                                    .w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 8,
+                      ),
+                      Text(
+                        '$remaining remaining',
+                        style: TextStyle(
+                          color: theme
+                              .colorScheme
+                              .primary,
+                          fontWeight:
+                          FontWeight
+                              .w700,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome,
                     ),
-                  ),
-                ),
-                Text(
-                  '$remaining remaining',
-                  style: TextStyle(
-                    color: theme
-                        .colorScheme
-                        .primary,
-                    fontWeight:
-                    FontWeight.w700,
-                  ),
-                ),
-              ],
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'AI Import Usage',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                          FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$remaining remaining',
+                      style: TextStyle(
+                        color: theme
+                            .colorScheme
+                            .primary,
+                        fontWeight:
+                        FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             ClipRRect(
               borderRadius:
-              BorderRadius.circular(10),
-              child: LinearProgressIndicator(
+              BorderRadius.circular(
+                10,
+              ),
+              child:
+              LinearProgressIndicator(
                 value: progress,
                 minHeight: 8,
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             Text(
               limit <= 0
@@ -584,57 +933,94 @@ class _DashboardScreenState
     );
   }
 
+  // ============================================================
+  // ERROR
+  // ============================================================
+
   Widget _buildError(
       BuildContext context,
       DashboardState state,
       ) {
+    final theme =
+    Theme.of(context);
+
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding:
         const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize:
-          MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 48,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              state.errorMessage ??
-                  'Unable to load dashboard.',
-              textAlign:
-              TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                ref
-                    .read(
-                  dashboardNotifierProvider
-                      .notifier,
-                )
-                    .loadDashboard();
-              },
-              child: const Text(
-                'Retry',
+        child: ConstrainedBox(
+          constraints:
+          const BoxConstraints(
+            maxWidth: 420,
+          ),
+          child: Column(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme
+                    .colorScheme
+                    .error,
               ),
-            ),
-          ],
+
+              const SizedBox(
+                height: 16,
+              ),
+
+              Text(
+                state.errorMessage ??
+                    'Unable to load dashboard.',
+                textAlign:
+                TextAlign.center,
+              ),
+
+              const SizedBox(
+                height: 16,
+              ),
+
+              FilledButton.icon(
+                onPressed: () {
+                  ref
+                      .read(
+                    dashboardNotifierProvider
+                        .notifier,
+                  )
+                      .loadDashboard();
+                },
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                ),
+                label:
+                const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
+  // ============================================================
+  // DATE
+  // ============================================================
+
+  String _formatDate(
+      DateTime date,
+      ) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
   }
 }
 
-class _StatCard extends StatelessWidget {
+// ============================================================
+// STAT CARD
+// ============================================================
+
+class _StatCard
+    extends StatelessWidget {
   const _StatCard({
     required this.icon,
     required this.title,
@@ -649,17 +1035,18 @@ class _StatCard extends StatelessWidget {
   Widget build(
       BuildContext context,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Card(
       child: Padding(
         padding:
-        const EdgeInsets.all(16),
+        const EdgeInsets.all(14),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width: 44,
+              height: 44,
               decoration:
               BoxDecoration(
                 color: theme
@@ -678,14 +1065,18 @@ class _StatCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(
+              width: 10,
+            ),
 
             Expanded(
               child: Column(
                 mainAxisAlignment:
-                MainAxisAlignment.center,
+                MainAxisAlignment
+                    .center,
                 crossAxisAlignment:
-                CrossAxisAlignment.start,
+                CrossAxisAlignment
+                    .start,
                 children: [
                   Text(
                     title,
@@ -693,20 +1084,25 @@ class _StatCard extends StatelessWidget {
                     overflow:
                     TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: theme
                           .colorScheme
                           .onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 4),
+
+                  const SizedBox(
+                    height: 4,
+                  ),
+
                   Text(
                     value,
                     maxLines: 1,
                     overflow:
                     TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style:
+                    const TextStyle(
+                      fontSize: 21,
                       fontWeight:
                       FontWeight.w800,
                     ),
@@ -720,6 +1116,10 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// ACTION BUTTON
+// ============================================================
 
 class _ActionButton
     extends StatelessWidget {
@@ -745,11 +1145,20 @@ class _ActionButton
         const EdgeInsets.symmetric(
           vertical: 12,
         ),
-        child: Text(label),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow:
+          TextOverflow.ellipsis,
+        ),
       ),
     );
   }
 }
+
+// ============================================================
+// STATUS CHIP
+// ============================================================
 
 class _StatusChip
     extends StatelessWidget {
@@ -763,6 +1172,10 @@ class _StatusChip
   Widget build(
       BuildContext context,
       ) {
+    final colorScheme =
+        Theme.of(context)
+            .colorScheme;
+
     return Container(
       padding:
       const EdgeInsets.symmetric(
@@ -770,8 +1183,7 @@ class _StatusChip
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
+        color: colorScheme
             .secondaryContainer,
         borderRadius:
         BorderRadius.circular(20),
@@ -782,14 +1194,17 @@ class _StatusChip
           fontSize: 12,
           fontWeight:
           FontWeight.w700,
-          color: Theme.of(context)
-              .colorScheme
+          color: colorScheme
               .onSecondaryContainer,
         ),
       ),
     );
   }
 }
+
+// ============================================================
+// INFO ROW
+// ============================================================
 
 class _InfoRow
     extends StatelessWidget {
@@ -813,8 +1228,19 @@ class _InfoRow
           icon,
           size: 16,
         ),
-        const SizedBox(width: 6),
-        Text(text),
+
+        const SizedBox(
+          width: 6,
+        ),
+
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 2,
+            overflow:
+            TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

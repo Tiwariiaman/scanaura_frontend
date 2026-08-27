@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/models/payment_response.dart';
-
+import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
+import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
 
 class PublicPaymentScreen
     extends ConsumerStatefulWidget {
@@ -19,13 +18,16 @@ class PublicPaymentScreen
   final String qrCode;
 
   @override
-  ConsumerState<PublicPaymentScreen> createState() =>
+  ConsumerState<PublicPaymentScreen>
+  createState() =>
       _PublicPaymentScreenState();
 }
 
 class _PublicPaymentScreenState
-    extends ConsumerState<PublicPaymentScreen> {
-  final TextEditingController _amountController =
+    extends ConsumerState<
+        PublicPaymentScreen> {
+  final TextEditingController
+  _amountController =
   TextEditingController();
 
   bool _isOpeningPayment = false;
@@ -35,13 +37,17 @@ class _PublicPaymentScreenState
     super.initState();
 
     Future.microtask(() {
-      ref
-          .read(publicNotifierProvider.notifier)
-          .setQrCode(widget.qrCode);
+      final notifier =
+      ref.read(
+        publicNotifierProvider
+            .notifier,
+      );
 
-      ref
-          .read(publicNotifierProvider.notifier)
-          .loadPayment();
+      notifier.setQrCode(
+        widget.qrCode,
+      );
+
+      notifier.loadPayment();
     });
   }
 
@@ -51,19 +57,28 @@ class _PublicPaymentScreenState
     super.dispose();
   }
 
+  // ============================================================
+  // PAY VIA UPI
+  // ============================================================
+
   Future<void> _payViaUpi() async {
     if (_isOpeningPayment) {
       return;
     }
 
     final state =
-    ref.read(publicNotifierProvider);
+    ref.read(
+      publicNotifierProvider,
+    );
 
-    final payment = state.payment;
+    final payment =
+        state.payment;
 
     if (payment == null ||
         payment.upiId == null ||
-        payment.upiId!.trim().isEmpty) {
+        payment.upiId!
+            .trim()
+            .isEmpty) {
       _showMessage(
         'UPI payment is not available.',
       );
@@ -74,7 +89,9 @@ class _PublicPaymentScreenState
     _amountController.text.trim();
 
     final amount =
-    double.tryParse(amountText);
+    double.tryParse(
+      amountText,
+    );
 
     if (amount == null ||
         amount <= 0) {
@@ -88,9 +105,15 @@ class _PublicPaymentScreenState
       scheme: 'upi',
       host: 'pay',
       queryParameters: {
-        'pa': payment.upiId!.trim(),
-        'pn': payment.businessName,
-        'am': amount.toStringAsFixed(2),
+        'pa':
+        payment.upiId!
+            .trim(),
+        'pn':
+        payment.businessName,
+        'am':
+        amount.toStringAsFixed(
+          2,
+        ),
         'cu': 'INR',
       },
     );
@@ -100,17 +123,21 @@ class _PublicPaymentScreenState
     });
 
     try {
-      final launched = await launchUrl(
+      final launched =
+      await launchUrl(
         upiUri,
-        mode: LaunchMode.externalApplication,
+        mode:
+        LaunchMode
+            .externalApplication,
       );
 
-      if (!launched && mounted) {
+      if (!launched &&
+          mounted) {
         _showMessage(
           'Unable to open a UPI payment app.',
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) {
         return;
       }
@@ -121,15 +148,24 @@ class _PublicPaymentScreenState
     } finally {
       if (mounted) {
         setState(() {
-          _isOpeningPayment = false;
+          _isOpeningPayment =
+          false;
         });
       }
     }
   }
 
-  void _copyUpiId(String upiId) {
+  // ============================================================
+  // COPY UPI
+  // ============================================================
+
+  void _copyUpiId(
+      String upiId,
+      ) {
     Clipboard.setData(
-      ClipboardData(text: upiId),
+      ClipboardData(
+        text: upiId,
+      ),
     );
 
     _showMessage(
@@ -137,27 +173,41 @@ class _PublicPaymentScreenState
     );
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+  void _showMessage(
+      String message,
+      ) {
+    ScaffoldMessenger.of(
+      context,
+    )
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior:
+          SnackBarBehavior
+              .floating,
+          content:
+          Text(message),
+        ),
+      );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     final state =
-    ref.watch(publicNotifierProvider);
+    ref.watch(
+      publicNotifierProvider,
+    );
 
     if (state.status ==
         PublicStatus.loading &&
         state.payment == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return _buildLoading();
     }
 
     if (state.status ==
@@ -169,12 +219,17 @@ class _PublicPaymentScreenState
       );
     }
 
-    final payment = state.payment;
+    final payment =
+        state.payment;
 
     if (payment == null ||
         payment.upiId == null ||
-        payment.upiId!.trim().isEmpty) {
-      return _buildUnavailable(context);
+        payment.upiId!
+            .trim()
+            .isEmpty) {
+      return _buildUnavailable(
+        context,
+      );
     }
 
     return Scaffold(
@@ -182,126 +237,215 @@ class _PublicPaymentScreenState
         title: const Text(
           'Pay via UPI',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
-              maxWidth: 560,
-            ),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-              children: [
-                _buildBusinessCard(
-                  context,
-                  payment,
-                ),
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width =
+                constraints.maxWidth;
 
-                const SizedBox(height: 20),
+            final horizontalPadding =
+            width < 360
+                ? 16.0
+                : width < 600
+                ? 20.0
+                : 24.0;
 
-                _buildAmountCard(context),
+            final maxWidth =
+            width >= 900
+                ? 620.0
+                : 560.0;
 
-                const SizedBox(height: 20),
-
-                FilledButton.icon(
-                  onPressed:
-                  _isOpeningPayment
-                      ? null
-                      : _payViaUpi,
-                  icon: _isOpeningPayment
-                      ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child:
-                    CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Icon(
-                    Icons
-                        .account_balance_wallet_outlined,
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior
+                  .onDrag,
+              padding:
+              EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                28,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints:
+                  BoxConstraints(
+                    maxWidth:
+                    maxWidth,
                   ),
-                  label: Padding(
-                    padding:
-                    const EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
-                    child: Text(
-                      _isOpeningPayment
-                          ? 'Opening UPI...'
-                          : 'Pay by any UPI app',
-                      style:
-                      const TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                        FontWeight.w700,
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
+                    children: [
+                      _buildBusinessCard(
+                        context,
+                        payment,
                       ),
-                    ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildAmountCard(
+                        context,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildPayButton(
+                        context,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildUpiIdCard(
+                        context,
+                        payment.upiId!
+                            .trim(),
+                      ),
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      _buildInfoCard(
+                        context,
+                      ),
+
+                      const SizedBox(
+                        height: 28,
+                      ),
+
+                      _buildFooter(
+                        context,
+                      ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
-
-                _buildUpiIdCard(
-                  context,
-                  payment.upiId!.trim(),
-                ),
-
-                const SizedBox(height: 24),
-
-                _buildInfoCard(context),
-
-                const SizedBox(height: 36),
-
-                _buildFooter(context),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  Widget _buildLoading() {
+    return const Scaffold(
+      body: SafeArea(
+        child: Center(
+          child:
+          CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUSINESS CARD
+  // ============================================================
 
   Widget _buildBusinessCard(
       BuildContext context,
       PaymentResponse payment,
       ) {
+    final theme =
+    Theme.of(context);
+
+    final width =
+        MediaQuery.sizeOf(
+          context,
+        ).width;
+
+    final avatarSize =
+    width < 360
+        ? 52.0
+        : 60.0;
+
     return Card(
+      elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        EdgeInsets.all(
+          width < 400
+              ? 16
+              : 20,
+        ),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 30,
-              child: const Icon(
-                Icons.storefront_outlined,
-                size: 30,
+            Container(
+              width:
+              avatarSize,
+              height:
+              avatarSize,
+              decoration:
+              BoxDecoration(
+                color: theme
+                    .colorScheme
+                    .surfaceContainerHighest,
+                shape:
+                BoxShape.circle,
+              ),
+              child: Icon(
+                Icons
+                    .storefront_outlined,
+                size:
+                avatarSize *
+                    0.5,
+                color: theme
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 12,
+            ),
 
             Text(
               payment.businessName,
-              textAlign: TextAlign.center,
+              textAlign:
+              TextAlign.center,
+              maxLines: 3,
+              overflow:
+              TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.w800,
+                fontWeight:
+                FontWeight.w800,
+                height: 1.2,
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(
+              height: 6,
+            ),
 
             Text(
               'Digital Payment',
+              textAlign:
+              TextAlign.center,
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: theme
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
             ),
           ],
@@ -309,44 +453,73 @@ class _PublicPaymentScreenState
       ),
     );
   }
+
+  // ============================================================
+  // AMOUNT
+  // ============================================================
 
   Widget _buildAmountCard(
       BuildContext context,
       ) {
     return Card(
+      elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(
+          18,
+        ),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
             const Text(
               'Amount',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight:
+                FontWeight.w600,
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(
+              height: 12,
+            ),
 
             TextField(
-              controller: _amountController,
+              controller:
+              _amountController,
               keyboardType:
-              const TextInputType.numberWithOptions(
+              const TextInputType
+                  .numberWithOptions(
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^\d*\.?\d{0,2}'),
+                FilteringTextInputFormatter
+                    .allow(
+                  RegExp(
+                    r'^\d*\.?\d{0,2}',
+                  ),
                 ),
               ],
-              decoration: InputDecoration(
+              textInputAction:
+              TextInputAction.done,
+              decoration:
+              InputDecoration(
                 prefixText: '₹ ',
                 hintText: '0.00',
-                border: OutlineInputBorder(
+                prefixIcon:
+                const Icon(
+                  Icons
+                      .currency_rupee_outlined,
+                ),
+                border:
+                OutlineInputBorder(
                   borderRadius:
-                  BorderRadius.circular(12),
+                  BorderRadius
+                      .circular(
+                    12,
+                  ),
                 ),
               ),
             ),
@@ -356,58 +529,198 @@ class _PublicPaymentScreenState
     );
   }
 
-  Widget _buildUpiIdCard(
+  // ============================================================
+  // PAY BUTTON
+  // ============================================================
+
+  Widget _buildPayButton(
       BuildContext context,
-      String upiId,
       ) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(
-          Icons.alternate_email,
-        ),
-        title: const Text(
-          'UPI ID',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+    return SizedBox(
+      width:
+      double.infinity,
+      height: 54,
+      child:
+      FilledButton.icon(
+        onPressed:
+        _isOpeningPayment
+            ? null
+            : _payViaUpi,
+        icon: _isOpeningPayment
+            ? const SizedBox(
+          width: 20,
+          height: 20,
+          child:
+          CircularProgressIndicator(
+            strokeWidth: 2,
           ),
+        )
+            : const Icon(
+          Icons
+              .account_balance_wallet_outlined,
         ),
-        subtitle: Text(upiId),
-        trailing: IconButton(
-          tooltip: 'Copy UPI ID',
-          onPressed: () {
-            _copyUpiId(upiId);
-          },
-          icon: const Icon(
-            Icons.copy_outlined,
+        label: Text(
+          _isOpeningPayment
+              ? 'Opening UPI...'
+              : 'Pay by any UPI app',
+          style:
+          const TextStyle(
+            fontSize: 16,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
       ),
     );
   }
 
+  // ============================================================
+  // UPI ID
+  // ============================================================
+
+  Widget _buildUpiIdCard(
+      BuildContext context,
+      String upiId,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding:
+        const EdgeInsets
+            .symmetric(
+          horizontal: 14,
+          vertical: 10,
+        ),
+        child: Row(
+          crossAxisAlignment:
+          CrossAxisAlignment
+              .center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment:
+              Alignment.center,
+              decoration:
+              BoxDecoration(
+                color: theme
+                    .colorScheme
+                    .surfaceContainerHighest,
+                borderRadius:
+                BorderRadius.circular(
+                  10,
+                ),
+              ),
+              child: const Icon(
+                Icons
+                    .alternate_email,
+              ),
+            ),
+
+            const SizedBox(
+              width: 12,
+            ),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment
+                    .start,
+                children: [
+                  Text(
+                    'UPI ID',
+                    style:
+                    const TextStyle(
+                      fontWeight:
+                      FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 3,
+                  ),
+                  Text(
+                    upiId,
+                    maxLines: 2,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            IconButton(
+              tooltip:
+              'Copy UPI ID',
+              onPressed: () {
+                _copyUpiId(
+                  upiId,
+                );
+              },
+              icon:
+              const Icon(
+                Icons
+                    .copy_outlined,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // INFO
+  // ============================================================
+
   Widget _buildInfoCard(
       BuildContext context,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      width:
+      double.infinity,
+      padding:
+      const EdgeInsets.all(
+        16,
+      ),
+      decoration:
+      BoxDecoration(
         color: theme
             .colorScheme
             .surfaceContainerHighest,
         borderRadius:
-        BorderRadius.circular(16),
+        BorderRadius.circular(
+          16,
+        ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment:
-        CrossAxisAlignment.start,
+        CrossAxisAlignment
+            .start,
         children: [
           Icon(
-            Icons.verified_user_outlined,
+            Icons
+                .verified_user_outlined,
+            color: theme
+                .colorScheme
+                .primary,
           ),
-          SizedBox(width: 12),
-          Expanded(
+
+          const SizedBox(
+            width: 12,
+          ),
+
+          const Expanded(
             child: Text(
               'You will be redirected to your selected UPI app to complete the payment.',
               style: TextStyle(
@@ -420,6 +733,10 @@ class _PublicPaymentScreenState
     );
   }
 
+  // ============================================================
+  // FOOTER
+  // ============================================================
+
   Widget _buildFooter(
       BuildContext context,
       ) {
@@ -427,14 +744,22 @@ class _PublicPaymentScreenState
       children: [
         Text(
           'Powered by ScanAura',
+          textAlign:
+          TextAlign.center,
           style: TextStyle(
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w600,
+            color: Colors
+                .grey
+                .shade600,
+            fontWeight:
+            FontWeight.w600,
           ),
         ),
+
         TextButton(
           onPressed: () {
-            context.go('/register');
+            context.go(
+              '/register',
+            );
           },
           child: const Text(
             'Register your business',
@@ -444,48 +769,111 @@ class _PublicPaymentScreenState
     );
   }
 
+  // ============================================================
+  // ERROR
+  // ============================================================
+
   Widget _buildError(
       BuildContext context,
       PublicState state,
       ) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize:
-            MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
+      body: SafeArea(
+        child: Center(
+          child:
+          SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(
+              24,
+            ),
+            child: ConstrainedBox(
+              constraints:
+              const BoxConstraints(
+                maxWidth: 420,
               ),
-              const SizedBox(height: 16),
-              Text(
-                state.errorMessage ??
-                    'Unable to load payment details.',
-                textAlign:
-                TextAlign.center,
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons
+                        .error_outline_rounded,
+                    size: 52,
+                    color: Theme.of(
+                      context,
+                    )
+                        .colorScheme
+                        .error,
+                  ),
+
+                  const SizedBox(
+                    height: 16,
+                  ),
+
+                  const Text(
+                    'Unable to load payment details',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 8,
+                  ),
+
+                  Text(
+                    state.errorMessage ??
+                        'Unable to load payment details.',
+                    textAlign:
+                    TextAlign.center,
+                  ),
+
+                  const SizedBox(
+                    height: 16,
+                  ),
+
+                  SizedBox(
+                    width:
+                    double.infinity,
+                    child:
+                    FilledButton
+                        .icon(
+                      onPressed:
+                          () {
+                        ref
+                            .read(
+                          publicNotifierProvider
+                              .notifier,
+                        )
+                            .loadPayment();
+                      },
+                      icon:
+                      const Icon(
+                        Icons
+                            .refresh_rounded,
+                      ),
+                      label:
+                      const Text(
+                        'Retry',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  ref
-                      .read(
-                    publicNotifierProvider
-                        .notifier,
-                  )
-                      .loadPayment();
-                },
-                child:
-                const Text('Retry'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  // ============================================================
+  // UNAVAILABLE
+  // ============================================================
 
   Widget _buildUnavailable(
       BuildContext context,
@@ -494,14 +882,90 @@ class _PublicPaymentScreenState
       appBar: AppBar(
         title: const Text(
           'Payment',
+          style: TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
         ),
       ),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'UPI payment is not available for this business.',
-            textAlign: TextAlign.center,
+      body: SafeArea(
+        child: Center(
+          child:
+          SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(
+              24,
+            ),
+            child: ConstrainedBox(
+              constraints:
+              const BoxConstraints(
+                maxWidth: 420,
+              ),
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons
+                        .account_balance_wallet_outlined,
+                    size: 56,
+                    color: Theme.of(
+                      context,
+                    )
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+
+                  const SizedBox(
+                    height: 16,
+                  ),
+
+                  const Text(
+                    'UPI payment is not available',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 8,
+                  ),
+
+                  Text(
+                    'This business has not configured a UPI payment ID yet.',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      )
+                          .colorScheme
+                          .onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 20,
+                  ),
+
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                      ).maybePop();
+                    },
+                    child:
+                    const Text(
+                      'Go Back',
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

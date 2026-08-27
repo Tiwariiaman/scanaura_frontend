@@ -58,16 +58,11 @@ class _RegisterScreenState
     }
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Account created successfully. Please sign in.',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      context.go(
+        '/verify-email?email=${Uri.encodeComponent(
+          _emailController.text.trim(),
+        )}',
       );
-
-      context.go('/login');
     }
   }
 
@@ -398,32 +393,41 @@ class _RegisterScreenState
   }
 
   Widget _buildHeader(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-
     return Column(
       children: [
-        Container(
+        Image.asset(
+          'assets/images/scanaura_logo.png',
           width: 68,
           height: 68,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Icon(
-            Icons.restaurant_menu_rounded,
-            size: 34,
-            color: colorScheme.primary,
-          ),
+          fit: BoxFit.contain,
+          errorBuilder: (
+              context,
+              error,
+              stackTrace,
+              ) {
+            return const SizedBox(
+              width: 68,
+              height: 68,
+              child: Icon(
+                Icons.qr_code_rounded,
+                size: 42,
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 14),
+
+        const SizedBox(
+          height: 14,
+        ),
+
         Text(
           'ScanAura',
           style: Theme.of(context)
               .textTheme
               .titleLarge
               ?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
       ],

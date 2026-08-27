@@ -217,6 +217,111 @@ class AuthNotifier extends Notifier<AuthState> {
 
     return message;
   }
+
+  Future<bool> resendVerificationEmail({
+    required String email,
+  }) async {
+    state = const AuthState(
+      status: AuthStatus.loading,
+    );
+
+    try {
+      final repository =
+      ref.read(
+        authRepositoryProvider,
+      );
+
+      await repository
+          .resendVerificationEmail(
+        email.trim(),
+      );
+
+      state = const AuthState(
+        status:
+        AuthStatus.unauthenticated,
+      );
+
+      return true;
+    } catch (e) {
+      state = AuthState(
+        status: AuthStatus.error,
+        errorMessage:
+        _cleanErrorMessage(e),
+      );
+
+      return false;
+    }
+  }
+
+  Future<bool> forgotPassword({
+    required String email,
+  }) async {
+    state = const AuthState(
+      status: AuthStatus.loading,
+    );
+
+    try {
+      final repository =
+      ref.read(
+        authRepositoryProvider,
+      );
+
+      await repository.forgotPassword(
+        email.trim(),
+      );
+
+      state = const AuthState(
+        status:
+        AuthStatus.unauthenticated,
+      );
+
+      return true;
+    } catch (e) {
+      state = AuthState(
+        status: AuthStatus.error,
+        errorMessage:
+        _cleanErrorMessage(e),
+      );
+
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    state = const AuthState(
+      status: AuthStatus.loading,
+    );
+
+    try {
+      final repository =
+      ref.read(
+        authRepositoryProvider,
+      );
+
+      await repository.resetPassword(
+        token: token,
+        newPassword: newPassword,
+      );
+
+      state = const AuthState(
+        status:
+        AuthStatus.unauthenticated,
+      );
+
+      return true;
+    } catch (e) {
+      state = AuthState(
+        status: AuthStatus.error,
+        errorMessage:
+        _cleanErrorMessage(e),
+      );
+
+      return false;
+    }
+  }
 }
 
 final authNotifierProvider =

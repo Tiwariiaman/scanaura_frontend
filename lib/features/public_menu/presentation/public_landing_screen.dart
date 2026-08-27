@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/models/landing_response.dart';
+import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
+import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
 
-
-class PublicLandingScreen extends ConsumerStatefulWidget {
+class PublicLandingScreen
+    extends ConsumerStatefulWidget {
   const PublicLandingScreen({
     super.key,
     required this.qrCode,
@@ -28,41 +28,56 @@ class PublicLandingScreen extends ConsumerStatefulWidget {
 
 class _PublicLandingScreenState
     extends ConsumerState<PublicLandingScreen> {
+
   @override
   void initState() {
     super.initState();
 
     Future.microtask(() {
       ref
-          .read(publicNotifierProvider.notifier)
-          .loadLanding(widget.qrCode);
+          .read(
+        publicNotifierProvider.notifier,
+      )
+          .loadLanding(
+        widget.qrCode,
+      );
     });
   }
 
+  // ============================================================
+  // SHARE
+  // ============================================================
+
   Future<void> _sharePage() async {
-    final currentUrl = Uri.base.toString();
+    final currentUrl =
+    Uri.base.toString();
 
     final state =
-    ref.read(publicNotifierProvider);
+    ref.read(
+      publicNotifierProvider,
+    );
 
-    final landing = state.landing;
+    final landing =
+        state.landing;
 
     final businessName =
-    landing?.businessName.trim().isNotEmpty ==
+    landing?.businessName
+        .trim()
+        .isNotEmpty ==
         true
         ? landing!.businessName.trim()
         : 'this business';
 
-    final businessType =
-    landing?.businessType.trim().isNotEmpty ==
-        true
-        ? landing!.businessType.trim()
-        : 'business';
+    final terminology =
+    _terminologyFor(
+      landing?.businessType ?? '',
+    );
 
     final shareText =
         'Check out $businessName on ScanAura.\n\n'
-        'Explore their digital $businessType page, '
-        'menu and offerings:\n'
+        'Explore their digital '
+        '${terminology.collectionTitle.toLowerCase()} '
+        'and offerings:\n'
         '$currentUrl';
 
     try {
@@ -87,6 +102,8 @@ class _PublicLandingScreenState
       ScaffoldMessenger.of(context)
           .showSnackBar(
         const SnackBar(
+          behavior:
+          SnackBarBehavior.floating,
           content: Text(
             'Share message copied to clipboard.',
           ),
@@ -95,55 +112,58 @@ class _PublicLandingScreenState
     }
   }
 
+  // ============================================================
+  // BUSINESS TYPE LABEL
+  // ============================================================
+
   String _businessTypeLabel(
       String value,
       ) {
-    final normalized =
-    value.trim().toUpperCase();
-
-    switch (normalized) {
-      case 'RESTAURANT':
-        return 'Restaurant';
-
-      case 'CAFE':
-        return 'Cafe';
-
-      case 'SALON':
-        return 'Salon';
+    switch (
+    value.trim().toUpperCase()) {
+      case 'FOOD':
+        return 'Food';
 
       case 'RETAIL':
-      case 'RETAIL_SHOP':
         return 'Retail';
 
       case 'ECOMMERCE':
-      case 'E_COMMERCE':
         return 'E-commerce';
 
-      default:
-        if (value.trim().isEmpty) {
-          return 'Business';
-        }
+      case 'SERVICES':
+        return 'Services';
 
-        return value
+      case 'PERSONAL_BRAND':
+        return 'Personal Brand';
+
+      case 'OTHER':
+        return 'Other';
+
+      default:
+        return value.trim().isEmpty
+            ? 'Business'
+            : value
             .trim()
             .replaceAll('_', ' ');
     }
   }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(
       BuildContext context,
       ) {
     final state =
-    ref.watch(publicNotifierProvider);
+    ref.watch(
+      publicNotifierProvider,
+    );
 
     if (state.status ==
         PublicStatus.loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return _buildLoading();
     }
 
     if (state.status ==
@@ -155,16 +175,11 @@ class _PublicLandingScreenState
       );
     }
 
-    final landing = state.landing;
+    final landing =
+        state.landing;
 
     if (landing == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            'Business information is unavailable.',
-          ),
-        ),
-      );
+      return _buildUnavailable();
     }
 
     return Scaffold(
@@ -182,54 +197,167 @@ class _PublicLandingScreenState
             )
                 .refreshLanding();
           },
-          child: SingleChildScrollView(
-            physics:
-            const AlwaysScrollableScrollPhysics(),
+          child: LayoutBuilder(
+            builder: (
+                context,
+                constraints,
+                ) {
+              final width =
+                  constraints.maxWidth;
+
+              final horizontalPadding =
+              width < 360
+                  ? 16.0
+                  : width < 600
+                  ? 20.0
+                  : 24.0;
+
+              final contentMaxWidth =
+              width >= 900
+                  ? 620.0
+                  : 560.0;
+
+              return SingleChildScrollView(
+                physics:
+                const AlwaysScrollableScrollPhysics(),
+                padding:
+                EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  8,
+                  horizontalPadding,
+                  28,
+                ),
+                child: Center(
+                  child:
+                  ConstrainedBox(
+                    constraints:
+                    BoxConstraints(
+                      maxWidth:
+                      contentMaxWidth,
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment
+                          .stretch,
+                      children: [
+                        _buildTopBar(),
+
+                        SizedBox(
+                          height:
+                          width < 400
+                              ? 16
+                              : 24,
+                        ),
+
+                        _buildBusinessIdentity(
+                          context,
+                          landing,
+                        ),
+
+                        SizedBox(
+                          height:
+                          width < 400
+                              ? 20
+                              : 24,
+                        ),
+
+                        _buildActionButtons(
+                          context,
+                          landing,
+                        ),
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
+                        _buildBusinessTypeInfo(
+                          context,
+                          landing,
+                        ),
+
+                        const SizedBox(
+                          height: 28,
+                        ),
+
+                        _buildFooter(
+                          context,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // UNAVAILABLE
+  // ============================================================
+
+  Widget _buildUnavailable() {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child:
+          SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints:
               const BoxConstraints(
-                maxWidth: 560,
+                maxWidth: 420,
               ),
-              child: Padding(
-                padding:
-                const EdgeInsets.fromLTRB(
-                  20,
-                  12,
-                  20,
-                  28,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.stretch,
-                  children: [
-                    _buildTopBar(),
-
-                    const SizedBox(height: 24),
-
-                    _buildBusinessIdentity(
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons
+                        .storefront_outlined,
+                    size: 56,
+                    color: Theme.of(
                       context,
-                      landing,
+                    )
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+
+                  const SizedBox(
+                    height: 16,
+                  ),
+
+                  const Text(
+                    'Business information is unavailable.',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                      FontWeight.w700,
                     ),
+                  ),
 
-                    const SizedBox(height: 24),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
-                    _buildActionButtons(
-                      context,
-                      landing,
+                  Text(
+                    'Please try again in a moment.',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      )
+                          .colorScheme
+                          .onSurfaceVariant,
                     ),
-
-                    const SizedBox(height: 20),
-
-                    _buildBusinessTypeInfo(
-                      context,
-                      landing,
-                    ),
-
-                    const SizedBox(height: 36),
-
-                    _buildFooter(context),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -237,6 +365,25 @@ class _PublicLandingScreenState
       ),
     );
   }
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  Widget _buildLoading() {
+    return const Scaffold(
+      body: SafeArea(
+        child: Center(
+          child:
+          CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // TOP BAR
+  // ============================================================
 
   Widget _buildTopBar() {
     return Row(
@@ -254,11 +401,16 @@ class _PublicLandingScreenState
     );
   }
 
+  // ============================================================
+  // BUSINESS IDENTITY
+  // ============================================================
+
   Widget _buildBusinessIdentity(
       BuildContext context,
       LandingResponse landing,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Column(
       children: [
@@ -267,21 +419,31 @@ class _PublicLandingScreenState
           landing.logoUrl,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(
+          height: 18,
+        ),
 
         Text(
           landing.businessName,
-          textAlign: TextAlign.center,
+          textAlign:
+          TextAlign.center,
+          maxLines: 3,
+          overflow:
+          TextOverflow.ellipsis,
           style: theme
               .textTheme
               .headlineMedium
               ?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight:
+            FontWeight.w800,
             letterSpacing: -0.4,
+            height: 1.15,
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(
+          height: 10,
+        ),
 
         Wrap(
           alignment:
@@ -290,17 +452,21 @@ class _PublicLandingScreenState
           runSpacing: 8,
           children: [
             _InfoChip(
-              icon: Icons.storefront_outlined,
-              label: _businessTypeLabel(
+              icon:
+              Icons.storefront_outlined,
+              label:
+              _businessTypeLabel(
                 landing.businessType,
               ),
             ),
+
             if (landing.city
                 ?.trim()
                 .isNotEmpty ==
                 true)
               _InfoChip(
-                icon: Icons.location_on_outlined,
+                icon:
+                Icons.location_on_outlined,
                 label:
                 landing.city!.trim(),
               ),
@@ -310,34 +476,56 @@ class _PublicLandingScreenState
     );
   }
 
+  // ============================================================
+  // LOGO
+  // ============================================================
+
   Widget _buildLogo(
       BuildContext context,
       String? logoUrl,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
+
+    final width =
+        MediaQuery.sizeOf(context)
+            .width;
+
+    final size =
+    width < 360
+        ? 92.0
+        : width < 600
+        ? 104.0
+        : 112.0;
 
     if (logoUrl == null ||
         logoUrl.trim().isEmpty) {
       return Container(
-        width: 112,
-        height: 112,
-        decoration: BoxDecoration(
+        width: size,
+        height: size,
+        decoration:
+        BoxDecoration(
           color: theme
               .colorScheme
               .surfaceContainerHighest,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.storefront_outlined,
-          size: 48,
+        child: Icon(
+          Icons
+              .storefront_outlined,
+          size: size * 0.42,
+          color: theme
+              .colorScheme
+              .onSurfaceVariant,
         ),
       );
     }
 
     return Container(
-      width: 112,
-      height: 112,
-      decoration: BoxDecoration(
+      width: size,
+      height: size,
+      decoration:
+      BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
           color: theme
@@ -351,38 +539,58 @@ class _PublicLandingScreenState
       child: Image.network(
         logoUrl,
         fit: BoxFit.cover,
-        errorBuilder:
-            (_, _, _) {
+        errorBuilder: (
+            _,
+            _,
+            _,
+            ) {
           return Container(
             color: theme
                 .colorScheme
                 .surfaceContainerHighest,
-            child: const Icon(
-              Icons.storefront_outlined,
-              size: 48,
+            child: Icon(
+              Icons
+                  .storefront_outlined,
+              size: size * 0.42,
+              color: theme
+                  .colorScheme
+                  .onSurfaceVariant,
             ),
           );
         },
-        loadingBuilder:
-            (
+        loadingBuilder: (
             context,
             child,
             loadingProgress,
             ) {
-          if (loadingProgress == null) {
+          if (loadingProgress ==
+              null) {
             return child;
           }
 
-          return const Center(
+          return Center(
             child:
             CircularProgressIndicator(
               strokeWidth: 2,
+              value:
+              loadingProgress
+                  .expectedTotalBytes !=
+                  null
+                  ? loadingProgress
+                  .cumulativeBytesLoaded /
+                  loadingProgress
+                      .expectedTotalBytes!
+                  : null,
             ),
           );
         },
       ),
     );
   }
+
+  // ============================================================
+  // ACTION BUTTONS
+  // ============================================================
 
   Widget _buildActionButtons(
       BuildContext context,
@@ -392,21 +600,21 @@ class _PublicLandingScreenState
       crossAxisAlignment:
       CrossAxisAlignment.stretch,
       children: [
-        FilledButton.icon(
-          onPressed:
-          landing.menuAvailable
-              ? widget.onOpenMenu
-              : null,
-          icon: const Icon(
-            Icons.restaurant_menu_outlined,
-          ),
-          label: const Padding(
-            padding:
-            EdgeInsets.symmetric(
-              vertical: 13,
+        SizedBox(
+          height: 54,
+          child:
+          FilledButton.icon(
+            onPressed:
+            landing.menuAvailable
+                ? widget
+                .onOpenMenu
+                : null,
+            icon: const Icon(
+              Icons
+                  .visibility_outlined,
             ),
-            child: Text(
-              'View Menu',
+            label: const Text(
+              'View',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight:
@@ -416,26 +624,31 @@ class _PublicLandingScreenState
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(
+          height: 12,
+        ),
 
-        OutlinedButton.icon(
-          onPressed:
-          landing.paymentEnabled
-              ? widget.onOpenPayment
-              : null,
-          icon: const Icon(
-            Icons.account_balance_wallet_outlined,
-          ),
-          label: Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              vertical: 13,
+        SizedBox(
+          height: 54,
+          child:
+          OutlinedButton.icon(
+            onPressed:
+            landing
+                .paymentEnabled
+                ? widget
+                .onOpenPayment
+                : null,
+            icon: const Icon(
+              Icons
+                  .account_balance_wallet_outlined,
             ),
-            child: Text(
-              landing.paymentEnabled
+            label: Text(
+              landing
+                  .paymentEnabled
                   ? 'Pay via UPI'
                   : 'Payment Unavailable',
-              style: const TextStyle(
+              style:
+              const TextStyle(
                 fontSize: 16,
                 fontWeight:
                 FontWeight.w700,
@@ -447,50 +660,27 @@ class _PublicLandingScreenState
     );
   }
 
+  // ============================================================
+  // BUSINESS INFO
+  // ============================================================
+
   Widget _buildBusinessTypeInfo(
       BuildContext context,
       LandingResponse landing,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
-    String label;
-
-    switch (
-    landing.businessType
-        .trim()
-        .toUpperCase()) {
-      case 'RESTAURANT':
-      case 'CAFE':
-        label =
-        'View the latest menu and discover available items.';
-        break;
-
-      case 'SALON':
-        label =
-        'View available services and offerings.';
-        break;
-
-      case 'RETAIL':
-      case 'RETAIL_SHOP':
-        label =
-        'Browse available products and items.';
-        break;
-
-      case 'ECOMMERCE':
-      case 'E_COMMERCE':
-        label =
-        'Browse the available product catalog.';
-        break;
-
-      default:
-        label =
-        'Explore products, services and offerings.';
-    }
+    final terminology =
+    _terminologyFor(
+      landing.businessType,
+    );
 
     return Container(
       padding:
       const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration:
+      BoxDecoration(
         color: theme
             .colorScheme
             .surfaceContainerHighest,
@@ -502,14 +692,21 @@ class _PublicLandingScreenState
         CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.info_outline,
-            color:
-            theme.colorScheme.primary,
+            Icons
+                .info_outline,
+            color: theme
+                .colorScheme
+                .primary,
           ),
-          const SizedBox(width: 12),
+
+          const SizedBox(
+            width: 12,
+          ),
+
           Expanded(
             child: Text(
-              label,
+              terminology
+                  .description,
               style: theme
                   .textTheme
                   .bodyMedium
@@ -523,6 +720,10 @@ class _PublicLandingScreenState
     );
   }
 
+  // ============================================================
+  // FOOTER
+  // ============================================================
+
   Widget _buildFooter(
       BuildContext context,
       ) {
@@ -530,9 +731,12 @@ class _PublicLandingScreenState
       children: [
         Text(
           'Powered by ScanAura',
-          textAlign: TextAlign.center,
+          textAlign:
+          TextAlign.center,
           style: TextStyle(
-            color: Theme.of(context)
+            color: Theme.of(
+              context,
+            )
                 .colorScheme
                 .onSurfaceVariant,
             fontWeight:
@@ -540,11 +744,15 @@ class _PublicLandingScreenState
           ),
         ),
 
-        const SizedBox(height: 6),
+        const SizedBox(
+          height: 6,
+        ),
 
         TextButton(
           onPressed: () {
-            context.go('/register');
+            context.go(
+              '/register',
+            );
           },
           child: const Text(
             'Register your business',
@@ -554,50 +762,100 @@ class _PublicLandingScreenState
     );
   }
 
+  // ============================================================
+  // ERROR
+  // ============================================================
+
   Widget _buildError(
       BuildContext context,
       PublicState state,
       ) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding:
-          const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize:
-            MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
+      body: SafeArea(
+        child: Center(
+          child:
+          SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints:
+              const BoxConstraints(
+                maxWidth: 420,
               ),
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons
+                        .error_outline,
+                    size: 52,
+                    color: Theme.of(
+                      context,
+                    )
+                        .colorScheme
+                        .error,
+                  ),
 
-              const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 16,
+                  ),
 
-              Text(
-                state.errorMessage ??
-                    'Unable to load business.',
-                textAlign:
-                TextAlign.center,
+                  const Text(
+                    'Unable to load business',
+                    textAlign:
+                    TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 8,
+                  ),
+
+                  Text(
+                    state.errorMessage ??
+                        'Unable to load business.',
+                    textAlign:
+                    TextAlign.center,
+                  ),
+
+                  const SizedBox(
+                    height: 16,
+                  ),
+
+                  SizedBox(
+                    width:
+                    double.infinity,
+                    child:
+                    FilledButton.icon(
+                      onPressed: () {
+                        ref
+                            .read(
+                          publicNotifierProvider
+                              .notifier,
+                        )
+                            .loadLanding(
+                          widget.qrCode,
+                        );
+                      },
+                      icon:
+                      const Icon(
+                        Icons
+                            .refresh_rounded,
+                      ),
+                      label:
+                      const Text(
+                        'Retry',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 16),
-
-              FilledButton(
-                onPressed: () {
-                  ref
-                      .read(
-                    publicNotifierProvider
-                        .notifier,
-                  )
-                      .loadLanding(
-                    widget.qrCode,
-                  );
-                },
-                child:
-                const Text('Retry'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -605,7 +863,77 @@ class _PublicLandingScreenState
   }
 }
 
-class _InfoChip extends StatelessWidget {
+// ============================================================
+// BUSINESS TERMINOLOGY
+// ============================================================
+
+class _BusinessTerminology {
+  const _BusinessTerminology({
+    required this.collectionTitle,
+    required this.itemTitle,
+    required this.description,
+  });
+
+  final String collectionTitle;
+  final String itemTitle;
+  final String description;
+}
+
+_BusinessTerminology _terminologyFor(
+    String businessType,
+    ) {
+  switch (
+  businessType.trim().toUpperCase()) {
+    case 'FOOD':
+      return const _BusinessTerminology(
+        collectionTitle: 'Menu',
+        itemTitle: 'Item',
+        description:
+        'Explore the latest menu and available items.',
+      );
+
+    case 'SERVICES':
+      return const _BusinessTerminology(
+        collectionTitle: 'Services',
+        itemTitle: 'Service',
+        description:
+        'Explore available services and offerings.',
+      );
+
+    case 'RETAIL':
+    case 'ECOMMERCE':
+      return const _BusinessTerminology(
+        collectionTitle: 'Catalog',
+        itemTitle: 'Product',
+        description:
+        'Browse available products and offerings.',
+      );
+
+    case 'PERSONAL_BRAND':
+      return const _BusinessTerminology(
+        collectionTitle: 'Catalog',
+        itemTitle: 'Item',
+        description:
+        'Explore products, services and offerings.',
+      );
+
+    case 'OTHER':
+    default:
+      return const _BusinessTerminology(
+        collectionTitle: 'Catalog',
+        itemTitle: 'Item',
+        description:
+        'Explore products, services and offerings.',
+      );
+  }
+}
+
+// ============================================================
+// INFO CHIP
+// ============================================================
+
+class _InfoChip
+    extends StatelessWidget {
   const _InfoChip({
     required this.icon,
     required this.label,
@@ -618,7 +946,8 @@ class _InfoChip extends StatelessWidget {
   Widget build(
       BuildContext context,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Container(
       padding:
@@ -626,7 +955,8 @@ class _InfoChip extends StatelessWidget {
         horizontal: 12,
         vertical: 8,
       ),
-      decoration: BoxDecoration(
+      decoration:
+      BoxDecoration(
         color: theme
             .colorScheme
             .surfaceContainerHighest,
@@ -641,14 +971,23 @@ class _InfoChip extends StatelessWidget {
             icon,
             size: 16,
           ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style:
-            const TextStyle(
-              fontWeight:
-              FontWeight.w600,
-              fontSize: 13,
+
+          const SizedBox(
+            width: 6,
+          ),
+
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow:
+              TextOverflow.ellipsis,
+              style:
+              const TextStyle(
+                fontWeight:
+                FontWeight.w600,
+                fontSize: 13,
+              ),
             ),
           ),
         ],

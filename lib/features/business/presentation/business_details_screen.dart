@@ -26,13 +26,16 @@ class BusinessDetailsScreen
   final bool isEditMode;
 
   @override
-  ConsumerState<BusinessDetailsScreen> createState() =>
+  ConsumerState<BusinessDetailsScreen>
+  createState() =>
       _BusinessDetailsScreenState();
 }
 
 class _BusinessDetailsScreenState
-    extends ConsumerState<BusinessDetailsScreen> {
-  final _formKey = GlobalKey<FormState>();
+    extends ConsumerState<
+        BusinessDetailsScreen> {
+  final _formKey =
+  GlobalKey<FormState>();
 
   final _addressController =
   TextEditingController();
@@ -88,6 +91,10 @@ class _BusinessDetailsScreenState
     super.dispose();
   }
 
+  // ============================================================
+  // LOAD EXISTING BUSINESS
+  // ============================================================
+
   Future<void> _loadExistingBusiness() async {
     if (_loadedBusiness) {
       return;
@@ -108,7 +115,9 @@ class _BusinessDetailsScreenState
     }
 
     final state =
-    ref.read(businessNotifierProvider);
+    ref.read(
+      businessNotifierProvider,
+    );
 
     final business = state.business;
 
@@ -150,8 +159,13 @@ class _BusinessDetailsScreenState
         business.upiId ?? '';
   }
 
+  // ============================================================
+  // CONTINUE
+  // ============================================================
+
   void _continue() {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!
+        .validate()) {
       return;
     }
 
@@ -163,28 +177,33 @@ class _BusinessDetailsScreenState
               widget.businessName,
               businessType:
               widget.businessType,
-              phone:
-              widget.phone,
-              whatsapp:
-              widget.whatsapp,
-              email:
-              widget.email,
+              phone: widget.phone,
+              whatsapp: widget.whatsapp,
+              email: widget.email,
               address:
-              _addressController.text.trim(),
+              _addressController.text
+                  .trim(),
               city:
-              _cityController.text.trim(),
+              _cityController.text
+                  .trim(),
               state:
-              _stateController.text.trim(),
+              _stateController.text
+                  .trim(),
               country:
-              _countryController.text.trim(),
+              _countryController.text
+                  .trim(),
               pincode:
-              _pincodeController.text.trim(),
+              _pincodeController.text
+                  .trim(),
               website:
-              _websiteController.text.trim(),
+              _websiteController.text
+                  .trim(),
               description:
-              _descriptionController.text.trim(),
+              _descriptionController.text
+                  .trim(),
               upiId:
-              _upiController.text.trim(),
+              _upiController.text
+                  .trim(),
               isEditMode:
               widget.isEditMode,
             ),
@@ -192,8 +211,14 @@ class _BusinessDetailsScreenState
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     final theme =
     Theme.of(context);
 
@@ -213,368 +238,465 @@ class _BusinessDetailsScreenState
           widget.isEditMode
               ? 'Edit Business Details'
               : 'Business Details',
-          style: const TextStyle(
+          style:
+          const TextStyle(
             fontWeight:
             FontWeight.w700,
           ),
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 620,
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width =
+                constraints.maxWidth;
+
+            final horizontalPadding =
+            width < 360
+                ? 16.0
+                : width < 600
+                ? 20.0
+                : 24.0;
+
+            final topPadding =
+            width < 600
+                ? 16.0
+                : 24.0;
+
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior
+                  .onDrag,
+              padding:
+              EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding,
+                horizontalPadding,
+                32,
               ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 24,
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints:
+                  const BoxConstraints(
+                    maxWidth: 620,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment
+                          .stretch,
+                      children: [
+                        // ==================================================
+                        // INTRO
+                        // ==================================================
 
-                    Text(
-                      widget.isEditMode
-                          ? 'Update Your Details'
-                          : 'Business Details',
-                      style: theme
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                        fontWeight:
-                        FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 8,
-                    ),
-
-                    Text(
-                      widget.isEditMode
-                          ? 'Update your business location, contact and payment information.'
-                          : 'Add your location and other information customers may need.',
-                      style: theme
-                          .textTheme
-                          .bodyLarge
-                          ?.copyWith(
-                        color: theme
-                            .colorScheme
-                            .onSurfaceVariant,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 28,
-                    ),
-
-                    _buildProgressIndicator(
-                      context,
-                    ),
-
-                    const SizedBox(
-                      height: 32,
-                    ),
-
-                    Text(
-                      'Location',
-                      style: theme
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
-                        fontWeight:
-                        FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    TextFormField(
-                      controller:
-                      _addressController,
-                      maxLines: 2,
-                      textInputAction:
-                      TextInputAction.next,
-                      decoration:
-                      const InputDecoration(
-                        labelText: 'Address',
-                        hintText:
-                        'Street, building or landmark',
-                        prefixIcon: Icon(
-                          Icons
-                              .location_on_outlined,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    LayoutBuilder(
-                      builder:
-                          (context,
-                          constraints) {
-                        if (constraints
-                            .maxWidth <
-                            500) {
-                          return Column(
-                            children: [
-                              _cityField(),
-                              const SizedBox(
-                                height: 16,
-                              ),
-                              _stateField(),
-                            ],
-                          );
-                        }
-
-                        return Row(
-                          children: [
-                            Expanded(
-                              child:
-                              _cityField(),
-                            ),
-                            const SizedBox(
-                              width: 16,
-                            ),
-                            Expanded(
-                              child:
-                              _stateField(),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    LayoutBuilder(
-                      builder:
-                          (context,
-                          constraints) {
-                        if (constraints
-                            .maxWidth <
-                            500) {
-                          return Column(
-                            children: [
-                              _countryField(),
-                              const SizedBox(
-                                height: 16,
-                              ),
-                              _pincodeField(),
-                            ],
-                          );
-                        }
-
-                        return Row(
-                          children: [
-                            Expanded(
-                              child:
-                              _countryField(),
-                            ),
-                            const SizedBox(
-                              width: 16,
-                            ),
-                            Expanded(
-                              child:
-                              _pincodeField(),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 32,
-                    ),
-
-                    Text(
-                      'Online Presence',
-                      style: theme
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
-                        fontWeight:
-                        FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    TextFormField(
-                      controller:
-                      _websiteController,
-                      keyboardType:
-                      TextInputType.url,
-                      decoration:
-                      const InputDecoration(
-                        labelText: 'Website',
-                        hintText:
-                        'https://example.com',
-                        prefixIcon: Icon(
-                          Icons
-                              .language_outlined,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    TextFormField(
-                      controller:
-                      _descriptionController,
-                      maxLines: 4,
-                      maxLength: 1000,
-                      decoration:
-                      const InputDecoration(
-                        labelText:
-                        'Business description',
-                        hintText:
-                        'Tell customers a little about your business...',
-                        prefixIcon: Icon(
-                          Icons
-                              .description_outlined,
-                        ),
-                        alignLabelWithHint:
-                        true,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 24,
-                    ),
-
-                    _buildBusinessSummary(
-                      context,
-                    ),
-
-                    const SizedBox(
-                      height: 32,
-                    ),
-
-                    Text(
-                      'Payments',
-                      style: theme
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
-                        fontWeight:
-                        FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    TextFormField(
-                      controller:
-                      _upiController,
-                      keyboardType:
-                      TextInputType.emailAddress,
-                      decoration:
-                      const InputDecoration(
-                        labelText: 'UPI ID',
-                        hintText:
-                        'business@upi',
-                        prefixIcon: Icon(
-                          Icons
-                              .account_balance_wallet_outlined,
-                        ),
-                        helperText:
-                        'Optional — you can add this later.',
-                      ),
-                      validator: (value) {
-                        if (value == null ||
-                            value
-                                .trim()
-                                .isEmpty) {
-                          return null;
-                        }
-
-                        if (!value.contains(
-                          '@',
-                        )) {
-                          return 'Enter a valid UPI ID';
-                        }
-
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 28,
-                    ),
-
-                    SizedBox(
-                      width:
-                      double.infinity,
-                      height: 52,
-                      child:
-                      FilledButton.icon(
-                        onPressed:
-                        _continue,
-                        icon: const Icon(
-                          Icons
-                              .arrow_forward_rounded,
-                        ),
-                        label: Text(
+                        Text(
                           widget.isEditMode
-                              ? 'Continue'
-                              : 'Continue',
+                              ? 'Update Your Details'
+                              : 'Business Details',
+                          textAlign:
+                          width < 600
+                              ? TextAlign.center
+                              : TextAlign.start,
+                          style: theme
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                            fontWeight:
+                            FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ),
 
-                    const SizedBox(
-                      height: 12,
-                    ),
-
-                    SizedBox(
-                      width:
-                      double.infinity,
-                      height: 48,
-                      child:
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pop();
-                        },
-                        child:
-                        const Text(
-                          'Back',
+                        const SizedBox(
+                          height: 8,
                         ),
-                      ),
-                    ),
 
-                    const SizedBox(
-                      height: 24,
+                        Text(
+                          widget.isEditMode
+                              ? 'Update your business location, contact and payment information.'
+                              : 'Add your location and other information customers may need.',
+                          textAlign:
+                          width < 600
+                              ? TextAlign.center
+                              : TextAlign.start,
+                          style: theme
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(
+                            color: theme
+                                .colorScheme
+                                .onSurfaceVariant,
+                            height: 1.45,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 26,
+                        ),
+
+                        _buildProgressIndicator(
+                          context,
+                        ),
+
+                        const SizedBox(
+                          height: 28,
+                        ),
+
+                        // ==================================================
+                        // LOCATION
+                        // ==================================================
+
+                        _buildSectionTitle(
+                          context,
+                          'Location',
+                        ),
+
+                        const SizedBox(
+                          height: 18,
+                        ),
+
+                        TextFormField(
+                          controller:
+                          _addressController,
+                          maxLines: 2,
+                          textInputAction:
+                          TextInputAction
+                              .next,
+                          textCapitalization:
+                          TextCapitalization
+                              .sentences,
+                          decoration:
+                          const InputDecoration(
+                            labelText:
+                            'Address',
+                            hintText:
+                            'Street, building or landmark',
+                            alignLabelWithHint:
+                            true,
+                            prefixIcon:
+                            Icon(
+                              Icons
+                                  .location_on_outlined,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
+                        // CITY + STATE
+                        LayoutBuilder(
+                          builder: (
+                              context,
+                              rowConstraints,
+                              ) {
+                            if (rowConstraints
+                                .maxWidth <
+                                500) {
+                              return Column(
+                                children: [
+                                  _cityField(),
+                                  const SizedBox(
+                                    height: 16,
+                                  ),
+                                  _stateField(),
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              crossAxisAlignment:
+                              CrossAxisAlignment
+                                  .start,
+                              children: [
+                                Expanded(
+                                  child:
+                                  _cityField(),
+                                ),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                Expanded(
+                                  child:
+                                  _stateField(),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
+                        // COUNTRY + PINCODE
+                        LayoutBuilder(
+                          builder: (
+                              context,
+                              rowConstraints,
+                              ) {
+                            if (rowConstraints
+                                .maxWidth <
+                                500) {
+                              return Column(
+                                children: [
+                                  _countryField(),
+                                  const SizedBox(
+                                    height: 16,
+                                  ),
+                                  _pincodeField(),
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              crossAxisAlignment:
+                              CrossAxisAlignment
+                                  .start,
+                              children: [
+                                Expanded(
+                                  child:
+                                  _countryField(),
+                                ),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                Expanded(
+                                  child:
+                                  _pincodeField(),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+
+                        const SizedBox(
+                          height: 30,
+                        ),
+
+                        // ==================================================
+                        // ONLINE PRESENCE
+                        // ==================================================
+
+                        _buildSectionTitle(
+                          context,
+                          'Online Presence',
+                        ),
+
+                        const SizedBox(
+                          height: 18,
+                        ),
+
+                        TextFormField(
+                          controller:
+                          _websiteController,
+                          keyboardType:
+                          TextInputType.url,
+                          textInputAction:
+                          TextInputAction.next,
+                          decoration:
+                          const InputDecoration(
+                            labelText:
+                            'Website',
+                            hintText:
+                            'https://example.com',
+                            prefixIcon:
+                            Icon(
+                              Icons
+                                  .language_outlined,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
+                        TextFormField(
+                          controller:
+                          _descriptionController,
+                          maxLines: 4,
+                          maxLength: 1000,
+                          textCapitalization:
+                          TextCapitalization
+                              .sentences,
+                          decoration:
+                          const InputDecoration(
+                            labelText:
+                            'Business description',
+                            hintText:
+                            'Tell customers a little about your business...',
+                            prefixIcon:
+                            Icon(
+                              Icons
+                                  .description_outlined,
+                            ),
+                            alignLabelWithHint:
+                            true,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
+                        _buildBusinessSummary(
+                          context,
+                        ),
+
+                        const SizedBox(
+                          height: 30,
+                        ),
+
+                        // ==================================================
+                        // PAYMENTS
+                        // ==================================================
+
+                        _buildSectionTitle(
+                          context,
+                          'Payments',
+                        ),
+
+                        const SizedBox(
+                          height: 18,
+                        ),
+
+                        TextFormField(
+                          controller:
+                          _upiController,
+                          keyboardType:
+                          TextInputType
+                              .emailAddress,
+                          textInputAction:
+                          TextInputAction.done,
+                          decoration:
+                          const InputDecoration(
+                            labelText:
+                            'UPI ID',
+                            hintText:
+                            'business@upi',
+                            prefixIcon:
+                            Icon(
+                              Icons
+                                  .account_balance_wallet_outlined,
+                            ),
+                            helperText:
+                            'Optional — you can add this later.',
+                          ),
+                          validator:
+                              (value) {
+                            final upi =
+                                value
+                                    ?.trim() ??
+                                    '';
+
+                            if (upi.isEmpty) {
+                              return null;
+                            }
+
+                            if (!upi.contains(
+                              '@',
+                            )) {
+                              return 'Enter a valid UPI ID';
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(
+                          height: 28,
+                        ),
+
+                        // ==================================================
+                        // CONTINUE
+                        // ==================================================
+
+                        SizedBox(
+                          width:
+                          double.infinity,
+                          height: 52,
+                          child:
+                          FilledButton.icon(
+                            onPressed:
+                            _continue,
+                            icon:
+                            const Icon(
+                              Icons
+                                  .arrow_forward_rounded,
+                            ),
+                            label:
+                            const Text(
+                              'Continue',
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 12,
+                        ),
+
+                        SizedBox(
+                          width:
+                          double.infinity,
+                          height: 48,
+                          child:
+                          OutlinedButton(
+                            onPressed: () {
+                              Navigator.of(
+                                context,
+                              ).pop();
+                            },
+                            child:
+                            const Text(
+                              'Back',
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 24,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // SECTION TITLE
+  // ============================================================
+
+  Widget _buildSectionTitle(
+      BuildContext context,
+      String title,
+      ) {
+    return Text(
+      title,
+      style: Theme.of(context)
+          .textTheme
+          .titleLarge
+          ?.copyWith(
+        fontWeight:
+        FontWeight.w700,
+      ),
+    );
+  }
+
+  // ============================================================
+  // CITY
+  // ============================================================
 
   Widget _cityField() {
     return TextFormField(
@@ -582,15 +704,23 @@ class _BusinessDetailsScreenState
       _cityController,
       textInputAction:
       TextInputAction.next,
+      textCapitalization:
+      TextCapitalization.words,
       decoration:
       const InputDecoration(
         labelText: 'City',
-        prefixIcon: Icon(
-          Icons.location_city_outlined,
+        prefixIcon:
+        Icon(
+          Icons
+              .location_city_outlined,
         ),
       ),
     );
   }
+
+  // ============================================================
+  // STATE
+  // ============================================================
 
   Widget _stateField() {
     return TextFormField(
@@ -598,15 +728,22 @@ class _BusinessDetailsScreenState
       _stateController,
       textInputAction:
       TextInputAction.next,
+      textCapitalization:
+      TextCapitalization.words,
       decoration:
       const InputDecoration(
         labelText: 'State',
-        prefixIcon: Icon(
+        prefixIcon:
+        Icon(
           Icons.map_outlined,
         ),
       ),
     );
   }
+
+  // ============================================================
+  // COUNTRY
+  // ============================================================
 
   Widget _countryField() {
     return TextFormField(
@@ -614,15 +751,22 @@ class _BusinessDetailsScreenState
       _countryController,
       textInputAction:
       TextInputAction.next,
+      textCapitalization:
+      TextCapitalization.words,
       decoration:
       const InputDecoration(
         labelText: 'Country',
-        prefixIcon: Icon(
+        prefixIcon:
+        Icon(
           Icons.public_outlined,
         ),
       ),
     );
   }
+
+  // ============================================================
+  // PINCODE
+  // ============================================================
 
   Widget _pincodeField() {
     return TextFormField(
@@ -631,23 +775,28 @@ class _BusinessDetailsScreenState
       keyboardType:
       TextInputType.number,
       maxLength: 6,
+      textInputAction:
+      TextInputAction.next,
       decoration:
       const InputDecoration(
         labelText: 'Pincode',
         counterText: '',
-        prefixIcon: Icon(
+        prefixIcon:
+        Icon(
           Icons.pin_drop_outlined,
         ),
       ),
       validator: (value) {
-        if (value == null ||
-            value.trim().isEmpty) {
+        final pincode =
+            value?.trim() ?? '';
+
+        if (pincode.isEmpty) {
           return null;
         }
 
         if (!RegExp(
           r'^\d{6}$',
-        ).hasMatch(value.trim())) {
+        ).hasMatch(pincode)) {
           return 'Enter a valid 6-digit pincode';
         }
 
@@ -656,11 +805,16 @@ class _BusinessDetailsScreenState
     );
   }
 
+  // ============================================================
+  // PROGRESS INDICATOR
+  // ============================================================
+
   Widget _buildProgressIndicator(
       BuildContext context,
       ) {
     final colorScheme =
-        Theme.of(context).colorScheme;
+        Theme.of(context)
+            .colorScheme;
 
     return Row(
       children: [
@@ -678,9 +832,11 @@ class _BusinessDetailsScreenState
             ),
           ),
         ),
+
         const SizedBox(
           width: 8,
         ),
+
         Expanded(
           child: Container(
             height: 6,
@@ -695,9 +851,11 @@ class _BusinessDetailsScreenState
             ),
           ),
         ),
+
         const SizedBox(
           width: 8,
         ),
+
         Expanded(
           child: Container(
             height: 6,
@@ -716,6 +874,10 @@ class _BusinessDetailsScreenState
     );
   }
 
+  // ============================================================
+  // BUSINESS SUMMARY
+  // ============================================================
+
   Widget _buildBusinessSummary(
       BuildContext context,
       ) {
@@ -726,12 +888,15 @@ class _BusinessDetailsScreenState
       width: double.infinity,
       padding:
       const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration:
+      BoxDecoration(
         color: theme
             .colorScheme
             .surfaceContainerLow,
         borderRadius:
-        BorderRadius.circular(16),
+        BorderRadius.circular(
+          16,
+        ),
         border: Border.all(
           color: theme
               .colorScheme
@@ -752,25 +917,35 @@ class _BusinessDetailsScreenState
               FontWeight.w700,
             ),
           ),
+
           const SizedBox(
             height: 12,
           ),
+
           _summaryRow(
+            context,
             Icons.storefront_outlined,
             widget.businessName,
           ),
+
           const SizedBox(
             height: 8,
           ),
+
           _summaryRow(
+            context,
             Icons.category_outlined,
-            widget.businessType
+            widget
+                .businessType
                 .displayName,
           ),
+
           const SizedBox(
             height: 8,
           ),
+
           _summaryRow(
+            context,
             Icons.phone_outlined,
             widget.phone,
           ),
@@ -780,23 +955,34 @@ class _BusinessDetailsScreenState
   }
 
   Widget _summaryRow(
+      BuildContext context,
       IconData icon,
       String value,
       ) {
     return Row(
+      crossAxisAlignment:
+      CrossAxisAlignment
+          .start,
       children: [
         Icon(
           icon,
           size: 20,
+          color: Theme.of(context)
+              .colorScheme
+              .onSurfaceVariant,
         ),
+
         const SizedBox(
           width: 10,
         ),
+
         Expanded(
           child: Text(
             value,
-            overflow:
-            TextOverflow.ellipsis,
+            softWrap: true,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium,
           ),
         ),
       ],

@@ -20,35 +20,51 @@ class QrScreen extends ConsumerStatefulWidget {
       _QrScreenState();
 }
 
-class _QrScreenState extends ConsumerState<QrScreen> {
-  final GlobalKey _qrCardKey = GlobalKey();
+class _QrScreenState
+    extends ConsumerState<QrScreen> {
+  final GlobalKey _qrCardKey =
+  GlobalKey();
 
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) async {
       await Future.wait([
         ref
-            .read(qrNotifierProvider.notifier)
+            .read(
+          qrNotifierProvider.notifier,
+        )
             .loadQr(),
-
         ref
-            .read(businessNotifierProvider.notifier)
+            .read(
+          businessNotifierProvider
+              .notifier,
+        )
             .loadMyBusiness(),
       ]);
     });
   }
-  String _publicQrUrl(String qrCode) {
+
+  // ============================================================
+  // PUBLIC QR URL
+  // ============================================================
+
+  String _publicQrUrl(
+      String qrCode,
+      ) {
     return 'https://scanaura.in/q/$qrCode';
   }
 
   // ============================================================
-  // GENERATE SCANAURA QR CARD IMAGE
+  // GENERATE QR CARD IMAGE
   // ============================================================
 
-  Future<Uint8List> _generateQrCardBytes() async {
-    await WidgetsBinding.instance.endOfFrame;
+  Future<Uint8List>
+  _generateQrCardBytes() async {
+    await WidgetsBinding.instance
+        .endOfFrame;
 
     final boundaryContext =
         _qrCardKey.currentContext;
@@ -60,21 +76,25 @@ class _QrScreenState extends ConsumerState<QrScreen> {
     }
 
     final renderObject =
-    boundaryContext.findRenderObject();
+    boundaryContext
+        .findRenderObject();
 
-    if (renderObject is! RenderRepaintBoundary) {
+    if (renderObject
+    is! RenderRepaintBoundary) {
       throw Exception(
         'Unable to capture QR card.',
       );
     }
 
-    final image = await renderObject.toImage(
+    final image =
+    await renderObject.toImage(
       pixelRatio: 3.0,
     );
 
     final byteData =
     await image.toByteData(
-      format: ui.ImageByteFormat.png,
+      format:
+      ui.ImageByteFormat.png,
     );
 
     image.dispose();
@@ -85,7 +105,8 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       );
     }
 
-    return byteData.buffer.asUint8List();
+    return byteData.buffer
+        .asUint8List();
   }
 
   // ============================================================
@@ -98,15 +119,19 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       await _generateQrCardBytes();
 
       final business =
-          ref.read(
+          ref
+              .read(
             businessNotifierProvider,
-          ).business;
+          )
+              .business;
 
       final businessName =
       business?.businessName
           .trim()
           .replaceAll(
-        RegExp(r'[^a-zA-Z0-9]+'),
+        RegExp(
+          r'[^a-zA-Z0-9]+',
+        ),
         '_',
       );
 
@@ -121,13 +146,17 @@ class _QrScreenState extends ConsumerState<QrScreen> {
         fileName,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _showMessage(
         'QR downloaded successfully.',
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _showMessage(
         'QR download failed: ${_cleanError(e)}',
@@ -142,9 +171,12 @@ class _QrScreenState extends ConsumerState<QrScreen> {
   Future<void> _shareQr() async {
     try {
       final state =
-      ref.read(qrNotifierProvider);
+      ref.read(
+        qrNotifierProvider,
+      );
 
-      final qr = state.digitalQr;
+      final qr =
+          state.digitalQr;
 
       if (qr == null) {
         throw Exception(
@@ -156,19 +188,25 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       await _generateQrCardBytes();
 
       final business =
-          ref.read(
+          ref
+              .read(
             businessNotifierProvider,
-          ).business;
+          )
+              .business;
 
       final businessName =
-      business?.businessName.trim();
+      business?.businessName
+          .trim();
 
       final safeBusinessName =
       businessName == null ||
           businessName.isEmpty
           ? 'business'
-          : businessName.replaceAll(
-        RegExp(r'[^a-zA-Z0-9]+'),
+          : businessName
+          .replaceAll(
+        RegExp(
+          r'[^a-zA-Z0-9]+',
+        ),
         '_',
       );
 
@@ -200,13 +238,17 @@ $publicUrl
         '$businessName on ScanAura',
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _showMessage(
         'QR shared successfully.',
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _showMessage(
         'QR sharing failed: ${_cleanError(e)}',
@@ -218,10 +260,15 @@ $publicUrl
   // HELPERS
   // ============================================================
 
-  String _cleanError(Object error) {
-    final message = error.toString();
+  String _cleanError(
+      Object error,
+      ) {
+    final message =
+    error.toString();
 
-    if (message.startsWith('Exception: ')) {
+    if (message.startsWith(
+      'Exception: ',
+    )) {
       return message.substring(
         'Exception: '.length,
       );
@@ -230,14 +277,22 @@ $publicUrl
     return message;
   }
 
-  void _showMessage(String message) {
-    if (!mounted) return;
+  void _showMessage(
+      String message,
+      ) {
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message),
+          behavior:
+          SnackBarBehavior
+              .floating,
+          content:
+          Text(message),
         ),
       );
   }
@@ -247,9 +302,13 @@ $publicUrl
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     final state =
-    ref.watch(qrNotifierProvider);
+    ref.watch(
+      qrNotifierProvider,
+    );
 
     final business =
         ref.watch(
@@ -263,6 +322,10 @@ $publicUrl
       appBar: AppBar(
         title: const Text(
           'QR Management',
+          style: TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
         ),
       ),
       body: _buildBody(
@@ -288,7 +351,8 @@ $publicUrl
       case QrStatus.initial:
       case QrStatus.loading:
         return const Center(
-          child: CircularProgressIndicator(),
+          child:
+          CircularProgressIndicator(),
         );
 
       case QrStatus.error:
@@ -323,7 +387,8 @@ $publicUrl
     final physicalQrs =
     state.qrCodes
         .where(
-          (qr) => qr.type == 'PHYSICAL',
+          (qr) =>
+      qr.type == 'PHYSICAL',
     )
         .toList();
 
@@ -331,62 +396,110 @@ $publicUrl
       onRefresh: () {
         return ref
             .read(
-          qrNotifierProvider.notifier,
+          qrNotifierProvider
+              .notifier,
         )
             .loadQr();
       },
-      child: ListView(
-        padding:
-        const EdgeInsets.all(20),
-        children: [
-          Text(
-            'Your QR Codes',
-            style: theme
-                .textTheme
-                .headlineSmall
-                ?.copyWith(
-              fontWeight:
-              FontWeight.w700,
-            ),
-          ),
-
-          const SizedBox(
-            height: 6,
-          ),
-
-          Text(
-            'Manage the QR codes connected to your business.',
-            style: theme
-                .textTheme
-                .bodyMedium
-                ?.copyWith(
-              color: theme
-                  .colorScheme
-                  .onSurfaceVariant,
-            ),
-          ),
-
-          const SizedBox(
-            height: 24,
-          ),
-
-          _buildDigitalQrCard(
+      child: LayoutBuilder(
+        builder: (
             context,
-            theme,
-            digitalQr,
-            businessName,
-          ),
+            constraints,
+            ) {
+          final width =
+              constraints.maxWidth;
 
-          const SizedBox(
-            height: 20,
-          ),
+          final horizontalPadding =
+          width < 360
+              ? 12.0
+              : width < 600
+              ? 16.0
+              : 24.0;
 
-          _buildPhysicalQrCard(
-            context,
-            theme,
-            physicalQrs,
-          ),
-        ],
+          final maxWidth =
+          width >= 1000
+              ? 1000.0
+              : 720.0;
+
+          return ListView(
+            physics:
+            const AlwaysScrollableScrollPhysics(),
+            padding:
+            EdgeInsets.fromLTRB(
+              horizontalPadding,
+              16,
+              horizontalPadding,
+              32,
+            ),
+            children: [
+              Center(
+                child:
+                ConstrainedBox(
+                  constraints:
+                  BoxConstraints(
+                    maxWidth:
+                    maxWidth,
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
+                    children: [
+                      Text(
+                        'Your QR Codes',
+                        style: theme
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 6,
+                      ),
+
+                      Text(
+                        'Manage the QR codes connected to your business.',
+                        style: theme
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(
+                          color: theme
+                              .colorScheme
+                              .onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      _buildDigitalQrCard(
+                        context,
+                        theme,
+                        digitalQr,
+                        businessName,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildPhysicalQrCard(
+                        context,
+                        theme,
+                        physicalQrs,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -403,14 +516,21 @@ $publicUrl
       ) {
     if (qr == null) {
       return Card(
+        elevation: 0,
         child: Padding(
           padding:
-          const EdgeInsets.all(20),
+          const EdgeInsets.all(
+            20,
+          ),
           child: Column(
             children: [
-              const Icon(
-                Icons.qr_code_2_rounded,
+              Icon(
+                Icons
+                    .qr_code_2_rounded,
                 size: 48,
+                color: theme
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
 
               const SizedBox(
@@ -430,23 +550,25 @@ $publicUrl
     }
 
     return Card(
+      elevation: 0,
       child: Padding(
         padding:
-        const EdgeInsets.all(20),
+        const EdgeInsets.all(
+          16,
+        ),
         child: Column(
+          crossAxisAlignment:
+          CrossAxisAlignment
+              .stretch,
           children: [
-            Align(
-              alignment:
-              Alignment.centerLeft,
-              child: Text(
-                'Digital QR',
-                style: theme
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(
-                  fontWeight:
-                  FontWeight.w700,
-                ),
+            Text(
+              'Digital QR',
+              style: theme
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(
+                fontWeight:
+                FontWeight.w700,
               ),
             ),
 
@@ -454,36 +576,15 @@ $publicUrl
               height: 6,
             ),
 
-            Align(
-              alignment:
-              Alignment.centerLeft,
-              child: Text(
-                'Your primary digital menu QR code.',
-                style: theme
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(
-                  color: theme
-                      .colorScheme
-                      .onSurfaceVariant,
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height: 24,
-            ),
-
-            // ==================================================
-            // SCANAURA QR CARD
-            // ==================================================
-
-            RepaintBoundary(
-              key: _qrCardKey,
-              child: ScanAuraQrCard(
-                qrData: _publicQrUrl(qr.qrCode),
-                businessName: businessName,
-                showBusinessName: true,
+            Text(
+              'Your primary digital menu QR code.',
+              style: theme
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
+                color: theme
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
             ),
 
@@ -491,13 +592,47 @@ $publicUrl
               height: 20,
             ),
 
-            // ==================================================
+            // ========================================================
+            // QR CARD
+            // ========================================================
+
+            Center(
+              child:
+              RepaintBoundary(
+                key: _qrCardKey,
+                child:
+                ConstrainedBox(
+                  constraints:
+                  const BoxConstraints(
+                    maxWidth: 540,
+                  ),
+                  child:
+                  ScanAuraQrCard(
+                    qrData:
+                    _publicQrUrl(
+                      qr.qrCode,
+                    ),
+                    businessName:
+                    businessName,
+                    showBusinessName:
+                    true,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 16,
+            ),
+
+            // ========================================================
             // STATUS
-            // ==================================================
+            // ========================================================
 
             Row(
               mainAxisAlignment:
-              MainAxisAlignment.center,
+              MainAxisAlignment
+                  .center,
               children: [
                 Icon(
                   qr.active
@@ -521,30 +656,44 @@ $publicUrl
                   qr.active
                       ? 'Active'
                       : 'Inactive',
+                  style: TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                    color: qr.active
+                        ? Colors.green
+                        : theme
+                        .colorScheme
+                        .error,
+                  ),
                 ),
               ],
             ),
 
             const SizedBox(
-              height: 20,
+              height: 16,
             ),
 
-            // ==================================================
-            // ACTION BUTTONS
-            // ==================================================
+            // ========================================================
+            // ACTIONS
+            // ========================================================
 
             LayoutBuilder(
-              builder:
-                  (context, constraints) {
+              builder: (
+                  context,
+                  constraints,
+                  ) {
                 if (constraints.maxWidth <
                     500) {
                   return Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
                     children: [
                       SizedBox(
-                        width:
-                        double.infinity,
+                        height: 48,
                         child:
-                        OutlinedButton.icon(
+                        OutlinedButton
+                            .icon(
                           onPressed:
                           _downloadQr,
                           icon:
@@ -564,10 +713,10 @@ $publicUrl
                       ),
 
                       SizedBox(
-                        width:
-                        double.infinity,
+                        height: 48,
                         child:
-                        FilledButton.icon(
+                        FilledButton
+                            .icon(
                           onPressed:
                           _shareQr,
                           icon:
@@ -589,7 +738,8 @@ $publicUrl
                   children: [
                     Expanded(
                       child:
-                      OutlinedButton.icon(
+                      OutlinedButton
+                          .icon(
                         onPressed:
                         _downloadQr,
                         icon:
@@ -610,7 +760,8 @@ $publicUrl
 
                     Expanded(
                       child:
-                      FilledButton.icon(
+                      FilledButton
+                          .icon(
                         onPressed:
                         _shareQr,
                         icon:
@@ -641,15 +792,20 @@ $publicUrl
   Widget _buildPhysicalQrCard(
       BuildContext context,
       ThemeData theme,
-      List<QrResponse> physicalQrs,
+      List<QrResponse>
+      physicalQrs,
       ) {
     return Card(
+      elevation: 0,
       child: Padding(
         padding:
-        const EdgeInsets.all(20),
+        const EdgeInsets.all(
+          16,
+        ),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
             Text(
               'Physical QR',
@@ -679,116 +835,252 @@ $publicUrl
             ),
 
             const SizedBox(
-              height: 20,
+              height: 16,
             ),
 
-            Row(
+            Container(
+              width:
+              double.infinity,
+              padding:
+              const EdgeInsets
+                  .symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              decoration:
+              BoxDecoration(
+                color: theme
+                    .colorScheme
+                    .surfaceContainerHighest,
+                borderRadius:
+                BorderRadius.circular(
+                  12,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Assigned',
+                      style: theme
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(
+                        fontWeight:
+                        FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${physicalQrs.length}',
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(
+              height: 12,
+            ),
+
+            if (physicalQrs.isEmpty)
+              _buildNoPhysicalQr(
+                context,
+                theme,
+              )
+            else
+              ...physicalQrs.map(
+                    (qr) =>
+                    _buildPhysicalQrItem(
+                      context,
+                      theme,
+                      qr,
+                    ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhysicalQrItem(
+      BuildContext context,
+      ThemeData theme,
+      QrResponse qr,
+      ) {
+    return Container(
+      width:
+      double.infinity,
+      margin:
+      const EdgeInsets.only(
+        bottom: 8,
+      ),
+      padding:
+      const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      decoration:
+      BoxDecoration(
+        border: Border.all(
+          color: theme
+              .colorScheme
+              .outlineVariant,
+        ),
+        borderRadius:
+        BorderRadius.circular(
+          12,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+        CrossAxisAlignment
+            .start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment:
+            Alignment.center,
+            decoration:
+            BoxDecoration(
+              color: theme
+                  .colorScheme
+                  .surfaceContainerHighest,
+              borderRadius:
+              BorderRadius.circular(
+                10,
+              ),
+            ),
+            child: Icon(
+              Icons
+                  .qr_code_2_rounded,
+              size: 22,
+              color: theme
+                  .colorScheme
+                  .onSurfaceVariant,
+            ),
+          ),
+
+          const SizedBox(
+            width: 12,
+          ),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
               children: [
                 Text(
-                  'Assigned',
+                  qr.qrCode,
+                  maxLines: 2,
+                  overflow:
+                  TextOverflow.ellipsis,
                   style: theme
                       .textTheme
-                      .bodyLarge,
-                ),
-
-                const Spacer(),
-
-                Text(
-                  '${physicalQrs.length}',
-                  style: theme
-                      .textTheme
-                      .titleMedium
+                      .bodyLarge
                       ?.copyWith(
                     fontWeight:
                     FontWeight.w700,
                   ),
                 ),
+
+                const SizedBox(
+                  height: 4,
+                ),
+
+                Text(
+                  qr.active
+                      ? 'Active'
+                      : 'Inactive',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                    FontWeight.w600,
+                    color: qr.active
+                        ? Colors.green
+                        : theme
+                        .colorScheme
+                        .error,
+                  ),
+                ),
               ],
             ),
+          ),
 
-            const SizedBox(
-              height: 16,
-            ),
+          const SizedBox(
+            width: 8,
+          ),
 
-            if (physicalQrs.isEmpty)
-              Container(
-                width:
-                double.infinity,
-                padding:
-                const EdgeInsets.all(
-                  20,
-                ),
-                decoration:
-                BoxDecoration(
-                  color: theme
-                      .colorScheme
-                      .surfaceContainerHighest,
-                  borderRadius:
-                  BorderRadius.circular(
-                    12,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons
-                          .qr_code_2_rounded,
-                      size: 40,
-                    ),
+          Icon(
+            qr.active
+                ? Icons
+                .check_circle
+                : Icons.cancel,
+            color: qr.active
+                ? Colors.green
+                : theme
+                .colorScheme
+                .error,
+            size: 21,
+          ),
+        ],
+      ),
+    );
+  }
 
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    Text(
-                      'No physical QR assigned yet.',
-                      textAlign:
-                      TextAlign.center,
-                      style: theme
-                          .textTheme
-                          .bodyMedium,
-                    ),
-                  ],
-                ),
-              )
-            else
-              ...physicalQrs.map(
-                    (qr) => Material(
-                  color:
-                  Colors.transparent,
-                  child: ListTile(
-                    contentPadding:
-                    EdgeInsets.zero,
-
-                    leading:
-                    const Icon(
-                      Icons
-                          .qr_code_2_rounded,
-                    ),
-
-                    title: Text(
-                      qr.qrCode,
-                    ),
-
-                    subtitle: Text(
-                      qr.active
-                          ? 'Active'
-                          : 'Inactive',
-                    ),
-
-                    trailing:
-                    Icon(
-                      qr.active
-                          ? Icons
-                          .check_circle
-                          : Icons
-                          .cancel,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+  Widget _buildNoPhysicalQr(
+      BuildContext context,
+      ThemeData theme,
+      ) {
+    return Container(
+      width:
+      double.infinity,
+      padding:
+      const EdgeInsets.all(
+        20,
+      ),
+      decoration:
+      BoxDecoration(
+        color: theme
+            .colorScheme
+            .surfaceContainerHighest,
+        borderRadius:
+        BorderRadius.circular(
+          12,
         ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons
+                .qr_code_2_rounded,
+            size: 40,
+            color: theme
+                .colorScheme
+                .onSurfaceVariant,
+          ),
+
+          const SizedBox(
+            height: 10,
+          ),
+
+          Text(
+            'No physical QR assigned yet.',
+            textAlign:
+            TextAlign.center,
+            style: theme
+                .textTheme
+                .bodyMedium,
+          ),
+        ],
       ),
     );
   }
@@ -802,52 +1094,90 @@ $publicUrl
       QrState state,
       ) {
     return Center(
-      child: Padding(
-        padding:
-        const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize:
-          MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons
-                  .error_outline_rounded,
-              size: 52,
+      child: SafeArea(
+        child:
+        SingleChildScrollView(
+          padding:
+          const EdgeInsets.all(
+            24,
+          ),
+          child: ConstrainedBox(
+            constraints:
+            const BoxConstraints(
+              maxWidth: 420,
             ),
+            child: Column(
+              mainAxisSize:
+              MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons
+                      .error_outline_rounded,
+                  size: 52,
+                  color: Theme.of(
+                    context,
+                  )
+                      .colorScheme
+                      .error,
+                ),
 
-            const SizedBox(
-              height: 16,
-            ),
+                const SizedBox(
+                  height: 16,
+                ),
 
-            Text(
-              state.errorMessage ??
-                  'Unable to load QR codes.',
-              textAlign:
-              TextAlign.center,
-            ),
+                const Text(
+                  'Unable to load QR codes',
+                  textAlign:
+                  TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight:
+                    FontWeight.w700,
+                  ),
+                ),
 
-            const SizedBox(
-              height: 20,
-            ),
+                const SizedBox(
+                  height: 8,
+                ),
 
-            FilledButton.icon(
-              onPressed: () {
-                ref
-                    .read(
-                  qrNotifierProvider
-                      .notifier,
-                )
-                    .loadQr();
-              },
-              icon: const Icon(
-                Icons
-                    .refresh_rounded,
-              ),
-              label: const Text(
-                'Retry',
-              ),
+                Text(
+                  state.errorMessage ??
+                      'Unable to load QR codes.',
+                  textAlign:
+                  TextAlign.center,
+                ),
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+                SizedBox(
+                  width:
+                  double.infinity,
+                  child:
+                  FilledButton.icon(
+                    onPressed: () {
+                      ref
+                          .read(
+                        qrNotifierProvider
+                            .notifier,
+                      )
+                          .loadQr();
+                    },
+                    icon:
+                    const Icon(
+                      Icons
+                          .refresh_rounded,
+                    ),
+                    label:
+                    const Text(
+                      'Retry',
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -104,4 +104,52 @@ class AuthRepository {
       'Something went wrong. Please try again.',
     );
   }
+
+  Future<void> resendVerificationEmail(
+      String email,
+      ) async {
+    try {
+      await _apiClient.post<Map<String, dynamic>>(
+        '/api/v1/auth/resend-verification',
+        data: {
+          'email': email.trim(),
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> forgotPassword(
+      String email,
+      ) async {
+    try {
+      await _apiClient.post<Map<String, dynamic>>(
+        '/api/v1/auth/forgot-password',
+        data: {
+          'email': email.trim(),
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _apiClient.post<Map<String, dynamic>>(
+        '/api/v1/auth/reset-password',
+        data: {
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
 }

@@ -36,9 +36,9 @@ class _AppShellState
       route: '/business',
     ),
     _NavigationItem(
-      label: 'Menu',
-      icon: Icons.restaurant_menu_outlined,
-      selectedIcon: Icons.restaurant_menu_rounded,
+      label: 'Catalog',
+      icon: Icons.inventory_2_outlined,
+      selectedIcon: Icons.inventory_2_rounded,
       route: '/menu',
     ),
     _NavigationItem(
@@ -124,18 +124,49 @@ class _AppShellState
           context,
           constraints,
           ) {
-        final isDesktop =
-            constraints.maxWidth >= 900;
+        final width =
+            constraints.maxWidth;
 
-        // =====================================================
-        // DESKTOP
-        // =====================================================
+        // ============================================================
+        // MOBILE
+        // < 600
+        // ============================================================
 
-        if (isDesktop) {
+        if (width < 600) {
+          return Scaffold(
+            appBar: _MobileHeader(
+              logoUrl: business?.logoUrl,
+              onLogout: _logout,
+            ),
+            body: SafeArea(
+              top: false,
+              child: widget.child,
+            ),
+            bottomNavigationBar:
+            _MobileNavigation(
+              items: _items,
+              selectedIndex:
+              selectedIndex,
+              onSelected: (index) {
+                _navigate(
+                  context,
+                  index,
+                );
+              },
+            ),
+          );
+        }
+
+        // ============================================================
+        // TABLET
+        // 600 - 999
+        // ============================================================
+
+        if (width < 1000) {
           return Scaffold(
             body: Row(
               children: [
-                _DesktopNavigation(
+                _TabletNavigation(
                   items: _items,
                   selectedIndex:
                   selectedIndex,
@@ -147,7 +178,6 @@ class _AppShellState
                       index,
                     );
                   },
-                  onLogout: _logout,
                 ),
 
                 Expanded(
@@ -158,7 +188,6 @@ class _AppShellState
                         business?.logoUrl,
                         onLogout: _logout,
                       ),
-
                       Expanded(
                         child: widget.child,
                       ),
@@ -170,28 +199,44 @@ class _AppShellState
           );
         }
 
-        // =====================================================
-        // MOBILE / TABLET
-        // =====================================================
+        // ============================================================
+        // DESKTOP
+        // >= 1000
+        // ============================================================
 
         return Scaffold(
-          appBar: _MobileHeader(
-            logoUrl:
-            business?.logoUrl,
-            onLogout: _logout,
-          ),
-          body: widget.child,
-          bottomNavigationBar:
-          _MobileNavigation(
-            items: _items,
-            selectedIndex:
-            selectedIndex,
-            onSelected: (index) {
-              _navigate(
-                context,
-                index,
-              );
-            },
+          body: Row(
+            children: [
+              _DesktopNavigation(
+                items: _items,
+                selectedIndex:
+                selectedIndex,
+                logoUrl:
+                business?.logoUrl,
+                onSelected: (index) {
+                  _navigate(
+                    context,
+                    index,
+                  );
+                },
+                onLogout: _logout,
+              ),
+
+              Expanded(
+                child: Column(
+                  children: [
+                    _DesktopHeader(
+                      logoUrl:
+                      business?.logoUrl,
+                      onLogout: _logout,
+                    ),
+                    Expanded(
+                      child: widget.child,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -234,9 +279,9 @@ class _DesktopNavigation
       child: SafeArea(
         child: Column(
           children: [
-            // ==================================================
+            // ========================================================
             // SCANAURA BRAND
-            // ==================================================
+            // ========================================================
 
             Padding(
               padding:
@@ -254,11 +299,9 @@ class _DesktopNavigation
                     height: 36,
                     fit: BoxFit.contain,
                   ),
-
                   const SizedBox(
                     width: 12,
                   ),
-
                   const Text(
                     'ScanAura',
                     style: TextStyle(
@@ -273,9 +316,9 @@ class _DesktopNavigation
               ),
             ),
 
-            // ==================================================
+            // ========================================================
             // NAVIGATION
-            // ==================================================
+            // ========================================================
 
             Expanded(
               child: ListView.builder(
@@ -317,7 +360,8 @@ class _DesktopNavigation
                             ? item.selectedIcon
                             : item.icon,
                         color: selected
-                            ? AppColors.primary
+                            ? AppColors
+                            .primary
                             : AppColors
                             .textSecondary,
                       ),
@@ -328,7 +372,8 @@ class _DesktopNavigation
                               ? FontWeight.w600
                               : FontWeight.w400,
                           color: selected
-                              ? AppColors.primary
+                              ? AppColors
+                              .primary
                               : AppColors
                               .textSecondary,
                         ),
@@ -339,9 +384,9 @@ class _DesktopNavigation
               ),
             ),
 
-            // ==================================================
+            // ========================================================
             // BUSINESS FOOTER
-            // ==================================================
+            // ========================================================
 
             Padding(
               padding:
@@ -366,14 +411,15 @@ class _DesktopNavigation
                           logoUrl: logoUrl,
                           size: 42,
                         ),
-
                         const SizedBox(
                           width: 10,
                         ),
-
                         const Expanded(
                           child: Text(
                             'Business',
+                            maxLines: 1,
+                            overflow:
+                            TextOverflow.ellipsis,
                             style: TextStyle(
                               fontWeight:
                               FontWeight.w700,
@@ -405,12 +451,14 @@ class _DesktopNavigation
                     ),
 
                     SizedBox(
-                      width: double.infinity,
+                      width:
+                      double.infinity,
                       child:
                       OutlinedButton.icon(
                         onPressed: onLogout,
                         icon: const Icon(
-                          Icons.logout_rounded,
+                          Icons
+                              .logout_rounded,
                           size: 18,
                         ),
                         label: const Text(
@@ -420,6 +468,153 @@ class _DesktopNavigation
                     ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TABLET NAVIGATION
+// ============================================================
+
+class _TabletNavigation
+    extends StatelessWidget {
+  const _TabletNavigation({
+    required this.items,
+    required this.selectedIndex,
+    required this.logoUrl,
+    required this.onSelected,
+  });
+
+  final List<_NavigationItem> items;
+  final int selectedIndex;
+  final String? logoUrl;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 76,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          right: BorderSide(
+            color: AppColors.border,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ========================================================
+            // LOGO
+            // ========================================================
+
+            Padding(
+              padding:
+              const EdgeInsets.symmetric(
+                vertical: 20,
+              ),
+              child: Image.asset(
+                'assets/images/scanaura_logo.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.contain,
+              ),
+            ),
+
+            // ========================================================
+            // ICON NAVIGATION
+            // ========================================================
+
+            Expanded(
+              child: ListView.builder(
+                padding:
+                const EdgeInsets.symmetric(
+                  horizontal: 8,
+                ),
+                itemCount: items.length,
+                itemBuilder:
+                    (context, index) {
+                  final item =
+                  items[index];
+
+                  final selected =
+                      index ==
+                          selectedIndex;
+
+                  return Padding(
+                    padding:
+                    const EdgeInsets.only(
+                      bottom: 8,
+                    ),
+                    child: Tooltip(
+                      message:
+                      item.label,
+                      child: Material(
+                        color: Colors
+                            .transparent,
+                        child: InkWell(
+                          borderRadius:
+                          BorderRadius
+                              .circular(
+                            12,
+                          ),
+                          onTap: () =>
+                              onSelected(
+                                index,
+                              ),
+                          child: Container(
+                            height: 52,
+                            decoration:
+                            BoxDecoration(
+                              color: selected
+                                  ? AppColors
+                                  .primaryLight
+                                  : Colors
+                                  .transparent,
+                              borderRadius:
+                              BorderRadius
+                                  .circular(
+                                12,
+                              ),
+                            ),
+                            child: Icon(
+                              selected
+                                  ? item
+                                  .selectedIcon
+                                  : item.icon,
+                              color: selected
+                                  ? AppColors
+                                  .primary
+                                  : AppColors
+                                  .textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // ========================================================
+            // BUSINESS AVATAR
+            // ========================================================
+
+            Padding(
+              padding:
+              const EdgeInsets.only(
+                bottom: 16,
+              ),
+              child: _BusinessAvatar(
+                logoUrl: logoUrl,
+                size: 42,
               ),
             ),
           ],
@@ -503,19 +698,20 @@ class _MobileHeader
 
   @override
   Size get preferredSize =>
-      const Size.fromHeight(64);
+      const Size.fromHeight(60);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      titleSpacing: 20,
+      automaticallyImplyLeading: false,
+      titleSpacing: 16,
 
       title: Row(
         children: [
           Image.asset(
             'assets/images/scanaura_logo.png',
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             fit: BoxFit.contain,
           ),
 
@@ -523,11 +719,16 @@ class _MobileHeader
             width: 10,
           ),
 
-          const Text(
-            'ScanAura',
-            style: TextStyle(
-              fontWeight:
-              FontWeight.w700,
+          const Flexible(
+            child: Text(
+              'ScanAura',
+              maxLines: 1,
+              overflow:
+              TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight:
+                FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -540,7 +741,7 @@ class _MobileHeader
         ),
 
         const SizedBox(
-          width: 4,
+          width: 2,
         ),
 
         IconButton(
@@ -552,7 +753,7 @@ class _MobileHeader
         ),
 
         const SizedBox(
-          width: 8,
+          width: 4,
         ),
       ],
     );
@@ -584,6 +785,9 @@ class _MobileNavigation
           : selectedIndex,
       onDestinationSelected:
       onSelected,
+      labelBehavior:
+      NavigationDestinationLabelBehavior
+          .alwaysShow,
       destinations: items
           .map(
             (item) =>
@@ -641,10 +845,18 @@ class _BusinessAvatar
                 error,
                 stackTrace,
                 ) {
-              return Icon(
-                Icons.storefront_rounded,
-                size: size * 0.55,
-                color: AppColors.primary,
+              return Container(
+                width: size,
+                height: size,
+                alignment:
+                Alignment.center,
+                child: Icon(
+                  Icons
+                      .storefront_rounded,
+                  size: size * 0.55,
+                  color:
+                  AppColors.primary,
+                ),
               );
             },
           ),
@@ -655,10 +867,12 @@ class _BusinessAvatar
     return SizedBox(
       width: size,
       height: size,
-      child: Icon(
-        Icons.storefront_rounded,
-        size: size * 0.55,
-        color: AppColors.primary,
+      child: Center(
+        child: Icon(
+          Icons.storefront_rounded,
+          size: size * 0.55,
+          color: AppColors.primary,
+        ),
       ),
     );
   }

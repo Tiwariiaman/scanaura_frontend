@@ -10,10 +10,15 @@ import '../../features/admin/presentation/screens/admin_qr_inventory_screen.dart
 import '../../features/admin/presentation/screens/admin_qr_scanner_screen.dart';
 import '../../features/admin/presentation/screens/admin_subscriptions_screen.dart';
 import '../../features/ai/presentation/ai_import_screen.dart';
+import '../../features/auth/presentation/screens/email_verification_page.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/business/presentation/business_onboarding_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/landing/presentation/landing_gate.dart';
 import '../../features/menu/presentation/add_menu_item_screen.dart';
 import '../../features/menu/presentation/category_management_screen.dart';
 import '../../features/menu/presentation/menu_edit_loader_screen.dart';
@@ -38,13 +43,15 @@ class AppRouter {
   AppRouter._();
 
   static GoRouter createRouter(
-      ProviderContainer container,
-      ) {
+      ProviderContainer container, {
+        required String initialLocation,
+      }) {
     final authRefresh =
     AuthRouterRefresh(container);
 
     return GoRouter(
-      initialLocation: '/login',
+      initialLocation: initialLocation,
+
 
       refreshListenable: authRefresh,
 
@@ -65,10 +72,29 @@ class AppRouter {
 
         final isAuthRoute =
             path == '/login' ||
-                path == '/register';
+                path == '/register' ||
+                path == '/verify-email' ||
+                path == '/forgot-password' ||
+                path == '/reset-password';
+
+        final isLandingRoute =
+            path == '/landing';
+
+
 
         // Public customer pages never require login.
         if (isPublicRoute) {
+          return null;
+        }
+
+        // Landing / onboarding route.
+        if (isLandingRoute) {
+          if (isAuthenticated) {
+            return authState.isAdmin
+                ? '/admin'
+                : '/dashboard';
+          }
+
           return null;
         }
 
@@ -119,6 +145,88 @@ class AppRouter {
           path: '/register',
           builder: (context, state) {
             return const RegisterScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/verify-email',
+          builder: (
+              context,
+              state,
+              ) {
+            final token =
+            state.uri.queryParameters['token'];
+
+            final email =
+            state.uri.queryParameters['email'];
+
+            if (token != null &&
+                token.trim().isNotEmpty) {
+              return EmailVerificationPage(
+                token: token,
+              );
+            }
+
+            if (email != null &&
+                email.trim().isNotEmpty) {
+              return VerifyEmailScreen(
+                email: email,
+              );
+            }
+
+            return const Scaffold(
+              body: Center(
+                child: Text(
+                  'Verification information is missing.',
+                ),
+              ),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/forgot-password',
+          builder: (
+              context,
+              state,
+              ) {
+            return const ForgotPasswordScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/reset-password',
+          builder: (
+              context,
+              state,
+              ) {
+            final token =
+            state.uri.queryParameters['token'];
+
+            if (token == null ||
+                token.trim().isEmpty) {
+              return const Scaffold(
+                body: Center(
+                  child: Text(
+                    'Password reset token is missing.',
+                  ),
+                ),
+              );
+            }
+
+            return ResetPasswordScreen(
+              token: token,
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/landing',
+          builder: (
+              context,
+              state,
+              ) {
+            return LandingGate();
           },
         ),
         GoRoute(
@@ -355,7 +463,6 @@ class AppRouter {
                 return const CategoryManagementScreen();
               },
             ),
-
 
           ],
         ),

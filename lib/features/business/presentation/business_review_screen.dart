@@ -49,8 +49,13 @@ class BusinessReviewScreen
 }
 
 class _BusinessReviewScreenState
-    extends ConsumerState<BusinessReviewScreen> {
+    extends ConsumerState<
+        BusinessReviewScreen> {
   bool _isSaving = false;
+
+  // ============================================================
+  // SAVE BUSINESS
+  // ============================================================
 
   Future<void> _saveBusiness() async {
     if (_isSaving) {
@@ -61,49 +66,59 @@ class _BusinessReviewScreenState
       _isSaving = true;
     });
 
-    final request = BusinessRequest(
+    final request =
+    BusinessRequest(
       businessName:
       widget.businessName,
       businessType:
       widget.businessType,
-      phone:
-      widget.phone,
+      phone: widget.phone,
+
       whatsapp:
       widget.whatsapp.isEmpty
           ? null
           : widget.whatsapp,
+
       email:
       widget.email.isEmpty
           ? null
           : widget.email,
+
       address:
       widget.address.isEmpty
           ? null
           : widget.address,
+
       city:
       widget.city.isEmpty
           ? null
           : widget.city,
+
       state:
       widget.state.isEmpty
           ? null
           : widget.state,
+
       country:
       widget.country.isEmpty
           ? null
           : widget.country,
+
       pincode:
       widget.pincode.isEmpty
           ? null
           : widget.pincode,
+
       website:
       widget.website.isEmpty
           ? null
           : widget.website,
+
       description:
       widget.description.isEmpty
           ? null
           : widget.description,
+
       upiId:
       widget.upiId.isEmpty
           ? null
@@ -112,7 +127,8 @@ class _BusinessReviewScreenState
 
     final notifier =
     ref.read(
-      businessNotifierProvider.notifier,
+      businessNotifierProvider
+          .notifier,
     );
 
     if (widget.isEditMode) {
@@ -142,12 +158,8 @@ class _BusinessReviewScreenState
       });
 
       if (widget.isEditMode) {
-        // Editing:
-        // return to the Business page.
         context.go('/business');
       } else {
-        // Creating:
-        // continue to Dashboard.
         context.go('/dashboard');
       }
 
@@ -161,6 +173,8 @@ class _BusinessReviewScreenState
     ScaffoldMessenger.of(context)
         .showSnackBar(
       SnackBar(
+        behavior:
+        SnackBarBehavior.floating,
         content: Text(
           state.errorMessage ??
               (widget.isEditMode
@@ -171,8 +185,14 @@ class _BusinessReviewScreenState
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     final theme =
     Theme.of(context);
 
@@ -193,321 +213,430 @@ class _BusinessReviewScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(
+          title,
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
+        ),
       ),
+
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 700,
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width =
+                constraints.maxWidth;
+
+            final horizontalPadding =
+            width < 360
+                ? 16.0
+                : width < 600
+                ? 20.0
+                : 24.0;
+
+            final topPadding =
+            width < 600
+                ? 16.0
+                : 24.0;
+
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior
+                  .onDrag,
+              padding:
+              EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding,
+                horizontalPadding,
+                32,
               ),
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.isEditMode
-                        ? 'Review Your Changes'
-                        : 'Almost there!',
-                    style: theme
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(
-                      fontWeight:
-                      FontWeight.bold,
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints:
+                  const BoxConstraints(
+                    maxWidth: 700,
                   ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  Text(
-                    description,
-                    style: theme
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 28,
-                  ),
-
-                  _section(
-                    context,
-                    title: 'Business',
-                    icon: Icons
-                        .storefront_outlined,
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
                     children: [
-                      _infoRow(
-                        context,
-                        'Business name',
-                        widget.businessName,
+                      // ==================================================
+                      // INTRO
+                      // ==================================================
+
+                      Text(
+                        widget.isEditMode
+                            ? 'Review Your Changes'
+                            : 'Almost there!',
+                        textAlign:
+                        width < 600
+                            ? TextAlign.center
+                            : TextAlign.start,
+                        style: theme
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.bold,
+                        ),
                       ),
-                      _infoRow(
-                        context,
-                        'Business type',
-                        widget.businessType
-                            .displayName,
+
+                      const SizedBox(
+                        height: 8,
                       ),
-                    ],
-                  ),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  _section(
-                    context,
-                    title: 'Contact',
-                    icon: Icons
-                        .contact_phone_outlined,
-                    children: [
-                      _infoRow(
-                        context,
-                        'Phone',
-                        widget.phone,
-                      ),
-                      if (widget.whatsapp
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'WhatsApp',
-                          widget.whatsapp,
-                        ),
-                      if (widget.email
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Email',
-                          widget.email,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  _section(
-                    context,
-                    title: 'Location',
-                    icon: Icons
-                        .location_on_outlined,
-                    children: [
-                      if (widget.address
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Address',
-                          widget.address,
-                        ),
-                      if (widget.city
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'City',
-                          widget.city,
-                        ),
-                      if (widget.state
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'State',
-                          widget.state,
-                        ),
-                      if (widget.country
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Country',
-                          widget.country,
-                        ),
-                      if (widget.pincode
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Pincode',
-                          widget.pincode,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  _section(
-                    context,
-                    title:
-                    'Additional Information',
-                    icon: Icons
-                        .info_outline_rounded,
-                    children: [
-                      if (widget.website
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Website',
-                          widget.website,
-                        ),
-                      if (widget.description
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'Description',
-                          widget.description,
-                        ),
-                      if (widget.upiId
-                          .isNotEmpty)
-                        _infoRow(
-                          context,
-                          'UPI ID',
-                          widget.upiId,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 28,
-                  ),
-
-                  Container(
-                    width:
-                    double.infinity,
-                    padding:
-                    const EdgeInsets.all(
-                      16,
-                    ),
-                    decoration:
-                    BoxDecoration(
-                      color: theme
-                          .colorScheme
-                          .primaryContainer,
-                      borderRadius:
-                      BorderRadius.circular(
-                        16,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                      children: [
-                        Icon(
-                          Icons
-                              .check_circle_outline_rounded,
+                      Text(
+                        description,
+                        textAlign:
+                        width < 600
+                            ? TextAlign.center
+                            : TextAlign.start,
+                        style: theme
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(
                           color: theme
                               .colorScheme
-                              .onPrimaryContainer,
+                              .onSurfaceVariant,
+                          height: 1.45,
                         ),
-                        const SizedBox(
-                          width: 12,
+                      ),
+
+                      const SizedBox(
+                        height: 26,
+                      ),
+
+                      // ==================================================
+                      // BUSINESS
+                      // ==================================================
+
+                      _section(
+                        context,
+                        title: 'Business',
+                        icon: Icons
+                            .storefront_outlined,
+                        children: [
+                          _infoRow(
+                            context,
+                            'Business name',
+                            widget.businessName,
+                          ),
+                          _infoRow(
+                            context,
+                            'Business type',
+                            widget.businessType
+                                .displayName,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // ==================================================
+                      // CONTACT
+                      // ==================================================
+
+                      _section(
+                        context,
+                        title: 'Contact',
+                        icon: Icons
+                            .contact_phone_outlined,
+                        children: [
+                          _infoRow(
+                            context,
+                            'Phone',
+                            widget.phone,
+                          ),
+
+                          if (widget
+                              .whatsapp
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'WhatsApp',
+                              widget.whatsapp,
+                            ),
+
+                          if (widget
+                              .email
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Email',
+                              widget.email,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // ==================================================
+                      // LOCATION
+                      // ==================================================
+
+                      _section(
+                        context,
+                        title: 'Location',
+                        icon: Icons
+                            .location_on_outlined,
+                        children: [
+                          if (widget
+                              .address
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Address',
+                              widget.address,
+                            ),
+
+                          if (widget
+                              .city
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'City',
+                              widget.city,
+                            ),
+
+                          if (widget
+                              .state
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'State',
+                              widget.state,
+                            ),
+
+                          if (widget
+                              .country
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Country',
+                              widget.country,
+                            ),
+
+                          if (widget
+                              .pincode
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Pincode',
+                              widget.pincode,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      // ==================================================
+                      // ADDITIONAL INFORMATION
+                      // ==================================================
+
+                      _section(
+                        context,
+                        title:
+                        'Additional Information',
+                        icon: Icons
+                            .info_outline_rounded,
+                        children: [
+                          if (widget
+                              .website
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Website',
+                              widget.website,
+                            ),
+
+                          if (widget
+                              .description
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Description',
+                              widget.description,
+                              allowMultiline:
+                              true,
+                            ),
+
+                          if (widget
+                              .upiId
+                              .isNotEmpty)
+                            _infoRow(
+                              context,
+                              'UPI ID',
+                              widget.upiId,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 24,
+                      ),
+
+                      // ==================================================
+                      // CONFIRMATION MESSAGE
+                      // ==================================================
+
+                      Container(
+                        width:
+                        double.infinity,
+                        padding:
+                        const EdgeInsets.all(
+                          16,
                         ),
-                        Expanded(
-                          child: Text(
-                            widget.isEditMode
-                                ? 'Your existing business information will be updated with the changes shown above.'
-                                : 'Your business will be created using the information shown above.',
-                            style: theme
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
+                        decoration:
+                        BoxDecoration(
+                          color: theme
+                              .colorScheme
+                              .primaryContainer,
+                          borderRadius:
+                          BorderRadius.circular(
+                            16,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+                          children: [
+                            Icon(
+                              Icons
+                                  .check_circle_outline_rounded,
                               color: theme
                                   .colorScheme
                                   .onPrimaryContainer,
                             ),
+
+                            const SizedBox(
+                              width: 12,
+                            ),
+
+                            Expanded(
+                              child: Text(
+                                widget.isEditMode
+                                    ? 'Your existing business information will be updated with the changes shown above.'
+                                    : 'Your business will be created using the information shown above.',
+                                style: theme
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                  color: theme
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 24,
+                      ),
+
+                      // ==================================================
+                      // SAVE
+                      // ==================================================
+
+                      SizedBox(
+                        width:
+                        double.infinity,
+                        height: 54,
+                        child:
+                        FilledButton.icon(
+                          onPressed:
+                          _isSaving
+                              ? null
+                              : _saveBusiness,
+                          icon: _isSaving
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child:
+                            CircularProgressIndicator(
+                              strokeWidth:
+                              2.5,
+                            ),
+                          )
+                              : Icon(
+                            widget
+                                .isEditMode
+                                ? Icons
+                                .save_outlined
+                                : Icons
+                                .check_rounded,
+                          ),
+                          label: Text(
+                            _isSaving
+                                ? widget.isEditMode
+                                ? 'Saving Changes...'
+                                : 'Creating Business...'
+                                : buttonText,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  const SizedBox(
-                    height: 28,
-                  ),
+                      const SizedBox(
+                        height: 12,
+                      ),
 
-                  SizedBox(
-                    width:
-                    double.infinity,
-                    height: 54,
-                    child:
-                    FilledButton.icon(
-                      onPressed:
-                      _isSaving
-                          ? null
-                          : _saveBusiness,
-                      icon: _isSaving
-                          ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                      // ==================================================
+                      // BACK
+                      // ==================================================
+
+                      SizedBox(
+                        width:
+                        double.infinity,
+                        height: 48,
                         child:
-                        CircularProgressIndicator(
-                          strokeWidth:
-                          2.5,
+                        OutlinedButton(
+                          onPressed:
+                          _isSaving
+                              ? null
+                              : () {
+                            Navigator.of(
+                              context,
+                            ).pop();
+                          },
+                          child:
+                          const Text(
+                            'Back',
+                          ),
                         ),
-                      )
-                          : Icon(
-                        widget.isEditMode
-                            ? Icons
-                            .save_outlined
-                            : Icons
-                            .check_rounded,
                       ),
-                      label: Text(
-                        _isSaving
-                            ? widget.isEditMode
-                            ? 'Saving Changes...'
-                            : 'Creating Business...'
-                            : buttonText,
+
+                      const SizedBox(
+                        height: 24,
                       ),
-                    ),
+                    ],
                   ),
-
-                  const SizedBox(
-                    height: 12,
-                  ),
-
-                  SizedBox(
-                    width:
-                    double.infinity,
-                    height: 48,
-                    child:
-                    OutlinedButton(
-                      onPressed:
-                      _isSaving
-                          ? null
-                          : () {
-                        Navigator.of(
-                          context,
-                        ).pop();
-                      },
-                      child: const Text(
-                        'Back',
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // SECTION
+  // ============================================================
 
   Widget _section(
       BuildContext context, {
@@ -522,32 +651,44 @@ class _BusinessReviewScreenState
       elevation: 0,
       child: Padding(
         padding:
-        const EdgeInsets.all(20),
+        const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon),
+                Icon(
+                  icon,
+                  size: 21,
+                ),
+
                 const SizedBox(
                   width: 10,
                 ),
-                Text(
-                  title,
-                  style: theme
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(
-                    fontWeight:
-                    FontWeight.w700,
+
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(
-              height: 16,
+              height: 14,
             ),
+
             ...children,
           ],
         ),
@@ -555,53 +696,181 @@ class _BusinessReviewScreenState
     );
   }
 
+  // ============================================================
+  // RESPONSIVE INFO ROW
+  // ============================================================
+
   Widget _infoRow(
       BuildContext context,
       String label,
-      String value,
-      ) {
+      String value, {
+        bool allowMultiline = false,
+      }) {
     final theme =
     Theme.of(context);
 
-    return Padding(
-      padding:
-      const EdgeInsets.only(
-        bottom: 12,
-      ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: theme
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                color: theme
-                    .colorScheme
-                    .onSurfaceVariant,
-              ),
+    return LayoutBuilder(
+      builder:
+          (context, constraints) {
+        final compact =
+            constraints.maxWidth <
+                460;
+
+        if (compact) {
+          return Padding(
+            padding:
+            const EdgeInsets.only(
+              bottom: 14,
             ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty
-                  ? '—'
-                  : value,
-              style: theme
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                fontWeight:
-                FontWeight.w600,
-              ),
+            child: Row(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment:
+                  Alignment.center,
+                  decoration:
+                  BoxDecoration(
+                    color: theme
+                        .colorScheme
+                        .surfaceContainerHighest,
+                    borderRadius:
+                    BorderRadius.circular(
+                      9,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons
+                        .arrow_right_rounded,
+                    size: 18,
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 10,
+                ),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                    children: [
+                      Text(
+                        label,
+                        style: theme
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                          color: theme
+                              .colorScheme
+                              .onSurfaceVariant,
+                          fontWeight:
+                          FontWeight.w600,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 3,
+                      ),
+
+                      Text(
+                        value.isEmpty
+                            ? '—'
+                            : value,
+                        softWrap: true,
+                        maxLines:
+                        allowMultiline
+                            ? null
+                            : 3,
+                        overflow:
+                        allowMultiline
+                            ? TextOverflow
+                            .visible
+                            : TextOverflow
+                            .ellipsis,
+                        style: theme
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w600,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          );
+        }
+
+        return Padding(
+          padding:
+          const EdgeInsets.only(
+            bottom: 12,
           ),
-        ],
-      ),
+          child: Row(
+            crossAxisAlignment:
+            CrossAxisAlignment
+                .start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: Text(
+                  label,
+                  style: theme
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                width: 12,
+              ),
+
+              Expanded(
+                child: Text(
+                  value.isEmpty
+                      ? '—'
+                      : value,
+                  softWrap: true,
+                  maxLines:
+                  allowMultiline
+                      ? null
+                      : 4,
+                  overflow:
+                  allowMultiline
+                      ? TextOverflow
+                      .visible
+                      : TextOverflow
+                      .ellipsis,
+                  style: theme
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
+                    fontWeight:
+                    FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

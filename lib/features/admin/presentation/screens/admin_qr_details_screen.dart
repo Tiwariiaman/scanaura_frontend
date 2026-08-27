@@ -17,11 +17,11 @@ class AdminQrDetailsScreen
       BuildContext context,
       WidgetRef ref,
       ) {
-    final state =
-    ref.watch(adminNotifierProvider);
+    final state = ref.watch(
+      adminNotifierProvider,
+    );
 
-    final details =
-        state.qrDetails;
+    final details = state.qrDetails;
 
     if (details == null ||
         details.qrCode != qrCode) {
@@ -32,266 +32,347 @@ class AdminQrDetailsScreen
           ),
         ),
         body: const Center(
-          child:
-          CircularProgressIndicator(),
+          child: CircularProgressIndicator(),
         ),
       );
     }
 
     final isPhysical =
-        details.type.toUpperCase() ==
-            'PHYSICAL';
+        details.type.toUpperCase() == 'PHYSICAL';
 
-    final isAssigned =
-        details.assigned;
-
-    final isActive =
-        details.active;
+    final isAssigned = details.assigned;
+    final isActive = details.active;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'QR Details',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
-
       body: RefreshIndicator(
         onRefresh: () async {
           await ref
               .read(
-            adminNotifierProvider
-                .notifier,
+            adminNotifierProvider.notifier,
           )
-              .loadQrDetails(
-            qrCode,
-          );
+              .loadQrDetails(qrCode);
         },
-        child: SingleChildScrollView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.all(20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 650,
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width = constraints.maxWidth;
+
+            final horizontalPadding =
+            width < 360
+                ? 12.0
+                : width < 600
+                ? 16.0
+                : 20.0;
+
+            final maxWidth =
+            width >= 1000
+                ? 720.0
+                : 650.0;
+
+            return SingleChildScrollView(
+              physics:
+              const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                32,
               ),
-              child: Card(
-                child: Padding(
-                  padding:
-                  const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                    children: [
-                      // =================================================
-                      // HEADER
-                      // =================================================
-
-                      Row(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: maxWidth,
+                  ),
+                  child: Card(
+                    elevation: 0,
+                    child: Padding(
+                      padding: EdgeInsets.all(
+                        width < 400 ? 16 : 24,
+                      ),
+                      child: Column(
                         crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                        CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 54,
-                            height: 54,
-                            decoration:
-                            BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              )
-                                  .colorScheme
-                                  .primaryContainer,
-                              borderRadius:
-                              BorderRadius
-                                  .circular(
-                                14,
-                              ),
+                          _buildHeader(
+                            context,
+                            details,
+                            isPhysical,
+                            isActive,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildQrInformation(
+                            context,
+                            details,
+                            isAssigned,
+                            isActive,
+                          ),
+                          const SizedBox(height: 8),
+                          const Divider(),
+                          const SizedBox(height: 20),
+
+                          if (isPhysical &&
+                              !isAssigned &&
+                              isActive)
+                            _buildAvailablePhysicalActions(
+                              context,
+                              ref,
+                              details.qrCode,
                             ),
-                            child: Icon(
-                              isPhysical
-                                  ? Icons
-                                  .qr_code_2_rounded
-                                  : Icons
-                                  .qr_code_rounded,
-                              color: Theme.of(
-                                context,
-                              )
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                              size: 28,
+
+                          if (isPhysical &&
+                              isAssigned)
+                            _buildAssignedPhysicalActions(
+                              context,
+                              ref,
+                              details.businessName,
+                              details.qrCode,
+                              isActive,
                             ),
-                          ),
 
-                          const SizedBox(
-                            width: 14,
-                          ),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
-                              children: [
-                                Text(
-                                  isPhysical
-                                      ? 'Physical QR'
-                                      : 'Digital QR',
-                                  style: Theme.of(
-                                    context,
-                                  )
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                    fontWeight:
-                                    FontWeight
-                                        .w800,
-                                  ),
-                                ),
-
-                                const SizedBox(
-                                  height: 6,
-                                ),
-
-                                Text(
-                                  details.qrCode,
-                                  style: Theme.of(
-                                    context,
-                                  )
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                    fontWeight:
-                                    FontWeight
-                                        .w700,
-                                    letterSpacing:
-                                    1,
-                                  ),
-                                ),
-                              ],
+                          if (isPhysical &&
+                              !isActive)
+                            _buildInactivePhysicalMessage(
+                              context,
                             ),
-                          ),
 
-                          _StatusBadge(
-                            active: isActive,
-                          ),
+                          if (!isPhysical)
+                            _buildDigitalQrMessage(
+                              context,
+                              details.businessName,
+                            ),
                         ],
                       ),
-
-                      const SizedBox(
-                        height: 28,
-                      ),
-
-                      // =================================================
-                      // QR INFORMATION
-                      // =================================================
-
-                      _InfoRow(
-                        label: 'Type',
-                        value:
-                        details.type,
-                      ),
-
-                      _InfoRow(
-                        label: 'Status',
-                        value: isActive
-                            ? 'Active'
-                            : 'Inactive',
-                      ),
-
-                      _InfoRow(
-                        label: 'Assignment',
-                        value: isAssigned
-                            ? 'Assigned'
-                            : 'Available',
-                      ),
-
-                      _InfoRow(
-                        label: 'Business',
-                        value:
-                        details.businessName
-                            ?.trim()
-                            .isNotEmpty ==
-                            true
-                            ? details
-                            .businessName!
-                            : 'Not assigned',
-                      ),
-
-                      if (details.businessId !=
-                          null)
-                        _InfoRow(
-                          label: 'Business ID',
-                          value:
-                          details.businessId!,
-                        ),
-
-                      const SizedBox(
-                        height: 20,
-                      ),
-
-                      const Divider(),
-
-                      const SizedBox(
-                        height: 20,
-                      ),
-
-                      // =================================================
-                      // PHYSICAL QR - AVAILABLE
-                      // =================================================
-
-                      if (isPhysical &&
-                          !isAssigned &&
-                          isActive)
-                        _buildAvailablePhysicalActions(
-                          context,
-                          details.qrCode,
-                        ),
-
-                      // =================================================
-                      // PHYSICAL QR - ASSIGNED
-                      // =================================================
-
-                      if (isPhysical &&
-                          isAssigned)
-                        _buildAssignedPhysicalActions(
-                          context,
-                          ref,
-                          details.businessName,
-                          details.qrCode,
-                          isActive,
-                        ),
-
-                      // =================================================
-                      // PHYSICAL QR - INACTIVE
-                      // =================================================
-
-                      if (isPhysical &&
-                          !isActive)
-                        _buildInactivePhysicalMessage(
-                          context,
-                        ),
-
-                      // =================================================
-                      // DIGITAL QR
-                      // =================================================
-
-                      if (!isPhysical)
-                        _buildDigitalQrMessage(
-                          context,
-                          details.businessName,
-                        ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  // ============================================================
+  // HEADER
+  // ============================================================
+
+  Widget _buildHeader(
+      BuildContext context,
+      dynamic details,
+      bool isPhysical,
+      bool isActive,
+      ) {
+    final theme = Theme.of(context);
+
+    return LayoutBuilder(
+      builder: (
+          context,
+          constraints,
+          ) {
+        final compact =
+            constraints.maxWidth < 430;
+
+        if (compact) {
+          return Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  _buildQrIcon(
+                    context,
+                    isPhysical,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isPhysical
+                              ? 'Physical QR'
+                              : 'Digital QR',
+                          maxLines: 1,
+                          overflow:
+                          TextOverflow.ellipsis,
+                          style: theme
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                            fontWeight:
+                            FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          details.qrCode,
+                          maxLines: 3,
+                          overflow:
+                          TextOverflow.ellipsis,
+                          style: theme
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                            fontWeight:
+                            FontWeight.w700,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _StatusBadge(
+                active: isActive,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+          children: [
+            _buildQrIcon(
+              context,
+              isPhysical,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPhysical
+                        ? 'Physical QR'
+                        : 'Digital QR',
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    details.qrCode,
+                    maxLines: 2,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _StatusBadge(
+              active: isActive,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildQrIcon(
+      BuildContext context,
+      bool isPhysical,
+      ) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: 54,
+      height: 54,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: theme
+            .colorScheme
+            .surfaceContainerHighest,
+        borderRadius:
+        BorderRadius.circular(14),
+      ),
+      child: Icon(
+        isPhysical
+            ? Icons.qr_code_2_rounded
+            : Icons.qr_code_rounded,
+        color: theme.colorScheme.primary,
+        size: 28,
+      ),
+    );
+  }
+
+  // ============================================================
+  // QR INFORMATION
+  // ============================================================
+
+  Widget _buildQrInformation(
+      BuildContext context,
+      dynamic details,
+      bool isAssigned,
+      bool isActive,
+      ) {
+    return Column(
+      children: [
+        _InfoRow(
+          label: 'Type',
+          value: details.type,
+        ),
+        _InfoRow(
+          label: 'Status',
+          value: isActive
+              ? 'Active'
+              : 'Inactive',
+        ),
+        _InfoRow(
+          label: 'Assignment',
+          value: isAssigned
+              ? 'Assigned'
+              : 'Available',
+        ),
+        _InfoRow(
+          label: 'Business',
+          value:
+          details.businessName
+              ?.trim()
+              .isNotEmpty ==
+              true
+              ? details.businessName!
+              : 'Not assigned',
+        ),
+        if (details.businessId != null)
+          _InfoRow(
+            label: 'Business ID',
+            value: details.businessId!,
+          ),
+      ],
     );
   }
 
@@ -301,6 +382,7 @@ class AdminQrDetailsScreen
 
   Widget _buildAvailablePhysicalActions(
       BuildContext context,
+      WidgetRef ref,
       String qrCode,
       ) {
     return SizedBox(
@@ -309,8 +391,7 @@ class AdminQrDetailsScreen
         children: [
           Container(
             width: double.infinity,
-            padding:
-            const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
@@ -330,27 +411,58 @@ class AdminQrDetailsScreen
                 Expanded(
                   child: Text(
                     'This physical QR is available and can be assigned to a business.',
+                    style: TextStyle(
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(
-            height: 16,
-          ),
-
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
+            height: 50,
             child: FilledButton.icon(
-              onPressed: () {
-                showDialog(
+              onPressed: () async {
+                final result =
+                await showDialog<bool>(
                   context: context,
+                  barrierDismissible: false,
                   builder: (_) =>
                       _AssignBusinessDialog(
                         qrCode: qrCode,
                       ),
                 );
+
+                if (!context.mounted) {
+                  return;
+                }
+
+                if (result == true) {
+                  await ref
+                      .read(
+                    adminNotifierProvider
+                        .notifier,
+                  )
+                      .loadQrDetails(qrCode);
+
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      const SnackBar(
+                        behavior:
+                        SnackBarBehavior.floating,
+                        content: Text(
+                          'QR assigned successfully.',
+                        ),
+                      ),
+                    );
+                }
               },
               icon: const Icon(
                 Icons.link_rounded,
@@ -376,20 +488,19 @@ class AdminQrDetailsScreen
       String qrCode,
       bool isActive,
       ) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.stretch,
       children: [
         Container(
           width: double.infinity,
-          padding:
-          const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isActive
-                ? Theme.of(context)
-                .colorScheme
-                .primaryContainer
-                : Theme.of(context)
+                ? theme.colorScheme.primaryContainer
+                : theme
                 .colorScheme
                 .errorContainer,
             borderRadius:
@@ -401,42 +512,34 @@ class AdminQrDetailsScreen
             children: [
               Icon(
                 isActive
-                    ? Icons
-                    .business_rounded
-                    : Icons
-                    .block_rounded,
+                    ? Icons.business_rounded
+                    : Icons.block_rounded,
               ),
-
-              const SizedBox(
-                width: 12,
-              ),
-
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
                   children: [
                     Text(
                       isActive
                           ? 'Assigned Business'
                           : 'Assigned QR is inactive',
-                      style:
-                      const TextStyle(
+                      style: const TextStyle(
                         fontWeight:
                         FontWeight.w700,
                       ),
                     ),
-
                     if (businessName
                         ?.trim()
                         .isNotEmpty ==
                         true) ...[
-                      const SizedBox(
-                        height: 4,
-                      ),
+                      const SizedBox(height: 4),
                       Text(
                         businessName!,
+                        maxLines: 3,
+                        overflow:
+                        TextOverflow.ellipsis,
                       ),
                     ],
                   ],
@@ -445,14 +548,10 @@ class AdminQrDetailsScreen
             ],
           ),
         ),
-
-        const SizedBox(
-          height: 16,
-        ),
-
+        const SizedBox(height: 16),
         if (isActive)
           SizedBox(
-            width: double.infinity,
+            height: 50,
             child: OutlinedButton.icon(
               onPressed: () {
                 _showDeactivateConfirmation(
@@ -462,8 +561,7 @@ class AdminQrDetailsScreen
                 );
               },
               icon: const Icon(
-                Icons
-                    .block_rounded,
+                Icons.block_rounded,
               ),
               label: const Text(
                 'Deactivate QR',
@@ -475,20 +573,20 @@ class AdminQrDetailsScreen
   }
 
   // ============================================================
-  // INACTIVE PHYSICAL
+  // INACTIVE
   // ============================================================
 
   Widget _buildInactivePhysicalMessage(
       BuildContext context,
       ) {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
-      padding:
-      const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .errorContainer,
+        color:
+        theme.colorScheme.errorContainer,
         borderRadius:
         BorderRadius.circular(14),
       ),
@@ -503,6 +601,9 @@ class AdminQrDetailsScreen
           Expanded(
             child: Text(
               'This physical QR is inactive and cannot be used by customers.',
+              style: TextStyle(
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -511,19 +612,20 @@ class AdminQrDetailsScreen
   }
 
   // ============================================================
-  // DIGITAL QR
+  // DIGITAL
   // ============================================================
 
   Widget _buildDigitalQrMessage(
       BuildContext context,
       String? businessName,
       ) {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
-      padding:
-      const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context)
+        color: theme
             .colorScheme
             .surfaceContainerHighest,
         borderRadius:
@@ -533,15 +635,11 @@ class AdminQrDetailsScreen
         crossAxisAlignment:
         CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons
-                .verified_outlined,
+          Icon(
+            Icons.verified_outlined,
+            color: theme.colorScheme.primary,
           ),
-
-          const SizedBox(
-            width: 12,
-          ),
-
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               businessName
@@ -550,6 +648,9 @@ class AdminQrDetailsScreen
                   true
                   ? 'Digital QR is permanently linked to ${businessName!.trim()} and cannot be assigned as a physical QR or manually deactivated.'
                   : 'Digital QR is business-linked and cannot be assigned as a physical QR or manually deactivated.',
+              style: const TextStyle(
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -558,11 +659,10 @@ class AdminQrDetailsScreen
   }
 
   // ============================================================
-  // DEACTIVATE CONFIRMATION
+  // DEACTIVATE
   // ============================================================
 
-  Future<void>
-  _showDeactivateConfirmation(
+  Future<void> _showDeactivateConfirmation(
       BuildContext context,
       WidgetRef ref,
       String qrCode,
@@ -570,7 +670,9 @@ class AdminQrDetailsScreen
     final confirmed =
     await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (
+          dialogContext,
+          ) {
         return AlertDialog(
           title: const Text(
             'Deactivate QR?',
@@ -610,10 +712,10 @@ class AdminQrDetailsScreen
       return;
     }
 
-    final success = await ref
+    final success =
+    await ref
         .read(
-      adminNotifierProvider
-          .notifier,
+      adminNotifierProvider.notifier,
     )
         .deactivateQr(qrCode);
 
@@ -622,43 +724,52 @@ class AdminQrDetailsScreen
     }
 
     if (success) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'QR deactivated successfully.',
-          ),
-        ),
-      );
-
-      // Refresh the QR details so the
-      // screen immediately shows inactive.
       await ref
           .read(
-        adminNotifierProvider
-            .notifier,
+        adminNotifierProvider.notifier,
       )
           .loadQrDetails(qrCode);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            behavior:
+            SnackBarBehavior.floating,
+            content: Text(
+              'QR deactivated successfully.',
+            ),
+          ),
+        );
     } else {
       final message =
-          ref.read(
+          ref
+              .read(
             adminNotifierProvider,
-          ).errorMessage ??
+          )
+              .errorMessage ??
               'Unable to deactivate QR.';
 
       ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            behavior:
+            SnackBarBehavior.floating,
+            content: Text(message),
+          ),
+        );
     }
   }
 }
 
-// ============================================================
+// ================================================================
 // STATUS BADGE
-// ============================================================
+// ================================================================
 
 class _StatusBadge
     extends StatelessWidget {
@@ -698,16 +809,12 @@ class _StatusBadge
           Container(
             width: 7,
             height: 7,
-            decoration:
-            BoxDecoration(
+            decoration: BoxDecoration(
               color: color,
-              shape:
-              BoxShape.circle,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(
-            width: 6,
-          ),
+          const SizedBox(width: 6),
           Text(
             active
                 ? 'Active'
@@ -725,9 +832,9 @@ class _StatusBadge
   }
 }
 
-// ============================================================
+// ================================================================
 // ASSIGN BUSINESS DIALOG
-// ============================================================
+// ================================================================
 
 class _AssignBusinessDialog
     extends ConsumerStatefulWidget {
@@ -739,8 +846,7 @@ class _AssignBusinessDialog
 
   @override
   ConsumerState<
-      _AssignBusinessDialog>
-  createState() =>
+      _AssignBusinessDialog> createState() =>
       _AssignBusinessDialogState();
 }
 
@@ -759,14 +865,16 @@ class _AssignBusinessDialogState
     super.initState();
 
     WidgetsBinding.instance
-        .addPostFrameCallback((_) {
-      ref
-          .read(
-        adminNotifierProvider
-            .notifier,
-      )
-          .loadBusinesses();
-    });
+        .addPostFrameCallback(
+          (_) {
+        ref
+            .read(
+          adminNotifierProvider
+              .notifier,
+        )
+            .loadBusinesses();
+      },
+    );
   }
 
   @override
@@ -780,8 +888,7 @@ class _AssignBusinessDialogState
       ) async {
     await ref
         .read(
-      adminNotifierProvider
-          .notifier,
+      adminNotifierProvider.notifier,
     )
         .searchBusinesses(value);
   }
@@ -789,18 +896,21 @@ class _AssignBusinessDialogState
   Future<void> _assign() async {
     if (_selectedBusinessId == null) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Select a business first.',
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            behavior:
+            SnackBarBehavior.floating,
+            content: Text(
+              'Select a business first.',
+            ),
           ),
-        ),
-      );
-
+        );
       return;
     }
 
-    final notifier = ref.read(
+    final notifier =
+    ref.read(
       adminNotifierProvider.notifier,
     );
 
@@ -816,190 +926,120 @@ class _AssignBusinessDialogState
     }
 
     if (success) {
-      Navigator.of(context)
-          .pop(true);
+      // Return the result to the QR details
+      // screen. Do not show success feedback
+      // from the dialog context after popping.
+      Navigator.of(context).pop(true);
+      return;
+    }
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            '${widget.qrCode} assigned to '
-                '${_selectedBusinessName ?? 'business'} successfully.',
-          ),
-        ),
-      );
-    } else {
-      final message =
-          ref
-              .read(
-            adminNotifierProvider,
-          )
-              .errorMessage ??
-              'Unable to assign QR code.';
+    final message =
+        ref
+            .read(
+          adminNotifierProvider,
+        )
+            .errorMessage ??
+            'Unable to assign QR code.';
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
         SnackBar(
+          behavior:
+          SnackBarBehavior.floating,
           content: Text(message),
         ),
       );
-    }
   }
 
   @override
   Widget build(
       BuildContext context,
       ) {
-    final state =
-    ref.watch(
+    final state = ref.watch(
       adminNotifierProvider,
     );
+
+    final screenWidth =
+        MediaQuery.sizeOf(context).width;
+
+    final dialogWidth =
+    screenWidth < 600
+        ? screenWidth * 0.90
+        : 500.0;
+
+    final maxDialogHeight =
+        MediaQuery.sizeOf(context).height *
+            0.70;
 
     return AlertDialog(
       title: const Text(
         'Assign Business',
       ),
-
       content: SizedBox(
-        width: 500,
-        child: Column(
-          mainAxisSize:
-          MainAxisSize.min,
-          children: [
-            Align(
-              alignment:
-              Alignment.centerLeft,
-              child: Text(
-                'QR Code: ${widget.qrCode}',
-                style:
-                const TextStyle(
-                  fontWeight:
-                  FontWeight.w600,
-                ),
-              ),
+        width: dialogWidth,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight:
+            maxDialogHeight.clamp(
+              320.0,
+              560.0,
             ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            TextField(
-              controller:
-              _searchController,
-              onChanged: _search,
-              decoration:
-              const InputDecoration(
-                labelText:
-                'Search business',
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                ),
-                border:
-                OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            if (state.isLoading &&
-                state.businesses.isEmpty)
-              const Padding(
-                padding:
-                EdgeInsets.all(20),
-                child:
-                CircularProgressIndicator(),
-              )
-            else if (state.businesses
-                .isEmpty)
-              const Padding(
-                padding:
-                EdgeInsets.all(20),
+          ),
+          child: Column(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              Align(
+                alignment:
+                Alignment.centerLeft,
                 child: Text(
-                  'No businesses found.',
-                  textAlign:
-                  TextAlign.center,
-                ),
-              )
-            else
-              ConstrainedBox(
-                constraints:
-                const BoxConstraints(
-                  maxHeight: 300,
-                ),
-                child:
-                ListView.separated(
-                  shrinkWrap: true,
-                  itemCount:
-                  state.businesses
-                      .length,
-                  separatorBuilder:
-                      (_, __) =>
-                  const Divider(
-                    height: 1,
+                  'QR Code: ${widget.qrCode}',
+                  maxLines: 3,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
                   ),
-                  itemBuilder:
-                      (context, index) {
-                    final business =
-                    state.businesses[
-                    index];
-
-                    final selected =
-                        _selectedBusinessId ==
-                            business
-                                .businessId;
-
-                    return ListTile(
-                      selected:
-                      selected,
-                      selectedTileColor:
-                      Theme.of(
-                        context,
-                      )
-                          .colorScheme
-                          .primaryContainer,
-                      leading:
-                      const Icon(
-                        Icons
-                            .storefront_outlined,
-                      ),
-                      title: Text(
-                        business
-                            .businessName,
-                      ),
-                      subtitle: Text(
-                        business.city ??
-                            business
-                                .ownerName ??
-                            '',
-                      ),
-                      trailing:
-                      selected
-                          ? const Icon(
-                        Icons
-                            .check_circle,
-                      )
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedBusinessId =
-                              business
-                                  .businessId;
-
-                          _selectedBusinessName =
-                              business
-                                  .businessName;
-                        });
-                      },
-                    );
-                  },
                 ),
               ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller:
+                _searchController,
+                onChanged: _search,
+                textInputAction:
+                TextInputAction.search,
+                decoration:
+                InputDecoration(
+                  labelText:
+                  'Search business',
+                  prefixIcon:
+                  const Icon(
+                    Icons.search_rounded,
+                  ),
+                  border:
+                  OutlineInputBorder(
+                    borderRadius:
+                    BorderRadius.circular(
+                      12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child:
+                _buildBusinessList(
+                  context,
+                  state,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-
       actions: [
         TextButton(
           onPressed:
@@ -1014,7 +1054,6 @@ class _AssignBusinessDialogState
             'Cancel',
           ),
         ),
-
         FilledButton(
           onPressed:
           state.businessActionInProgress
@@ -1037,11 +1076,93 @@ class _AssignBusinessDialogState
       ],
     );
   }
+
+  Widget _buildBusinessList(
+      BuildContext context,
+      dynamic state,
+      ) {
+    if (state.isLoading &&
+        state.businesses.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (state.businesses.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text(
+            'No businesses found.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: state.businesses.length,
+      separatorBuilder: (
+          _,
+          __,
+          ) =>
+      const Divider(height: 1),
+      itemBuilder: (
+          context,
+          index,
+          ) {
+        final business =
+        state.businesses[index];
+
+        final selected =
+            _selectedBusinessId ==
+                business.businessId;
+
+        return ListTile(
+          selected: selected,
+          selectedTileColor:
+          Theme.of(context)
+              .colorScheme
+              .primaryContainer,
+          leading: const Icon(
+            Icons.storefront_outlined,
+          ),
+          title: Text(
+            business.businessName,
+            maxLines: 2,
+            overflow:
+            TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            business.city.isNotEmpty
+                ? business.city
+                : business.ownerName,
+            maxLines: 1,
+            overflow:
+            TextOverflow.ellipsis,
+          ),
+          trailing: selected
+              ? const Icon(
+            Icons.check_circle,
+          )
+              : null,
+          onTap: () {
+            setState(() {
+              _selectedBusinessId =
+                  business.businessId;
+              _selectedBusinessName =
+                  business.businessName;
+            });
+          },
+        );
+      },
+    );
+  }
 }
 
-// ============================================================
+// ================================================================
 // INFO ROW
-// ============================================================
+// ================================================================
 
 class _InfoRow
     extends StatelessWidget {
@@ -1057,45 +1178,91 @@ class _InfoRow
   Widget build(
       BuildContext context,
       ) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding:
       const EdgeInsets.only(
         bottom: 14,
       ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment
-            .start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              )
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                color: Theme.of(
-                  context,
-                )
-                    .colorScheme
-                    .onSurfaceVariant,
+      child: LayoutBuilder(
+        builder: (
+            context,
+            constraints,
+            ) {
+          final compact =
+              constraints.maxWidth < 380;
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+              children: [
+                Text(
+                  label,
+                  style: theme
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 4,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 110,
+                child: Text(
+                  label,
+                  style: theme
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style:
-              const TextStyle(
-                fontWeight:
-                FontWeight.w600,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 4,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

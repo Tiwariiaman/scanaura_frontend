@@ -38,93 +38,189 @@ class ScanAuraQrCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBusinessName =
         businessName != null &&
-            businessName!.trim().isNotEmpty;
+            businessName!
+                .trim()
+                .isNotEmpty;
 
     final hasBusinessLogo =
         businessLogoUrl != null &&
-            businessLogoUrl!.trim().isNotEmpty;
+            businessLogoUrl!
+                .trim()
+                .isNotEmpty;
 
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(
-        maxWidth: 430,
-      ),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-        BorderRadius.circular(28),
-        border: Border.all(
-          color:
-          scanAuraGreen.withValues(
-            alpha: 0.10,
+    return LayoutBuilder(
+      builder: (
+          context,
+          constraints,
+          ) {
+        final availableWidth =
+            constraints.maxWidth;
+
+        // ========================================================
+        // RESPONSIVE CARD WIDTH
+        // ========================================================
+
+        final cardWidth =
+        availableWidth > 430
+            ? 430.0
+            : availableWidth;
+
+        final compact =
+            cardWidth < 340;
+
+        final small =
+            cardWidth < 380;
+
+        final outerHorizontal =
+        compact
+            ? 12.0
+            : small
+            ? 14.0
+            : 18.0;
+
+        final cardRadius =
+        compact ? 22.0 : 28.0;
+
+        final headerTopPadding =
+        compact ? 20.0 : 26.0;
+
+        final headerBottomPadding =
+        compact ? 76.0 : 92.0;
+
+        final contentHorizontal =
+        compact ? 14.0 : 18.0;
+
+        final qrOuterPadding =
+        compact ? 10.0 : 14.0;
+
+        final qrOuterRadius =
+        compact ? 18.0 : 22.0;
+
+        // Keep the actual QR comfortably
+        // scannable while allowing smaller phones.
+        final qrSize =
+        (cardWidth -
+            (contentHorizontal * 2) -
+            (qrOuterPadding * 2) -
+            8)
+            .clamp(
+          180.0,
+          compact
+              ? 220.0
+              : small
+              ? 235.0
+              : 250.0,
+        );
+
+        final businessLogoSize =
+        compact
+            ? 44.0
+            : 52.0;
+
+        final footerLogoSize =
+        compact ? 24.0 : 27.0;
+
+        final businessNameFontSize =
+        compact
+            ? 18.0
+            : small
+            ? 20.0
+            : 22.0;
+
+        final taglineFontSize =
+        compact
+            ? 19.0
+            : small
+            ? 21.0
+            : 23.0;
+
+        final descriptionFontSize =
+        compact ? 13.0 : 15.0;
+
+        return Container(
+          width: cardWidth,
+          constraints:
+          const BoxConstraints(
+            maxWidth: 430,
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.black.withValues(
-              alpha: 0.10,
+          clipBehavior:
+          Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius:
+            BorderRadius.circular(
+              cardRadius,
             ),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // =====================================================
-          // GREEN HEADER
-          // =====================================================
-
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: double.infinity,
-                padding:
-                const EdgeInsets.fromLTRB(
-                  20,
-                  26,
-                  20,
-                  92,
+            border: Border.all(
+              color:
+              scanAuraGreen.withValues(
+                alpha: 0.10,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:
+                Colors.black.withValues(
+                  alpha: 0.10,
                 ),
-                color: scanAuraGreen,
-                child: Column(
-                  children: [
-                    // =================================================
-                    // SCANAURA TOP LOGO
-                    // =================================================
+                blurRadius:
+                compact ? 16 : 24,
+                offset:
+                const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              // ==================================================
+              // GREEN HEADER
+              // ==================================================
 
-                    LayoutBuilder(
-                      builder:
-                          (context, constraints) {
-                        final compact =
-                            constraints.maxWidth <
-                                340;
+              Stack(
+                clipBehavior:
+                Clip.none,
+                children: [
+                  Container(
+                    width:
+                    double.infinity,
+                    padding:
+                    EdgeInsets.fromLTRB(
+                      outerHorizontal +
+                          6,
+                      headerTopPadding,
+                      outerHorizontal +
+                          6,
+                      headerBottomPadding,
+                    ),
+                    color:
+                    scanAuraGreen,
+                    child: Column(
+                      children: [
+                        // ==============================================
+                        // SCANAURA LOGO
+                        // ==============================================
 
-                        return Row(
+                        Row(
                           mainAxisAlignment:
                           MainAxisAlignment
                               .center,
                           children: [
                             Container(
                               width:
-                              compact
-                                  ? 44
-                                  : 52,
+                              businessLogoSize,
                               height:
-                              compact
-                                  ? 44
-                                  : 52,
+                              businessLogoSize,
                               decoration:
                               BoxDecoration(
                                 color:
                                 Colors.white,
                                 borderRadius:
                                 BorderRadius.circular(
-                                  12,
+                                  compact
+                                      ? 10
+                                      : 12,
                                 ),
                               ),
                               clipBehavior:
@@ -132,19 +228,23 @@ class ScanAuraQrCard extends StatelessWidget {
                               child:
                               Image.asset(
                                 topLogo,
-                                fit: BoxFit.cover,
+                                fit: BoxFit
+                                    .cover,
                                 errorBuilder:
                                     (
                                     context,
                                     error,
                                     stackTrace,
                                     ) {
-                                  return const Icon(
+                                  return Icon(
                                     Icons
                                         .qr_code_rounded,
                                     color:
                                     scanAuraGreen,
-                                    size: 28,
+                                    size:
+                                    compact
+                                        ? 24
+                                        : 28,
                                   );
                                 },
                               ),
@@ -158,7 +258,8 @@ class ScanAuraQrCard extends StatelessWidget {
                             ),
 
                             Flexible(
-                              child: Text(
+                              child:
+                              Text(
                                 'ScanAura',
                                 maxLines: 1,
                                 overflow:
@@ -167,11 +268,10 @@ class ScanAuraQrCard extends StatelessWidget {
                                 style:
                                 TextStyle(
                                   color:
-                                  Colors
-                                      .white,
+                                  Colors.white,
                                   fontSize:
                                   compact
-                                      ? 24
+                                      ? 22
                                       : 28,
                                   fontWeight:
                                   FontWeight
@@ -182,120 +282,139 @@ class ScanAuraQrCard extends StatelessWidget {
                               ),
                             ),
                           ],
-                        );
-                      },
+                        ),
+
+                        SizedBox(
+                          height:
+                          compact
+                              ? 18
+                              : 22,
+                        ),
+
+                        // ==============================================
+                        // TAGLINE
+                        // ==============================================
+
+                        Text(
+                          'SCAN ~ VIEW ~ PAY',
+                          textAlign:
+                          TextAlign.center,
+                          maxLines: 1,
+                          overflow:
+                          TextOverflow
+                              .ellipsis,
+                          style:
+                          TextStyle(
+                            color:
+                            Colors.white,
+                            fontSize:
+                            taglineFontSize,
+                            fontWeight:
+                            FontWeight
+                                .w800,
+                            letterSpacing:
+                            0.2,
+                          ),
+                        ),
+
+                        SizedBox(
+                          height:
+                          compact
+                              ? 8
+                              : 10,
+                        ),
+
+                        Text(
+                          'Scan to view menu & pay with any UPI app',
+                          textAlign:
+                          TextAlign.center,
+                          maxLines:
+                          compact
+                              ? 2
+                              : 2,
+                          overflow:
+                          TextOverflow
+                              .ellipsis,
+                          style:
+                          TextStyle(
+                            color:
+                            scanAuraLightGreen,
+                            fontSize:
+                            descriptionFontSize,
+                            fontWeight:
+                            FontWeight.w500,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
-
-                    const SizedBox(
-                      height: 22,
-                    ),
-
-                    // =================================================
-                    // TAGLINE
-                    // =================================================
-
-                    const Text(
-                      'SCAN ~ VIEW ~ PAY',
-                      textAlign:
-                      TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 23,
-                        fontWeight:
-                        FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    const Text(
-                      'Scan to view menu & pay with any UPI app',
-                      textAlign:
-                      TextAlign.center,
-                      style: TextStyle(
-                        color:
-                        scanAuraLightGreen,
-                        fontSize: 15,
-                        fontWeight:
-                        FontWeight.w500,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // =====================================================
-              // CURVED TRANSITION
-              // =====================================================
-
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: -1,
-                child: ClipPath(
-                  clipper:
-                  _QrCurveClipper(),
-                  child: Container(
-                    height: 78,
-                    color: Colors.white,
                   ),
-                ),
+
+                  // ==================================================
+                  // CURVED TRANSITION
+                  // ==================================================
+
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    child: ClipPath(
+                      clipper:
+                      _QrCurveClipper(
+                        compact:
+                        compact,
+                      ),
+                      child:
+                      Container(
+                        height:
+                        compact
+                            ? 64
+                            : 78,
+                        color:
+                        Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
 
-          // =====================================================
-          // QR CONTENT
-          // =====================================================
+              // ==================================================
+              // QR CONTENT
+              // ==================================================
 
-          Padding(
-            padding:
-            const EdgeInsets.fromLTRB(
-              18,
-              0,
-              18,
-              22,
-            ),
-            child: Column(
-              children: [
-                // =================================================
-                // QR
-                // =================================================
+              Padding(
+                padding:
+                EdgeInsets.fromLTRB(
+                  contentHorizontal,
+                  0,
+                  contentHorizontal,
+                  compact
+                      ? 18
+                      : 22,
+                ),
+                child: Column(
+                  children: [
+                    // ==============================================
+                    // QR
+                    // ==============================================
 
-                LayoutBuilder(
-                  builder:
-                      (context, constraints) {
-                    final availableWidth =
-                        constraints.maxWidth;
-
-                    final qrSize =
-                    availableWidth >= 300
-                        ? 250.0
-                        : (availableWidth -
-                        32)
-                        .clamp(
-                      180.0,
-                      250.0,
-                    );
-
-                    return Container(
+                    Container(
                       padding:
-                      const EdgeInsets.all(
-                        14,
+                      EdgeInsets.all(
+                        qrOuterPadding,
                       ),
                       decoration:
                       BoxDecoration(
-                        color: Colors.white,
+                        color:
+                        Colors.white,
                         borderRadius:
                         BorderRadius.circular(
-                          22,
+                          qrOuterRadius,
                         ),
-                        border: Border.all(
-                          color: scanAuraGreen
+                        border:
+                        Border.all(
+                          color:
+                          scanAuraGreen
                               .withValues(
                             alpha: 0.20,
                           ),
@@ -303,11 +422,15 @@ class ScanAuraQrCard extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
+                            color:
+                            Colors.black
                                 .withValues(
                               alpha: 0.07,
                             ),
-                            blurRadius: 14,
+                            blurRadius:
+                            compact
+                                ? 10
+                                : 14,
                             offset:
                             const Offset(
                               0,
@@ -316,22 +439,27 @@ class ScanAuraQrCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Stack(
+                      child:
+                      Stack(
                         alignment:
-                        Alignment.center,
+                        Alignment
+                            .center,
                         children: [
                           QrImageView(
-                            data: qrData,
+                            data:
+                            qrData,
                             version:
                             QrVersions.auto,
-                            size: qrSize,
+                            size:
+                            qrSize,
                             backgroundColor:
                             Colors.white,
                             gapless: true,
                             eyeStyle:
                             const QrEyeStyle(
                               eyeShape:
-                              QrEyeShape.square,
+                              QrEyeShape
+                                  .square,
                               color:
                               Colors.black,
                             ),
@@ -345,17 +473,22 @@ class ScanAuraQrCard extends StatelessWidget {
                             ),
                           ),
 
-                          // =========================================
-                          // BUSINESS LOGO
-                          // =========================================
+                          // ============================================
+                          // BUSINESS LOGO INSIDE QR
+                          // ============================================
 
                           if (hasBusinessLogo)
                             Container(
-                              width: 52,
-                              height: 52,
+                              width:
+                              compact
+                                  ? 44
+                                  : 52,
+                              height:
+                              compact
+                                  ? 44
+                                  : 52,
                               padding:
-                              const EdgeInsets
-                                  .all(
+                              const EdgeInsets.all(
                                 4,
                               ),
                               decoration:
@@ -363,9 +496,10 @@ class ScanAuraQrCard extends StatelessWidget {
                                 color:
                                 Colors.white,
                                 borderRadius:
-                                BorderRadius
-                                    .circular(
-                                  12,
+                                BorderRadius.circular(
+                                  compact
+                                      ? 10
+                                      : 12,
                                 ),
                                 border:
                                 Border.all(
@@ -375,12 +509,13 @@ class ScanAuraQrCard extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors
-                                        .black
-                                        .withValues(
-                                      alpha: 0.16,
+                                    color:
+                                    Colors.black.withValues(
+                                      alpha:
+                                      0.16,
                                     ),
-                                    blurRadius: 8,
+                                    blurRadius:
+                                    8,
                                   ),
                                 ],
                               ),
@@ -398,144 +533,170 @@ class ScanAuraQrCard extends StatelessWidget {
                                     ) {
                                   return Image.asset(
                                     footerLogo,
-                                    fit: BoxFit.contain,
+                                    fit: BoxFit
+                                        .contain,
                                   );
                                 },
                               ),
                             ),
                         ],
                       ),
-                    );
-                  },
-                ),
-
-                const SizedBox(
-                  height: 24,
-                ),
-
-                // =================================================
-                // BUSINESS NAME
-                // =================================================
-
-                if (showBusinessName)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 8,
                     ),
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: scanAuraGreen,
-                          width: 1.4,
+
+                    SizedBox(
+                      height:
+                      compact
+                          ? 18
+                          : 24,
+                    ),
+
+                    // ==============================================
+                    // BUSINESS NAME
+                    // ==============================================
+
+                    if (showBusinessName)
+                      Container(
+                        width:
+                        double.infinity,
+                        constraints:
+                        const BoxConstraints(
+                          minHeight: 46,
                         ),
-                        bottom: BorderSide(
-                          color: scanAuraGreen,
-                          width: 1.4,
+                        padding:
+                        const EdgeInsets
+                            .symmetric(
+                          vertical: 9,
+                          horizontal: 8,
                         ),
-                      ),
-                    ),
-                    child: hasBusinessName
-                        ? Text(
-                      businessName!.trim(),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: darkText,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    )
-                        : const SizedBox(
-                      height: 24,
-                    ),
-                  ),
-
-                // =================================================
-                // PHYSICAL QR HELPER
-                // =================================================
-
-                // if (!hasBusinessName &&
-                //     showBusinessName)
-                //   const Padding(
-                //     padding:
-                //     EdgeInsets.only(
-                //       top: 8,
-                //     ),
-                //     child: Text(
-                //       'Write business name here',
-                //       textAlign:
-                //       TextAlign.center,
-                //       style: TextStyle(
-                //         color: darkText,
-                //         fontSize: 14,
-                //         fontStyle:
-                //         FontStyle.italic,
-                //       ),
-                //     ),
-                //   ),
-
-                const SizedBox(
-                  height: 22,
-                ),
-
-                // =================================================
-                // FOOTER
-                // =================================================
-
-                Row(
-                  mainAxisAlignment:
-                  MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      footerLogo,
-                      width: 27,
-                      height: 27,
-                      fit: BoxFit.contain,
-                      errorBuilder:
-                          (
-                          context,
-                          error,
-                          stackTrace,
-                          ) {
-                        return const Icon(
-                          Icons
-                              .qr_code_rounded,
-                          size: 27,
-                          color:
-                          scanAuraGreen,
-                        );
-                      },
-                    ),
-
-                    const SizedBox(
-                      width: 8,
-                    ),
-
-                    Flexible(
-                      child: Text(
-                        'Powered by ScanAura',
-                        maxLines: 1,
-                        overflow:
-                        TextOverflow.ellipsis,
-                        style:
-                        const TextStyle(
-                          color: darkText,
-                          fontSize: 15,
-                          fontWeight:
-                          FontWeight.w600,
+                        decoration:
+                        const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color:
+                              scanAuraGreen,
+                              width: 1.4,
+                            ),
+                            bottom:
+                            BorderSide(
+                              color:
+                              scanAuraGreen,
+                              width: 1.4,
+                            ),
+                          ),
                         ),
+                        alignment:
+                        Alignment.center,
+                        child:
+                        hasBusinessName
+                            ? Text(
+                          businessName!
+                              .trim(),
+                          textAlign:
+                          TextAlign
+                              .center,
+                          maxLines:
+                          compact
+                              ? 2
+                              : 1,
+                          overflow:
+                          TextOverflow
+                              .ellipsis,
+                          style:
+                          TextStyle(
+                            color:
+                            darkText,
+                            fontSize:
+                            businessNameFontSize,
+                            fontWeight:
+                            FontWeight
+                                .w700,
+                            height:
+                            1.2,
+                          ),
+                        )
+                            : const SizedBox
+                            .shrink(),
                       ),
+
+                    SizedBox(
+                      height:
+                      compact
+                          ? 18
+                          : 22,
+                    ),
+
+                    // ==============================================
+                    // FOOTER
+                    // ==============================================
+
+                    Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .center,
+                      children: [
+                        Image.asset(
+                          footerLogo,
+                          width:
+                          footerLogoSize,
+                          height:
+                          footerLogoSize,
+                          fit:
+                          BoxFit.contain,
+                          errorBuilder:
+                              (
+                              context,
+                              error,
+                              stackTrace,
+                              ) {
+                            return Icon(
+                              Icons
+                                  .qr_code_rounded,
+                              size:
+                              footerLogoSize,
+                              color:
+                              scanAuraGreen,
+                            );
+                          },
+                        ),
+
+                        SizedBox(
+                          width:
+                          compact
+                              ? 6
+                              : 8,
+                        ),
+
+                        Flexible(
+                          child:
+                          Text(
+                            'Powered by ScanAura',
+                            maxLines: 1,
+                            overflow:
+                            TextOverflow
+                                .ellipsis,
+                            style:
+                            TextStyle(
+                              color:
+                              darkText,
+                              fontSize:
+                              compact
+                                  ? 13
+                                  : 15,
+                              fontWeight:
+                              FontWeight
+                                  .w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -546,17 +707,37 @@ class ScanAuraQrCard extends StatelessWidget {
 
 class _QrCurveClipper
     extends CustomClipper<Path> {
+  const _QrCurveClipper({
+    required this.compact,
+  });
+
+  final bool compact;
+
   @override
-  Path getClip(Size size) {
+  Path getClip(
+      Size size,
+      ) {
     final path = Path();
 
-    path.moveTo(0, size.height * 0.32);
+    path.moveTo(
+      0,
+      size.height *
+          (compact
+              ? 0.34
+              : 0.32),
+    );
 
     path.quadraticBezierTo(
       size.width * 0.50,
-      -size.height * 0.35,
+      -size.height *
+          (compact
+              ? 0.28
+              : 0.35),
       size.width,
-      size.height * 0.32,
+      size.height *
+          (compact
+              ? 0.34
+              : 0.32),
     );
 
     path.lineTo(
@@ -576,8 +757,9 @@ class _QrCurveClipper
 
   @override
   bool shouldReclip(
-      covariant CustomClipper<Path> oldClipper,
+      covariant _QrCurveClipper oldClipper,
       ) {
-    return false;
+    return oldClipper.compact !=
+        compact;
   }
 }

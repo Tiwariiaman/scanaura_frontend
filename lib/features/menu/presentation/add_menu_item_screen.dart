@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/app_providers.dart';
+import '../../business/presentation/providers/business_notifier.dart';
 import '../data/models/catalog_request.dart';
 import '../data/models/catalog_response.dart';
 import 'providers/menu_notifier.dart';
 import 'providers/menu_state.dart';
 
-class AddMenuItemScreen extends ConsumerStatefulWidget {
+class AddMenuItemScreen
+    extends ConsumerStatefulWidget {
   const AddMenuItemScreen({
     super.key,
     this.item,
@@ -18,21 +20,31 @@ class AddMenuItemScreen extends ConsumerStatefulWidget {
 
   final CatalogResponse? item;
 
-  bool get isEditing => item != null;
+  bool get isEditing =>
+      item != null;
 
   @override
-  ConsumerState<AddMenuItemScreen> createState() =>
+  ConsumerState<AddMenuItemScreen>
+  createState() =>
       _AddMenuItemScreenState();
 }
 
 class _AddMenuItemScreenState
     extends ConsumerState<AddMenuItemScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey =
+  GlobalKey<FormState>();
 
-  late final TextEditingController _nameController;
-  late final TextEditingController _descriptionController;
-  late final TextEditingController _priceController;
-  late final TextEditingController _displayOrderController;
+  late final TextEditingController
+  _nameController;
+
+  late final TextEditingController
+  _descriptionController;
+
+  late final TextEditingController
+  _priceController;
+
+  late final TextEditingController
+  _displayOrderController;
 
   String? _categoryId;
 
@@ -53,30 +65,46 @@ class _AddMenuItemScreenState
 
     final item = widget.item;
 
-    _nameController = TextEditingController(
-      text: item?.name ?? '',
-    );
+    _nameController =
+        TextEditingController(
+          text: item?.name ?? '',
+        );
 
-    _descriptionController = TextEditingController(
-      text: item?.description ?? '',
-    );
+    _descriptionController =
+        TextEditingController(
+          text: item?.description ?? '',
+        );
 
-    _priceController = TextEditingController(
-      text: item?.price.toString() ?? '',
-    );
+    _priceController =
+        TextEditingController(
+          text: item?.price.toString() ?? '',
+        );
 
-    _displayOrderController = TextEditingController(
-      text: item?.displayOrder.toString() ?? '0',
-    );
+    _displayOrderController =
+        TextEditingController(
+          text:
+          item?.displayOrder
+              .toString() ??
+              '0',
+        );
 
-    _categoryId = item?.categoryId;
+    _categoryId =
+        item?.categoryId;
 
-    _veg = item?.veg ?? true;
-    _available = item?.available ?? true;
-    _bestSeller = item?.bestSeller ?? false;
-    _recommended = item?.recommended ?? false;
+    _veg =
+        item?.veg ?? true;
 
-    _imageUrl = item?.imageUrl;
+    _available =
+        item?.available ?? true;
+
+    _bestSeller =
+        item?.bestSeller ?? false;
+
+    _recommended =
+        item?.recommended ?? false;
+
+    _imageUrl =
+        item?.imageUrl;
   }
 
   @override
@@ -89,178 +117,597 @@ class _AddMenuItemScreenState
     super.dispose();
   }
 
+  // ============================================================
+  // BUSINESS TYPE
+  // ============================================================
+
+  bool get _isFoodBusiness {
+    final business =
+        ref
+            .read(
+          businessNotifierProvider,
+        )
+            .business;
+
+    return business?.businessType
+        .trim()
+        .toUpperCase() ==
+        'FOOD';
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(menuNotifierProvider);
+  Widget build(
+      BuildContext context,
+      ) {
+    final state =
+    ref.watch(
+      menuNotifierProvider,
+    );
+
+    // Keep business provider reactive so
+    // the screen updates if business data
+    // is refreshed while this page is open.
+    final businessState =
+    ref.watch(
+      businessNotifierProvider,
+    );
+
+    final showVegOption =
+        businessState.business
+            ?.businessType
+            .trim()
+            .toUpperCase() ==
+            'FOOD';
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.isEditing
-              ? 'Edit Menu Item'
-              : 'Add Menu Item',
+              ? 'Edit Item'
+              : 'Add Item',
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            _buildImageSection(),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width =
+                constraints.maxWidth;
 
-            const SizedBox(height: 24),
+            final horizontalPadding =
+            width < 360
+                ? 12.0
+                : width < 600
+                ? 16.0
+                : 20.0;
 
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Item name',
-                hintText: 'e.g. Paneer Butter Masala',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null ||
-                    value.trim().isEmpty) {
-                  return 'Item name is required';
-                }
+            final imageHeight =
+            width < 400
+                ? 190.0
+                : width < 600
+                ? 210.0
+                : 240.0;
 
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                hintText: 'Describe the menu item',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _priceController,
-              keyboardType:
-              const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Price',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                final price =
-                double.tryParse(value ?? '');
-
-                if (price == null || price <= 0) {
-                  return 'Enter a valid price';
-                }
-
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildCategoryDropdown(
-              state,
-            ),
-
-            const SizedBox(height: 12),
-
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Vegetarian'),
-              value: _veg,
-              onChanged: (value) {
-                setState(() {
-                  _veg = value;
-                });
-              },
-            ),
-
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Available'),
-              subtitle: const Text(
-                'Turn off to hide this item from customers.',
-              ),
-              value: _available,
-              onChanged: (value) {
-                setState(() {
-                  _available = value;
-                });
-              },
-            ),
-
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Best Seller'),
-              value: _bestSeller,
-              onChanged: (value) {
-                setState(() {
-                  _bestSeller = value;
-                });
-              },
-            ),
-
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Recommended'),
-              value: _recommended,
-              onChanged: (value) {
-                setState(() {
-                  _recommended = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 8),
-
-            TextFormField(
-              controller: _displayOrderController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Display order',
-                hintText: '0',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            FilledButton(
-              onPressed:
-              state.status == MenuStatus.loading ||
-                  _uploadingImage
-                  ? null
-                  : _saveItem,
-              child:
-              state.status == MenuStatus.loading ||
-                  _uploadingImage
-                  ? const SizedBox(
-                width: 20,
-                height: 20,
-                child:
-                CircularProgressIndicator(
-                  strokeWidth: 2,
+            return Form(
+              key: _formKey,
+              child: ListView(
+                keyboardDismissBehavior:
+                ScrollViewKeyboardDismissBehavior
+                    .onDrag,
+                padding:
+                EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  16,
+                  horizontalPadding,
+                  32,
                 ),
-              )
-                  : Text(
-                widget.isEditing
-                    ? 'Save Changes'
-                    : 'Save Menu Item',
+                children: [
+                  Center(
+                    child:
+                    ConstrainedBox(
+                      constraints:
+                      const BoxConstraints(
+                        maxWidth: 760,
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment
+                            .stretch,
+                        children: [
+                          // ==================================================
+                          // IMAGE
+                          // ==================================================
+
+                          _buildImageSection(
+                            context,
+                            height:
+                            imageHeight,
+                          ),
+
+                          const SizedBox(
+                            height: 20,
+                          ),
+
+                          // ==================================================
+                          // ITEM INFORMATION
+                          // ==================================================
+
+                          _sectionTitle(
+                            context,
+                            'Item Information',
+                          ),
+
+                          const SizedBox(
+                            height: 14,
+                          ),
+
+                          TextFormField(
+                            controller:
+                            _nameController,
+                            textInputAction:
+                            TextInputAction
+                                .next,
+                            textCapitalization:
+                            TextCapitalization
+                                .words,
+                            decoration:
+                            const InputDecoration(
+                              labelText:
+                              'Item name',
+                              hintText:
+                              'e.g. Product or Service Name',
+                              prefixIcon:
+                              Icon(
+                                Icons
+                                    .inventory_2_outlined,
+                              ),
+                            ),
+                            validator:
+                                (value) {
+                              if (value ==
+                                  null ||
+                                  value
+                                      .trim()
+                                      .isEmpty) {
+                                return 'Item name is required';
+                              }
+
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                          TextFormField(
+                            controller:
+                            _descriptionController,
+                            maxLines: 3,
+                            textCapitalization:
+                            TextCapitalization
+                                .sentences,
+                            decoration:
+                            const InputDecoration(
+                              labelText:
+                              'Description',
+                              hintText:
+                              'Describe this item',
+                              prefixIcon:
+                              Icon(
+                                Icons
+                                    .description_outlined,
+                              ),
+                              alignLabelWithHint:
+                              true,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                          // ==================================================
+                          // PRICE + ORDER
+                          // ==================================================
+
+                          LayoutBuilder(
+                            builder: (
+                                context,
+                                rowConstraints,
+                                ) {
+                              if (rowConstraints
+                                  .maxWidth <
+                                  500) {
+                                return Column(
+                                  children: [
+                                    _priceField(),
+                                    const SizedBox(
+                                      height:
+                                      16,
+                                    ),
+                                    _displayOrderField(),
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                                children: [
+                                  Expanded(
+                                    child:
+                                    _priceField(),
+                                  ),
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  SizedBox(
+                                    width: 180,
+                                    child:
+                                    _displayOrderField(),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                          // ==================================================
+                          // CATEGORY
+                          // ==================================================
+
+                          _buildCategoryDropdown(
+                            state,
+                          ),
+
+                          const SizedBox(
+                            height: 20,
+                          ),
+
+                          // ==================================================
+                          // OPTIONS
+                          // ==================================================
+
+                          _sectionTitle(
+                            context,
+                            'Options',
+                          ),
+
+                          const SizedBox(
+                            height: 8,
+                          ),
+
+                          // --------------------------------------------------
+                          // VEG / NON-VEG — FOOD ONLY
+                          // --------------------------------------------------
+
+                          if (showVegOption)
+                            _buildOptionCard(
+                              context,
+                              icon:
+                              Icons.eco_outlined,
+                              title:
+                              'Vegetarian',
+                              subtitle:
+                              'Mark this item as vegetarian.',
+                              value: _veg,
+                              activeColor:
+                              Colors.green,
+                              onChanged:
+                                  (value) {
+                                setState(() {
+                                  _veg =
+                                      value;
+                                });
+                              },
+                            ),
+
+                          // --------------------------------------------------
+                          // AVAILABLE
+                          // --------------------------------------------------
+
+                          _buildOptionCard(
+                            context,
+                            icon: Icons
+                                .visibility_outlined,
+                            title:
+                            'Available',
+                            subtitle:
+                            'Turn off to hide this item from customers.',
+                            value:
+                            _available,
+                            activeColor:
+                            Theme.of(
+                              context,
+                            )
+                                .colorScheme
+                                .primary,
+                            onChanged:
+                                (value) {
+                              setState(() {
+                                _available =
+                                    value;
+                              });
+                            },
+                          ),
+
+                          // --------------------------------------------------
+                          // BEST SELLER
+                          // --------------------------------------------------
+
+                          _buildOptionCard(
+                            context,
+                            icon: Icons
+                                .star_outline_rounded,
+                            title:
+                            'Best Seller',
+                            subtitle:
+                            'Highlight this item as a best seller.',
+                            value:
+                            _bestSeller,
+                            activeColor:
+                            Colors.orange,
+                            onChanged:
+                                (value) {
+                              setState(() {
+                                _bestSeller =
+                                    value;
+                              });
+                            },
+                          ),
+
+                          // --------------------------------------------------
+                          // RECOMMENDED
+                          // --------------------------------------------------
+
+                          _buildOptionCard(
+                            context,
+                            icon: Icons
+                                .thumb_up_alt_outlined,
+                            title:
+                            'Recommended',
+                            subtitle:
+                            'Mark this item as recommended.',
+                            value:
+                            _recommended,
+                            activeColor:
+                            Theme.of(
+                              context,
+                            )
+                                .colorScheme
+                                .primary,
+                            onChanged:
+                                (value) {
+                              setState(() {
+                                _recommended =
+                                    value;
+                              });
+                            },
+                          ),
+
+                          const SizedBox(
+                            height: 24,
+                          ),
+
+                          // ==================================================
+                          // SAVE BUTTON
+                          // ==================================================
+
+                          SizedBox(
+                            width:
+                            double.infinity,
+                            height: 54,
+                            child:
+                            FilledButton
+                                .icon(
+                              onPressed:
+                              state.status ==
+                                  MenuStatus
+                                      .loading ||
+                                  _uploadingImage
+                                  ? null
+                                  : _saveItem,
+                              icon:
+                              state.status ==
+                                  MenuStatus
+                                      .loading ||
+                                  _uploadingImage
+                                  ? const SizedBox(
+                                width:
+                                20,
+                                height:
+                                20,
+                                child:
+                                CircularProgressIndicator(
+                                  strokeWidth:
+                                  2.3,
+                                ),
+                              )
+                                  : Icon(
+                                widget.isEditing
+                                    ? Icons
+                                    .save_outlined
+                                    : Icons
+                                    .check_rounded,
+                              ),
+                              label:
+                              Text(
+                                _uploadingImage
+                                    ? 'Uploading Image...'
+                                    : state.status ==
+                                    MenuStatus.loading
+                                    ? widget.isEditing
+                                    ? 'Saving Changes...'
+                                    : 'Saving Item...'
+                                    : widget.isEditing
+                                    ? 'Save Changes'
+                                    : 'Save Item',
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 12,
+                          ),
+
+                          SizedBox(
+                            width:
+                            double.infinity,
+                            height: 48,
+                            child:
+                            OutlinedButton(
+                              onPressed:
+                              state.status ==
+                                  MenuStatus
+                                      .loading ||
+                                  _uploadingImage
+                                  ? null
+                                  : () {
+                                Navigator.of(
+                                  context,
+                                ).pop();
+                              },
+                              child:
+                              const Text(
+                                'Cancel',
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // SECTION TITLE
+  // ============================================================
+
+  Widget _sectionTitle(
+      BuildContext context,
+      String title,
+      ) {
+    return Text(
+      title,
+      style: Theme.of(context)
+          .textTheme
+          .titleLarge
+          ?.copyWith(
+        fontWeight:
+        FontWeight.w700,
+      ),
+    );
+  }
+
+  // ============================================================
+  // PRICE FIELD
+  // ============================================================
+
+  Widget _priceField() {
+    return TextFormField(
+      controller:
+      _priceController,
+      keyboardType:
+      const TextInputType.numberWithOptions(
+        decimal: true,
+      ),
+      textInputAction:
+      TextInputAction.next,
+      decoration:
+      const InputDecoration(
+        labelText: 'Price',
+        prefixText: '₹ ',
+        prefixIcon:
+        Icon(
+          Icons
+              .currency_rupee_outlined,
+        ),
+      ),
+      validator: (value) {
+        final price =
+        double.tryParse(
+          value?.trim() ?? '',
+        );
+
+        if (price == null ||
+            price <= 0) {
+          return 'Enter a valid price';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  // ============================================================
+  // DISPLAY ORDER
+  // ============================================================
+
+  Widget _displayOrderField() {
+    return TextFormField(
+      controller:
+      _displayOrderController,
+      keyboardType:
+      TextInputType.number,
+      textInputAction:
+      TextInputAction.next,
+      decoration:
+      const InputDecoration(
+        labelText:
+        'Display order',
+        hintText: '0',
+        prefixIcon:
+        Icon(
+          Icons
+              .format_list_numbered_rounded,
+        ),
+      ),
+      validator: (value) {
+        final order =
+        int.tryParse(
+          value?.trim() ?? '',
+        );
+
+        if (order == null ||
+            order < 0) {
+          return 'Enter a valid order';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  // ============================================================
+  // CATEGORY
+  // ============================================================
 
   Widget _buildCategoryDropdown(
       MenuState state,
@@ -270,94 +717,344 @@ class _AddMenuItemScreenState
     }
 
     return DropdownButtonFormField<String?>(
-      initialValue: _categoryId,
-      decoration: const InputDecoration(
-        labelText: 'Category',
-        border: OutlineInputBorder(),
+      initialValue:
+      _categoryId,
+      isExpanded: true,
+      decoration:
+      const InputDecoration(
+        labelText:
+        'Category',
+        prefixIcon:
+        Icon(
+          Icons
+              .category_outlined,
+        ),
       ),
       items: [
         const DropdownMenuItem<String?>(
           value: null,
-          child: Text('No category'),
+          child:
+          Text(
+            'No category',
+          ),
         ),
         ...state.categories.map(
               (category) {
             return DropdownMenuItem<String?>(
-              value: category.id,
-              child: Text(category.name),
+              value:
+              category.id,
+              child:
+              Text(
+                category.name,
+                maxLines: 1,
+                overflow:
+                TextOverflow
+                    .ellipsis,
+              ),
             );
           },
         ),
       ],
       onChanged: (value) {
         setState(() {
-          _categoryId = value;
+          _categoryId =
+              value;
         });
       },
     );
   }
 
-  Widget _buildImageSection() {
-    return GestureDetector(
-      onTap: _uploadingImage
-          ? null
-          : _pickImage,
-      child: Container(
-        height: 220,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.grey.shade300,
+  // ============================================================
+  // OPTION CARD
+  // ============================================================
+
+  Widget _buildOptionCard(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required bool value,
+        required Color activeColor,
+        required ValueChanged<bool>
+        onChanged,
+      }) {
+    return Card(
+      elevation: 0,
+      margin:
+      const EdgeInsets.only(
+        bottom: 10,
+      ),
+      child:
+      SwitchListTile.adaptive(
+        contentPadding:
+        const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 4,
+        ),
+        secondary:
+        Container(
+          width: 40,
+          height: 40,
+          alignment:
+          Alignment.center,
+          decoration:
+          BoxDecoration(
+            color: activeColor
+                .withValues(
+              alpha: 0.10,
+            ),
+            borderRadius:
+            BorderRadius.circular(
+              10,
+            ),
+          ),
+          child:
+          Icon(
+            icon,
+            color:
+            activeColor,
+            size: 21,
           ),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: _imageBytes != null
-            ? Image.memory(
-          _imageBytes!,
-          fit: BoxFit.cover,
-        )
-            : _imageUrl != null &&
-            _imageUrl!.isNotEmpty
-            ? Image.network(
-          _imageUrl!,
-          fit: BoxFit.cover,
-          errorBuilder:
-              (_, _, _) {
-            return _emptyImage();
-          },
-        )
-            : _emptyImage(),
+        title: Text(
+          title,
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          maxLines: 2,
+          overflow:
+          TextOverflow.ellipsis,
+        ),
+        value:
+        value,
+        onChanged:
+        onChanged,
       ),
     );
   }
 
-  Widget _emptyImage() {
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.add_photo_alternate_outlined,
-          size: 48,
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Add Item Image',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+  // ============================================================
+  // IMAGE SECTION
+  // ============================================================
+
+  Widget _buildImageSection(
+      BuildContext context, {
+        required double height,
+      }) {
+    return GestureDetector(
+      onTap:
+      _uploadingImage
+          ? null
+          : _pickImage,
+      child: Container(
+        height:
+        height,
+        width:
+        double.infinity,
+        decoration:
+        BoxDecoration(
+          color: Theme.of(
+            context,
+          )
+              .colorScheme
+              .surfaceContainerHighest,
+          borderRadius:
+          BorderRadius.circular(
+            16,
+          ),
+          border:
+          Border.all(
+            color: Theme.of(
+              context,
+            )
+                .colorScheme
+                .outlineVariant,
           ),
         ),
-        SizedBox(height: 4),
-        Text('Tap to select image'),
+        clipBehavior:
+        Clip.antiAlias,
+        child:
+        _buildImageContent(
+          context,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageContent(
+      BuildContext context,
+      ) {
+    if (_imageBytes != null) {
+      return Stack(
+        fit:
+        StackFit.expand,
+        children: [
+          Image.memory(
+            _imageBytes!,
+            fit:
+            BoxFit.cover,
+          ),
+          _buildImageOverlay(
+            context,
+          ),
+        ],
+      );
+    }
+
+    if (_imageUrl != null &&
+        _imageUrl!
+            .trim()
+            .isNotEmpty) {
+      return Stack(
+        fit:
+        StackFit.expand,
+        children: [
+          Image.network(
+            _imageUrl!,
+            fit:
+            BoxFit.cover,
+            errorBuilder:
+                (
+                _,
+                _,
+                _,
+                ) {
+              return _emptyImage(
+                context,
+              );
+            },
+          ),
+          _buildImageOverlay(
+            context,
+          ),
+        ],
+      );
+    }
+
+    return _emptyImage(
+      context,
+    );
+  }
+
+  Widget _buildImageOverlay(
+      BuildContext context,
+      ) {
+    return Align(
+      alignment:
+      Alignment.bottomCenter,
+      child: Container(
+        width:
+        double.infinity,
+        padding:
+        const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        decoration:
+        const BoxDecoration(
+          gradient:
+          LinearGradient(
+            begin:
+            Alignment.topCenter,
+            end:
+            Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black54,
+            ],
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment:
+          MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons
+                  .photo_camera_outlined,
+              color:
+              Colors.white,
+              size: 18,
+            ),
+            SizedBox(
+              width: 6,
+            ),
+            Text(
+              'Tap to change image',
+              style:
+              TextStyle(
+                color:
+                Colors.white,
+                fontWeight:
+                FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyImage(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Column(
+      mainAxisAlignment:
+      MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons
+              .add_photo_alternate_outlined,
+          size: 48,
+          color: theme
+              .colorScheme
+              .onSurfaceVariant,
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        const Text(
+          'Add Item Image',
+          style:
+          TextStyle(
+            fontWeight:
+            FontWeight.w600,
+          ),
+        ),
+        const SizedBox(
+          height: 4,
+        ),
+        Text(
+          'Tap to select image',
+          style: TextStyle(
+            color: theme
+                .colorScheme
+                .onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
+  // ============================================================
+  // PICK IMAGE
+  // ============================================================
 
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
+  Future<void> _pickImage() async {
+    final picker =
+    ImagePicker();
+
+    final image =
+    await picker.pickImage(
+      source:
+      ImageSource.gallery,
       imageQuality: 80,
     );
 
@@ -365,40 +1062,60 @@ class _AddMenuItemScreenState
       return;
     }
 
-    final bytes = await image.readAsBytes();
+    final bytes =
+    await image.readAsBytes();
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
-      _selectedImage = image;
-      _imageBytes = bytes;
+      _selectedImage =
+          image;
+      _imageBytes =
+          bytes;
       _imageUrl = null;
     });
   }
 
+  // ============================================================
+  // SAVE ITEM
+  // ============================================================
+
   Future<void> _saveItem() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!
+        .validate()) {
       return;
     }
 
-    final price = double.tryParse(
-      _priceController.text.trim(),
+    final price =
+    double.tryParse(
+      _priceController
+          .text
+          .trim(),
     );
 
-    if (price == null || price <= 0) {
+    if (price == null ||
+        price <= 0) {
       return;
     }
 
     final displayOrder =
         int.tryParse(
-          _displayOrderController.text.trim(),
+          _displayOrderController
+              .text
+              .trim(),
         ) ??
             0;
 
-    String? imageUrl = _imageUrl;
+    String? imageUrl =
+        _imageUrl;
 
     if (_imageBytes != null &&
         _selectedImage != null) {
       setState(() {
-        _uploadingImage = true;
+        _uploadingImage =
+        true;
       });
 
       try {
@@ -408,23 +1125,35 @@ class _AddMenuItemScreenState
         );
 
         final response =
-        await imageService.uploadCatalogImage(
+        await imageService
+            .uploadCatalogImage(
           _imageBytes!,
-          _selectedImage!.name,
+          _selectedImage!
+              .name,
         );
 
-        imageUrl = response.imageUrl;
+        imageUrl =
+            response.imageUrl;
       } catch (e) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setState(() {
-          _uploadingImage = false;
+          _uploadingImage =
+          false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
           SnackBar(
+            behavior:
+            SnackBarBehavior
+                .floating,
             content: Text(
-              e.toString().replaceFirst(
+              e.toString()
+                  .replaceFirst(
                 'Exception: ',
                 '',
               ),
@@ -437,63 +1166,111 @@ class _AddMenuItemScreenState
 
       if (mounted) {
         setState(() {
-          _uploadingImage = false;
+          _uploadingImage =
+          false;
         });
       }
     }
 
-    final request = CatalogRequest(
-      categoryId: _categoryId,
-      name: _nameController.text.trim(),
+    // For non-food businesses the
+    // vegetarian field is not user-facing.
+    // We keep sending the existing backend
+    // field for compatibility.
+    final showVegOption =
+        _isFoodBusiness;
+
+    final request =
+    CatalogRequest(
+      categoryId:
+      _categoryId,
+      name:
+      _nameController
+          .text
+          .trim(),
       description:
-      _descriptionController.text.trim(),
-      price: price,
-      imageUrl: imageUrl,
-      veg: _veg,
-      available: _available,
-      bestSeller: _bestSeller,
-      recommended: _recommended,
-      displayOrder: displayOrder,
+      _descriptionController
+          .text
+          .trim(),
+      price:
+      price,
+      imageUrl:
+      imageUrl,
+      veg:
+      showVegOption
+          ? _veg
+          : true,
+      available:
+      _available,
+      bestSeller:
+      _bestSeller,
+      recommended:
+      _recommended,
+      displayOrder:
+      displayOrder,
     );
 
     final notifier =
     ref.read(
-      menuNotifierProvider.notifier,
+      menuNotifierProvider
+          .notifier,
     );
 
-    final success = widget.isEditing
-        ? await notifier.updateCatalog(
+    final success =
+    widget.isEditing
+        ? await notifier
+        .updateCatalog(
       widget.item!.id,
       request,
     )
-        : await notifier.createCatalog(
+        : await notifier
+        .createCatalog(
       request,
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
         SnackBar(
+          behavior:
+          SnackBarBehavior
+              .floating,
           content: Text(
             widget.isEditing
-                ? 'Menu item updated successfully.'
-                : 'Menu item added successfully.',
+                ? 'Item updated successfully.'
+                : 'Item added successfully.',
           ),
         ),
       );
 
-      Navigator.of(context).pop();
+      Navigator.of(
+        context,
+      ).pop();
+
       return;
     }
 
     final error =
-        ref.read(menuNotifierProvider).errorMessage;
+        ref
+            .read(
+          menuNotifierProvider,
+        )
+            .errorMessage;
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
         SnackBar(
-          content: Text(error),
+          behavior:
+          SnackBarBehavior
+              .floating,
+          content:
+          Text(error),
         ),
       );
     }

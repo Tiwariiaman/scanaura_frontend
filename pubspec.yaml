@@ -41,7 +41,10 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   json_annotation: ^4.9.0
   image_picker: ^1.1.2
-  file_picker: ^8.3.7
+  file_picker: ^10.3.10
+
+  shared_preferences: ^2.5.3
+
   cached_network_image: ^3.4.1
   intl: ^0.20.2
   qr_flutter: ^4.1.0

@@ -12,8 +12,6 @@ class MenuFilterChips extends StatelessWidget {
     required this.categories,
     required this.onAllSelected,
     required this.onCategorySelected,
-    required this.onVegSelected,
-    required this.onNonVegSelected,
     required this.onBestSellerSelected,
     required this.onRecommendedSelected,
   });
@@ -23,19 +21,34 @@ class MenuFilterChips extends StatelessWidget {
 
   final VoidCallback onAllSelected;
 
-  final ValueChanged<String> onCategorySelected;
+  final ValueChanged<String>
+  onCategorySelected;
 
-  final VoidCallback onVegSelected;
-  final VoidCallback onNonVegSelected;
-  final VoidCallback onBestSellerSelected;
-  final VoidCallback onRecommendedSelected;
+  final VoidCallback
+  onBestSellerSelected;
+
+  final VoidCallback
+  onRecommendedSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
+    final width =
+        MediaQuery.sizeOf(context).width;
+
+    final compact =
+        width < 400;
+
+    final chipHeight =
+    compact ? 44.0 : 46.0;
+
     return SizedBox(
-      height: 48,
+      height: chipHeight,
       child: ScrollConfiguration(
-        behavior: const MaterialScrollBehavior().copyWith(
+        behavior:
+        const MaterialScrollBehavior()
+            .copyWith(
           dragDevices: {
             PointerDeviceKind.touch,
             PointerDeviceKind.mouse,
@@ -43,12 +56,22 @@ class MenuFilterChips extends StatelessWidget {
           },
         ),
         child: ListView(
-          scrollDirection: Axis.horizontal,
-          physics: const AlwaysScrollableScrollPhysics(),
+          scrollDirection:
+          Axis.horizontal,
+          shrinkWrap: true,
+          physics:
+          const BouncingScrollPhysics(),
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 2,
+          ),
           children: [
             FilterChip(
-              label: const Text('All'),
-              selected: state.selectedCategoryId == null,
+              label:
+              const Text('All'),
+              selected:
+              state.selectedCategoryId ==
+                  null,
               onSelected: (_) {
                 onAllSelected();
               },
@@ -59,17 +82,27 @@ class MenuFilterChips extends StatelessWidget {
             ...categories.map(
                   (category) {
                 final selected =
-                    state.selectedCategoryId == category.id;
+                    state.selectedCategoryId ==
+                        category.id;
 
                 return Padding(
-                  padding: const EdgeInsets.only(
+                  padding:
+                  const EdgeInsets.only(
                     right: 8,
                   ),
                   child: FilterChip(
-                    label: Text(category.name),
-                    selected: selected,
+                    label: Text(
+                      category.name,
+                      maxLines: 1,
+                      overflow:
+                      TextOverflow.ellipsis,
+                    ),
+                    selected:
+                    selected,
                     onSelected: (_) {
-                      onCategorySelected(category.id);
+                      onCategorySelected(
+                        category.id,
+                      );
                     },
                   ),
                 );
@@ -78,35 +111,15 @@ class MenuFilterChips extends StatelessWidget {
 
             FilterChip(
               avatar: const Icon(
-                Icons.eco_outlined,
-                size: 18,
-              ),
-              label: const Text('Veg'),
-              selected: state.showVegOnly,
-              onSelected: (_) {
-                onVegSelected();
-              },
-            ),
-
-            const SizedBox(width: 8),
-
-            FilterChip(
-              label: const Text('Non-Veg'),
-              selected: state.showNonVegOnly,
-              onSelected: (_) {
-                onNonVegSelected();
-              },
-            ),
-
-            const SizedBox(width: 8),
-
-            FilterChip(
-              avatar: const Icon(
                 Icons.star_outline,
                 size: 18,
               ),
-              label: const Text('Best Seller'),
-              selected: state.showBestSellerOnly,
+              label:
+              const Text(
+                'Best Seller',
+              ),
+              selected:
+              state.showBestSellerOnly,
               onSelected: (_) {
                 onBestSellerSelected();
               },
@@ -116,11 +129,16 @@ class MenuFilterChips extends StatelessWidget {
 
             FilterChip(
               avatar: const Icon(
-                Icons.thumb_up_alt_outlined,
+                Icons
+                    .thumb_up_alt_outlined,
                 size: 18,
               ),
-              label: const Text('Recommended'),
-              selected: state.showRecommendedOnly,
+              label:
+              const Text(
+                'Recommended',
+              ),
+              selected:
+              state.showRecommendedOnly,
               onSelected: (_) {
                 onRecommendedSelected();
               },

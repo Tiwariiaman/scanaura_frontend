@@ -20,6 +20,7 @@ class BusinessScreen extends ConsumerStatefulWidget {
 class _BusinessScreenState
     extends ConsumerState<BusinessScreen> {
   bool _loadingStarted = false;
+  bool _logoUploading = false;
 
   @override
   void initState() {
@@ -30,6 +31,10 @@ class _BusinessScreenState
     });
   }
 
+  // ============================================================
+  // LOAD BUSINESS
+  // ============================================================
+
   Future<void> _checkBusiness() async {
     if (_loadingStarted) {
       return;
@@ -38,45 +43,34 @@ class _BusinessScreenState
     _loadingStarted = true;
 
     await ref
-        .read(businessNotifierProvider.notifier)
+        .read(
+      businessNotifierProvider.notifier,
+    )
         .loadMyBusiness();
 
     if (!mounted) {
       return;
     }
 
-    final state = ref.read(businessNotifierProvider);
+    final state =
+    ref.read(businessNotifierProvider);
 
-    /*
-     * BUSINESS EXISTS
-     *
-     * Do nothing.
-     * The build method will display the business.
-     */
+    // Business exists.
     if (state.business != null) {
       return;
     }
 
-    /*
-     * NO BUSINESS
-     *
-     * Backend currently returns:
-     *
-     * Business not found.
-     *
-     * This is a normal onboarding state.
-     */
+    // No business yet.
     if (state.status == BusinessStatus.error &&
-        state.errorMessage == 'Business not found.') {
-      context.go('/business-onboarding');
+        state.errorMessage ==
+            'Business not found.') {
+      context.go(
+        '/business-onboarding',
+      );
       return;
     }
 
-    /*
-     * Unexpected error.
-     *
-     * Stay on this page and show retry.
-     */
+    // Unexpected error.
     setState(() {});
   }
 
@@ -88,12 +82,20 @@ class _BusinessScreenState
     await _checkBusiness();
   }
 
+  // ============================================================
+  // LOGO UPLOAD
+  // ============================================================
+
   Future<void> _pickAndUploadLogo() async {
     final business =
-        ref.read(businessNotifierProvider).business;
+        ref
+            .read(businessNotifierProvider)
+            .business;
 
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
@@ -109,11 +111,13 @@ class _BusinessScreenState
     }
 
     final file = result.files.single;
-
     final bytes = file.bytes;
 
-    if (bytes == null || bytes.isEmpty) {
-      _showMessage('Unable to read the selected image.');
+    if (bytes == null ||
+        bytes.isEmpty) {
+      _showMessage(
+        'Unable to read the selected image.',
+      );
       return;
     }
 
@@ -121,12 +125,13 @@ class _BusinessScreenState
       _showLogoLoading(true);
 
       final compressed =
-      await ImageCompressionHelper.compressLogo(
-        bytes,
-      );
+      await ImageCompressionHelper
+          .compressLogo(bytes);
 
       final uploadService =
-      ref.read(imageUploadServiceProvider);
+      ref.read(
+        imageUploadServiceProvider,
+      );
 
       final upload =
       await uploadService.uploadBusinessLogo(
@@ -139,38 +144,25 @@ class _BusinessScreenState
         businessName:
         business.businessName,
         businessType:
-        _parseBusinessType(
-          business.businessType,
-        ),
-        phone:
-        business.phone,
-        logoUrl:
-        upload.imageUrl,
-        whatsapp:
-        business.whatsapp,
-        email:
-        business.email,
-        address:
-        business.address,
-        city:
-        business.city,
-        state:
-        business.state,
-        country:
-        business.country,
-        pincode:
-        business.pincode,
-        website:
-        business.website,
-        description:
-        business.description,
-        upiId:
-        business.upiId,
+        _parseBusinessType(business.businessType)!,
+        phone: business.phone,
+        logoUrl: upload.imageUrl,
+        whatsapp: business.whatsapp,
+        email: business.email,
+        address: business.address,
+        city: business.city,
+        state: business.state,
+        country: business.country,
+        pincode: business.pincode,
+        website: business.website,
+        description: business.description,
+        upiId: business.upiId,
       );
 
       await ref
           .read(
-        businessNotifierProvider.notifier,
+        businessNotifierProvider
+            .notifier,
       )
           .updateBusiness(
         updatedRequest,
@@ -181,7 +173,9 @@ class _BusinessScreenState
       }
 
       final state =
-      ref.read(businessNotifierProvider);
+      ref.read(
+        businessNotifierProvider,
+      );
 
       if (state.status ==
           BusinessStatus.success &&
@@ -213,8 +207,6 @@ class _BusinessScreenState
     }
   }
 
-  bool _logoUploading = false;
-
   void _showLogoLoading(bool value) {
     setState(() {
       _logoUploading = value;
@@ -222,36 +214,55 @@ class _BusinessScreenState
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior:
+          SnackBarBehavior.floating,
+        ),
+      );
   }
 
-  BusinessType _parseBusinessType(
-      String value,
+  BusinessType? _parseBusinessType(
+      String? value,
       ) {
+    if (value == null ||
+        value.trim().isEmpty) {
+      return null;
+    }
+
     final normalized =
     value.trim().toUpperCase();
 
     for (final type in BusinessType.values) {
+      if (type.name.toUpperCase() ==
+          normalized) {
+        return type;
+      }
+
       if (type.apiValue == normalized) {
         return type;
       }
     }
 
-    return BusinessType.restaurant;
+    return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(businessNotifierProvider);
+  // ============================================================
+  // BUILD
+  // ============================================================
 
-    /*
-     * BUSINESS EXISTS
-     */
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    final state =
+    ref.watch(
+      businessNotifierProvider,
+    );
+
     if (state.business != null) {
       return _buildBusinessPage(
         context,
@@ -259,22 +270,20 @@ class _BusinessScreenState
       );
     }
 
-    /*
-     * INITIAL CHECK / LOADING
-     */
-    if (state.status == BusinessStatus.loading ||
-        state.status == BusinessStatus.initial) {
+    if (state.status ==
+        BusinessStatus.loading ||
+        state.status ==
+            BusinessStatus.initial) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+          CircularProgressIndicator(),
         ),
       );
     }
 
-    /*
-     * ERROR
-     */
-    if (state.status == BusinessStatus.error) {
+    if (state.status ==
+        BusinessStatus.error) {
       return _buildErrorPage(
         context,
         state.errorMessage,
@@ -283,7 +292,8 @@ class _BusinessScreenState
 
     return const Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child:
+        CircularProgressIndicator(),
       ),
     );
   }
@@ -296,12 +306,20 @@ class _BusinessScreenState
       BuildContext context,
       dynamic business,
       ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme =
+    Theme.of(context);
+    final colorScheme =
+        theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Business'),
+        title: const Text(
+          'My Business',
+          style: TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Edit Business',
@@ -314,383 +332,671 @@ class _BusinessScreenState
               Icons.edit_outlined,
             ),
           ),
+          const SizedBox(width: 4),
         ],
       ),
+
       body: RefreshIndicator(
         onRefresh: () async {
           _loadingStarted = false;
 
           await ref
-              .read(businessNotifierProvider.notifier)
+              .read(
+            businessNotifierProvider
+                .notifier,
+          )
               .loadMyBusiness();
 
           _loadingStarted = true;
         },
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          children: [
-            // ==================================================
-            // BUSINESS HEADER
-            // ==================================================
 
-            Card(
-              elevation: 0,
-              color: colorScheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-
-                child: Row(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.center,
-
-                  children: [
-                    // LOGO
-
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            return ListView(
+              physics:
+              const AlwaysScrollableScrollPhysics(),
+              padding:
+              const EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                32,
+              ),
+              children: [
+                Center(
+                  child:
+                  ConstrainedBox(
+                    constraints:
+                    const BoxConstraints(
+                      maxWidth: 1100,
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment
+                          .stretch,
                       children: [
-                        GestureDetector(
-                          onTap: _logoUploading
-                              ? null
-                              : _pickAndUploadLogo,
-                          child: Stack(
-                            alignment: Alignment.center,
+                        _buildBusinessHeader(
+                          context,
+                          business,
+                        ),
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
+                        // ==================================================
+                        // BUSINESS STATUS
+                        // ==================================================
+
+                        _sectionCard(
+                          context,
+                          title:
+                          'Business Status',
+                          icon: Icons
+                              .verified_outlined,
+                          child: Row(
                             children: [
                               Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius:
-                                  BorderRadius.circular(18),
-                                ),
-                                child: business.logoUrl != null &&
-                                    business.logoUrl!
-                                        .trim()
-                                        .isNotEmpty
-                                    ? ClipRRect(
-                                  borderRadius:
-                                  BorderRadius.circular(18),
-                                  child: Image.network(
-                                    business.logoUrl!,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (_, _, _) {
-                                      return Icon(
-                                        Icons.storefront_rounded,
-                                        size: 36,
-                                        color:
-                                        colorScheme.primary,
-                                      );
-                                    },
-                                  ),
-                                )
-                                    : Icon(
-                                  Icons.storefront_rounded,
-                                  size: 36,
-                                  color: colorScheme.primary,
+                                width: 10,
+                                height: 10,
+                                decoration:
+                                BoxDecoration(
+                                  color:
+                                  business.active ==
+                                      true
+                                      ? Colors
+                                      .green
+                                      : Colors
+                                      .red,
+                                  shape:
+                                  BoxShape
+                                      .circle,
                                 ),
                               ),
 
-                              if (_logoUploading)
-                                Container(
-                                  width: 72,
-                                  height: 72,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius:
-                                    BorderRadius.circular(18),
-                                  ),
-                                  child: const Center(
-                                    child:
-                                    CircularProgressIndicator(),
-                                  ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+
+                              Text(
+                                business.active ==
+                                    true
+                                    ? 'Active'
+                                    : 'Inactive',
+                                style: theme
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                  fontWeight:
+                                  FontWeight
+                                      .w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
+                        // ==================================================
+                        // CONTACT INFORMATION
+                        // ==================================================
+
+                        _sectionCard(
+                          context,
+                          title:
+                          'Contact Information',
+                          icon: Icons
+                              .contact_phone_outlined,
+                          child: Column(
+                            children: [
+                              _infoRow(
+                                context,
+                                Icons
+                                    .phone_outlined,
+                                'Phone',
+                                business.phone,
+                              ),
+
+                              if (_hasValue(
+                                business.whatsapp,
+                              ))
+                                _infoRow(
+                                  context,
+                                  Icons
+                                      .chat_outlined,
+                                  'WhatsApp',
+                                  business.whatsapp,
+                                ),
+
+                              if (_hasValue(
+                                business.email,
+                              ))
+                                _infoRow(
+                                  context,
+                                  Icons
+                                      .email_outlined,
+                                  'Email',
+                                  business.email,
                                 ),
                             ],
                           ),
                         ),
 
-                        const SizedBox(height: 6),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
-                        Text(
-                          'Tap logo to change',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 11,
+                        // ==================================================
+                        // ADDRESS
+                        // ==================================================
+
+                        if (_hasAddress(
+                          business,
+                        ))
+                          _sectionCard(
+                            context,
+                            title:
+                            'Address',
+                            icon: Icons
+                                .location_on_outlined,
+                            child:
+                            Column(
+                              children: [
+                                if (_hasValue(
+                                  business.address,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .home_outlined,
+                                    'Address',
+                                    business.address,
+                                  ),
+
+                                if (_hasValue(
+                                  business.city,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .location_city_outlined,
+                                    'City',
+                                    business.city,
+                                  ),
+
+                                if (_hasValue(
+                                  business.state,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .map_outlined,
+                                    'State',
+                                    business.state,
+                                  ),
+
+                                if (_hasValue(
+                                  business.country,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .public_outlined,
+                                    'Country',
+                                    business.country,
+                                  ),
+
+                                if (_hasValue(
+                                  business.pincode,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .pin_drop_outlined,
+                                    'Pincode',
+                                    business.pincode,
+                                  ),
+                              ],
+                            ),
                           ),
-                          textAlign: TextAlign.center,
+
+                        if (_hasAddress(
+                          business,
+                        ))
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                        // ==================================================
+                        // ONLINE & PAYMENT
+                        // ==================================================
+
+                        if (_hasValue(
+                          business.website,
+                        ) ||
+                            _hasValue(
+                              business.upiId,
+                            ))
+                          _sectionCard(
+                            context,
+                            title:
+                            'Additional Information',
+                            icon: Icons
+                                .info_outline_rounded,
+                            child:
+                            Column(
+                              children: [
+                                if (_hasValue(
+                                  business.website,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .language_outlined,
+                                    'Website',
+                                    business.website,
+                                  ),
+
+                                if (_hasValue(
+                                  business.upiId,
+                                ))
+                                  _infoRow(
+                                    context,
+                                    Icons
+                                        .account_balance_wallet_outlined,
+                                    'UPI ID',
+                                    business.upiId,
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        if (_hasValue(
+                          business.website,
+                        ) ||
+                            _hasValue(
+                              business.upiId,
+                            ))
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                        // ==================================================
+                        // DESCRIPTION
+                        // ==================================================
+
+                        if (_hasValue(
+                          business.description,
+                        ))
+                          _sectionCard(
+                            context,
+                            title:
+                            'About Business',
+                            icon: Icons
+                                .description_outlined,
+                            child: Text(
+                              business.description!,
+                              style: theme
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+
+                        if (_hasValue(
+                          business.description,
+                        ))
+                          const SizedBox(
+                            height: 24,
+                          ),
+
+                        // ==================================================
+                        // EDIT BUTTON
+                        // ==================================================
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child:
+                          FilledButton.icon(
+                            onPressed: () {
+                              context.push(
+                                '/business-onboarding?edit=true',
+                              );
+                            },
+                            icon:
+                            const Icon(
+                              Icons
+                                  .edit_outlined,
+                            ),
+                            label:
+                            const Text(
+                              'Edit Business',
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 24,
                         ),
                       ],
                     ),
-                    const SizedBox(width: 16),
-
-                    // NAME + TYPE
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            business.businessName,
-                            maxLines: 2,
-                            overflow:
-                            TextOverflow.ellipsis,
-                            style: theme
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Container(
-                            padding:
-                            const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                              colorScheme.surface,
-                              borderRadius:
-                              BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              _formatBusinessType(
-                                business.businessType,
-                              ),
-                              style: theme
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(
-                                fontWeight:
-                                FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 20),
+  // ============================================================
+  // BUSINESS HEADER
+  // ============================================================
 
-            // ==================================================
-            // BUSINESS STATUS
-            // ==================================================
+  Widget _buildBusinessHeader(
+      BuildContext context,
+      dynamic business,
+      ) {
+    final theme =
+    Theme.of(context);
+    final colorScheme =
+        theme.colorScheme;
 
-            _sectionCard(
+    return Card(
+      elevation: 0,
+      color:
+      colorScheme.primaryContainer,
+      child: Padding(
+        padding:
+        const EdgeInsets.all(20),
+        child: LayoutBuilder(
+          builder: (
               context,
-              title: 'Business Status',
-              icon: Icons.verified_outlined,
-              child: Row(
+              constraints,
+              ) {
+            final isCompact =
+                constraints.maxWidth <
+                    500;
+
+            if (isCompact) {
+              return Column(
+                crossAxisAlignment:
+                CrossAxisAlignment
+                    .center,
                 children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: business.active == true
-                          ? Colors.green
-                          : Colors.red,
-                      shape: BoxShape.circle,
-                    ),
+                  _buildLogo(
+                    context,
+                    business,
+                    size: 84,
                   ),
 
-                  const SizedBox(width: 10),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
                   Text(
-                    business.active == true
-                        ? 'Active'
-                        : 'Inactive',
+                    business.businessName,
+                    textAlign:
+                    TextAlign.center,
+                    maxLines: 3,
+                    overflow:
+                    TextOverflow.ellipsis,
                     style: theme
                         .textTheme
-                        .bodyLarge
+                        .headlineSmall
                         ?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                      FontWeight.w800,
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
-            // ==================================================
-            // CONTACT INFORMATION
-            // ==================================================
-
-            _sectionCard(
-              context,
-              title: 'Contact Information',
-              icon: Icons.contact_phone_outlined,
-              child: Column(
-                children: [
-                  _infoRow(
+                  _businessTypeChip(
                     context,
-                    Icons.phone_outlined,
-                    'Phone',
-                    business.phone,
+                    business.businessType,
                   ),
-
-                  if (_hasValue(business.whatsapp))
-                    _infoRow(
-                      context,
-                      Icons.chat_outlined,
-                      'WhatsApp',
-                      business.whatsapp,
-                    ),
-
-                  if (_hasValue(business.email))
-                    _infoRow(
-                      context,
-                      Icons.email_outlined,
-                      'Email',
-                      business.email,
-                    ),
                 ],
-              ),
-            ),
+              );
+            }
 
-            const SizedBox(height: 16),
+            return Row(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .center,
+              children: [
+                _buildLogo(
+                  context,
+                  business,
+                  size: 84,
+                ),
 
-            // ==================================================
-            // ADDRESS
-            // ==================================================
+                const SizedBox(
+                  width: 16,
+                ),
 
-            if (_hasAddress(business))
-              _sectionCard(
-                context,
-                title: 'Address',
-                icon: Icons.location_on_outlined,
-                child: Column(
-                  children: [
-                    if (_hasValue(business.address))
-                      _infoRow(
-                        context,
-                        Icons.home_outlined,
-                        'Address',
-                        business.address,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                    children: [
+                      Text(
+                        business
+                            .businessName,
+                        maxLines: 2,
+                        overflow:
+                        TextOverflow
+                            .ellipsis,
+                        style: theme
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight
+                              .w800,
+                        ),
                       ),
 
-                    if (_hasValue(business.city))
-                      _infoRow(
-                        context,
-                        Icons.location_city_outlined,
-                        'City',
-                        business.city,
+                      const SizedBox(
+                        height: 8,
                       ),
 
-                    if (_hasValue(business.state))
-                      _infoRow(
+                      _businessTypeChip(
                         context,
-                        Icons.map_outlined,
-                        'State',
-                        business.state,
+                        business
+                            .businessType,
                       ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-                    if (_hasValue(business.country))
-                      _infoRow(
-                        context,
-                        Icons.public_outlined,
-                        'Country',
-                        business.country,
-                      ),
+  // ============================================================
+  // LOGO
+  // ============================================================
 
-                    if (_hasValue(business.pincode))
-                      _infoRow(
-                        context,
-                        Icons.pin_drop_outlined,
-                        'Pincode',
-                        business.pincode,
-                      ),
-                  ],
+  Widget _buildLogo(
+      BuildContext context,
+      dynamic business, {
+        required double size,
+      }) {
+    final colorScheme =
+        Theme.of(context)
+            .colorScheme;
+
+    return Column(
+      mainAxisSize:
+      MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: _logoUploading
+              ? null
+              : _pickAndUploadLogo,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: size,
+                height: size,
+                decoration:
+                BoxDecoration(
+                  color:
+                  colorScheme.surface,
+                  borderRadius:
+                  BorderRadius.circular(
+                    size * 0.22,
+                  ),
+                ),
+                child:
+                business.logoUrl !=
+                    null &&
+                    business
+                        .logoUrl!
+                        .trim()
+                        .isNotEmpty
+                    ? ClipRRect(
+                  borderRadius:
+                  BorderRadius.circular(
+                    size * 0.22,
+                  ),
+                  child:
+                  Image.network(
+                    business.logoUrl!,
+                    width: size,
+                    height: size,
+                    fit: BoxFit
+                        .cover,
+                    errorBuilder:
+                        (
+                        _,
+                        _,
+                        _,
+                        ) {
+                      return Icon(
+                        Icons
+                            .storefront_rounded,
+                        size:
+                        size *
+                            0.5,
+                        color:
+                        colorScheme
+                            .primary,
+                      );
+                    },
+                  ),
+                )
+                    : Icon(
+                  Icons
+                      .storefront_rounded,
+                  size:
+                  size *
+                      0.5,
+                  color:
+                  colorScheme
+                      .primary,
                 ),
               ),
 
-            const SizedBox(height: 16),
-
-            // ==================================================
-            // ONLINE & PAYMENT
-            // ==================================================
-
-            if (_hasValue(business.website) ||
-                _hasValue(business.upiId))
-              _sectionCard(
-                context,
-                title: 'Additional Information',
-                icon: Icons.info_outline_rounded,
-                child: Column(
-                  children: [
-                    if (_hasValue(business.website))
-                      _infoRow(
-                        context,
-                        Icons.language_outlined,
-                        'Website',
-                        business.website,
-                      ),
-
-                    if (_hasValue(business.upiId))
-                      _infoRow(
-                        context,
-                        Icons.account_balance_wallet_outlined,
-                        'UPI ID',
-                        business.upiId,
-                      ),
-                  ],
+              if (_logoUploading)
+                Container(
+                  width: size,
+                  height: size,
+                  decoration:
+                  BoxDecoration(
+                    color:
+                    Colors.black54,
+                    borderRadius:
+                    BorderRadius.circular(
+                      size * 0.22,
+                    ),
+                  ),
+                  child:
+                  const Center(
+                    child:
+                    CircularProgressIndicator(),
+                  ),
                 ),
-              ),
+            ],
+          ),
+        ),
 
-            const SizedBox(height: 16),
+        const SizedBox(
+          height: 6,
+        ),
 
-            // ==================================================
-            // DESCRIPTION
-            // ==================================================
+        Text(
+          'Tap logo to change',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant,
+            fontSize: 11,
+          ),
+          textAlign:
+          TextAlign.center,
+        ),
+      ],
+    );
+  }
 
-            if (_hasValue(business.description))
-              _sectionCard(
-                context,
-                title: 'About Business',
-                icon: Icons.description_outlined,
-                child: Text(
-                  business.description!,
-                  style:
-                  theme.textTheme.bodyLarge,
-                ),
-              ),
+  // ============================================================
+  // BUSINESS TYPE
+  // ============================================================
 
-            const SizedBox(height: 24),
+  Widget _businessTypeChip(
+      BuildContext context,
+      String type,
+      ) {
+    final theme =
+    Theme.of(context);
+    final colorScheme =
+        theme.colorScheme;
 
-            // ==================================================
-            // EDIT BUTTON
-            // ==================================================
-
-            SizedBox(
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: () {
-                  context.push(
-                    '/business-onboarding?edit=true',
-                  );
-                },
-                icon: const Icon(
-                  Icons.edit_outlined,
-                ),
-                label: const Text(
-                  'Edit Business',
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-          ],
+    return Container(
+      padding:
+      const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+      decoration:
+      BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius:
+        BorderRadius.circular(20),
+      ),
+      child: Text(
+        _formatBusinessType(type),
+        maxLines: 1,
+        overflow:
+        TextOverflow.ellipsis,
+        style: theme
+            .textTheme
+            .labelMedium
+            ?.copyWith(
+          fontWeight:
+          FontWeight.w600,
         ),
       ),
     );
@@ -706,12 +1012,14 @@ class _BusinessScreenState
         required IconData icon,
         required Widget child,
       }) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+        const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -723,19 +1031,31 @@ class _BusinessScreenState
                   size: 21,
                 ),
 
-                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 8,
+                ),
 
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 16,
+            ),
 
             child,
           ],
@@ -745,7 +1065,7 @@ class _BusinessScreenState
   }
 
   // ============================================================
-  // INFORMATION ROW
+  // RESPONSIVE INFORMATION ROW
   // ============================================================
 
   Widget _infoRow(
@@ -758,51 +1078,145 @@ class _BusinessScreenState
       return const SizedBox.shrink();
     }
 
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
-    return Padding(
-      padding:
-      const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: theme
-                .colorScheme
-                .onSurfaceVariant,
+    return LayoutBuilder(
+      builder:
+          (context, constraints) {
+        final compact =
+            constraints.maxWidth <
+                420;
+
+        if (compact) {
+          return Padding(
+            padding:
+            const EdgeInsets.only(
+              bottom: 16,
+            ),
+            child: Row(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: theme
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+
+                const SizedBox(
+                  width: 12,
+                ),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                    children: [
+                      Text(
+                        label,
+                        style: theme
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                          color: theme
+                              .colorScheme
+                              .onSurfaceVariant,
+                          fontWeight:
+                          FontWeight
+                              .w600,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 3,
+                      ),
+
+                      Text(
+                        value!,
+                        softWrap: true,
+                        style: theme
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight
+                              .w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Padding(
+          padding:
+          const EdgeInsets.only(
+            bottom: 14,
           ),
-
-          const SizedBox(width: 12),
-
-          SizedBox(
-            width: 85,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(
+          child: Row(
+            crossAxisAlignment:
+            CrossAxisAlignment
+                .start,
+            children: [
+              Icon(
+                icon,
+                size: 20,
                 color: theme
                     .colorScheme
                     .onSurfaceVariant,
               ),
-            ),
-          ),
 
-          const SizedBox(width: 8),
-
-          Expanded(
-            child: Text(
-              value!,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(
-                fontWeight: FontWeight.w500,
+              const SizedBox(
+                width: 12,
               ),
-            ),
+
+              SizedBox(
+                width: 85,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  style: theme
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                width: 8,
+              ),
+
+              Expanded(
+                child: Text(
+                  value!,
+                  softWrap: true,
+                  style: theme
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(
+                    fontWeight:
+                    FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -814,55 +1228,83 @@ class _BusinessScreenState
       BuildContext context,
       String? message,
       ) {
-    final theme = Theme.of(context);
+    final theme =
+    Theme.of(context);
 
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.cloud_off_rounded,
-                size: 56,
-                color:
-                theme.colorScheme.error,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints:
+              const BoxConstraints(
+                maxWidth: 420,
               ),
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons
+                        .cloud_off_rounded,
+                    size: 56,
+                    color: theme
+                        .colorScheme
+                        .error,
+                  ),
 
-              const SizedBox(height: 20),
+                  const SizedBox(
+                    height: 20,
+                  ),
 
-              Text(
-                'Unable to load business',
-                style: theme
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                  Text(
+                    'Unable to load business',
+                    textAlign:
+                    TextAlign.center,
+                    style: theme
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight
+                          .w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 8,
+                  ),
+
+                  Text(
+                    message ??
+                        'Something went wrong. Please try again.',
+                    textAlign:
+                    TextAlign.center,
+                    style: theme
+                        .textTheme
+                        .bodyMedium,
+                  ),
+
+                  const SizedBox(
+                    height: 24,
+                  ),
+
+                  FilledButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(
+                      Icons
+                          .refresh_rounded,
+                    ),
+                    label:
+                    const Text(
+                      'Retry',
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                message ??
-                    'Something went wrong. Please try again.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
-              ),
-
-              const SizedBox(height: 24),
-
-              FilledButton.icon(
-                onPressed: _retry,
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                ),
-                label: const Text(
-                  'Retry',
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -873,21 +1315,41 @@ class _BusinessScreenState
   // HELPERS
   // ============================================================
 
-  bool _hasValue(String? value) {
+  bool _hasValue(
+      String? value,
+      ) {
     return value != null &&
         value.trim().isNotEmpty;
   }
 
-  bool _hasAddress(dynamic business) {
-    return _hasValue(business.address) ||
-        _hasValue(business.city) ||
-        _hasValue(business.state) ||
-        _hasValue(business.country) ||
-        _hasValue(business.pincode);
+  bool _hasAddress(
+      dynamic business,
+      ) {
+    return _hasValue(
+      business.address,
+    ) ||
+        _hasValue(
+          business.city,
+        ) ||
+        _hasValue(
+          business.state,
+        ) ||
+        _hasValue(
+          business.country,
+        ) ||
+        _hasValue(
+          business.pincode,
+        );
   }
 
-  String _formatBusinessType(dynamic type) {
-    final value = type.toString().split('.').last;
+  String _formatBusinessType(
+      dynamic type,
+      ) {
+    final value =
+        type
+            .toString()
+            .split('.')
+            .last;
 
     return value
         .replaceAll('_', ' ')

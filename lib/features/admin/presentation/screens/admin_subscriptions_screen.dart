@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/model/pending_subscription_request_response.dart';
-
 import '../providers/admin_subscription_notifier.dart';
 import '../providers/admin_subscription_state.dart';
 
@@ -13,12 +12,14 @@ class AdminSubscriptionsScreen
   });
 
   @override
-  ConsumerState<AdminSubscriptionsScreen> createState() =>
+  ConsumerState<AdminSubscriptionsScreen>
+  createState() =>
       _AdminSubscriptionsScreenState();
 }
 
 class _AdminSubscriptionsScreenState
-    extends ConsumerState<AdminSubscriptionsScreen> {
+    extends ConsumerState<
+        AdminSubscriptionsScreen> {
   @override
   void initState() {
     super.initState();
@@ -33,17 +34,25 @@ class _AdminSubscriptionsScreenState
     });
   }
 
+  // ============================================================
+  // APPROVE
+  // ============================================================
+
   Future<void> _approveRequest(
-      PendingSubscriptionRequestResponse request,
+      PendingSubscriptionRequestResponse
+      request,
       ) async {
     final confirmed =
-    await _showApproveDialog(request);
+    await _showApproveDialog(
+      request,
+    );
 
     if (!confirmed || !mounted) {
       return;
     }
 
-    final success = await ref
+    final success =
+    await ref
         .read(
       adminSubscriptionNotifierProvider
           .notifier,
@@ -61,25 +70,24 @@ class _AdminSubscriptionsScreenState
       adminSubscriptionNotifierProvider,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Subscription approved successfully.'
-              : state.errorMessage ??
-              'Unable to approve subscription.',
-        ),
-      ),
+    _showMessage(
+      success
+          ? 'Subscription approved successfully.'
+          : state.errorMessage ??
+          'Unable to approve subscription.',
     );
   }
 
   Future<bool> _showApproveDialog(
-      PendingSubscriptionRequestResponse request,
+      PendingSubscriptionRequestResponse
+      request,
       ) async {
     final result =
     await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (
+          dialogContext,
+          ) {
         return AlertDialog(
           title: const Text(
             'Approve Subscription?',
@@ -91,21 +99,21 @@ class _AdminSubscriptionsScreenState
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext)
-                    .pop(false);
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
               },
-              child: const Text(
-                'Cancel',
-              ),
+              child:
+              const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(dialogContext)
-                    .pop(true);
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
               },
-              child: const Text(
-                'Approve',
-              ),
+              child:
+              const Text('Approve'),
             ),
           ],
         );
@@ -115,17 +123,24 @@ class _AdminSubscriptionsScreenState
     return result == true;
   }
 
+  // ============================================================
+  // REJECT
+  // ============================================================
+
   Future<void> _rejectRequest(
-      PendingSubscriptionRequestResponse request,
+      PendingSubscriptionRequestResponse
+      request,
       ) async {
     final remark =
     await _showRejectDialog();
 
-    if (remark == null || !mounted) {
+    if (remark == null ||
+        !mounted) {
       return;
     }
 
-    final success = await ref
+    final success =
+    await ref
         .read(
       adminSubscriptionNotifierProvider
           .notifier,
@@ -144,15 +159,11 @@ class _AdminSubscriptionsScreenState
       adminSubscriptionNotifierProvider,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Subscription rejected successfully.'
-              : state.errorMessage ??
-              'Unable to reject subscription.',
-        ),
-      ),
+    _showMessage(
+      success
+          ? 'Subscription rejected successfully.'
+          : state.errorMessage ??
+          'Unable to reject subscription.',
     );
   }
 
@@ -163,23 +174,40 @@ class _AdminSubscriptionsScreenState
     final result =
     await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
+      builder: (
+          dialogContext,
+          ) {
         return AlertDialog(
           title: const Text(
             'Reject Subscription',
           ),
-          content: TextField(
-            controller: controller,
-            maxLines: 4,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'Remark',
-              hintText:
-              'Enter the reason for rejection',
-              border: OutlineInputBorder(
-                borderRadius:
-                BorderRadius.circular(
-                  12,
+          content: ConstrainedBox(
+            constraints:
+            const BoxConstraints(
+              maxWidth: 500,
+            ),
+            child: TextField(
+              controller:
+              controller,
+              maxLines: 4,
+              autofocus: true,
+              textCapitalization:
+              TextCapitalization
+                  .sentences,
+              decoration:
+              InputDecoration(
+                labelText:
+                'Remark',
+                hintText:
+                'Enter the reason for rejection',
+                alignLabelWithHint:
+                true,
+                border:
+                OutlineInputBorder(
+                  borderRadius:
+                  BorderRadius.circular(
+                    12,
+                  ),
                 ),
               ),
             ),
@@ -187,23 +215,27 @@ class _AdminSubscriptionsScreenState
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext)
-                    .pop();
+                Navigator.of(
+                  dialogContext,
+                ).pop();
               },
-              child: const Text(
-                'Cancel',
-              ),
+              child:
+              const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () {
                 final remark =
-                controller.text.trim();
+                controller.text
+                    .trim();
 
                 if (remark.isEmpty) {
                   ScaffoldMessenger.of(
                     dialogContext,
                   ).showSnackBar(
                     const SnackBar(
+                      behavior:
+                      SnackBarBehavior
+                          .floating,
                       content: Text(
                         'Remark is required.',
                       ),
@@ -212,12 +244,12 @@ class _AdminSubscriptionsScreenState
                   return;
                 }
 
-                Navigator.of(dialogContext)
-                    .pop(remark);
+                Navigator.of(
+                  dialogContext,
+                ).pop(remark);
               },
-              child: const Text(
-                'Reject',
-              ),
+              child:
+              const Text('Reject'),
             ),
           ],
         );
@@ -229,8 +261,13 @@ class _AdminSubscriptionsScreenState
     return result;
   }
 
+  // ============================================================
+  // SCREENSHOT
+  // ============================================================
+
   Future<void> _showScreenshot(
-      PendingSubscriptionRequestResponse request,
+      PendingSubscriptionRequestResponse
+      request,
       ) async {
     final url =
         request.paymentScreenshotUrl;
@@ -245,95 +282,176 @@ class _AdminSubscriptionsScreenState
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
+      builder: (
+          dialogContext,
+          ) {
         return Dialog(
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
-              maxWidth: 700,
-              maxHeight: 800,
-            ),
-            child: Padding(
-              padding:
-              const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize:
-                MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Payment Screenshot',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:
-                            FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(
-                            dialogContext,
-                          ).pop();
-                        },
-                        icon:
-                        const Icon(
-                          Icons.close,
-                        ),
-                      ),
-                    ],
+          insetPadding:
+          const EdgeInsets.all(
+            16,
+          ),
+          child: LayoutBuilder(
+            builder: (
+                context,
+                constraints,
+                ) {
+              final width =
+                  constraints.maxWidth;
+
+              final maxHeight =
+                  MediaQuery.sizeOf(
+                    context,
+                  ).height *
+                      0.80;
+
+              return ConstrainedBox(
+                constraints:
+                const BoxConstraints(
+                  maxWidth: 720,
+                ),
+                child: SizedBox(
+                  height:
+                  maxHeight.clamp(
+                    300.0,
+                    800.0,
                   ),
-                  const SizedBox(height: 10),
-                  Flexible(
-                    child: InteractiveViewer(
-                      minScale: 0.5,
-                      maxScale: 4,
-                      child: Image.network(
-                        url,
-                        fit: BoxFit.contain,
-                        errorBuilder:
-                            (
-                            context,
-                            error,
-                            stackTrace,
-                            ) {
-                          return const Center(
-                            child: Padding(
-                              padding:
-                              EdgeInsets.all(
-                                24,
-                              ),
+                  child: Padding(
+                    padding:
+                    const EdgeInsets
+                        .all(12),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Expanded(
                               child: Text(
-                                'Unable to load payment screenshot.',
+                                'Payment Screenshot',
+                                style:
+                                TextStyle(
+                                  fontSize:
+                                  18,
+                                  fontWeight:
+                                  FontWeight
+                                      .w700,
+                                ),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            IconButton(
+                              tooltip:
+                              'Close',
+                              onPressed: () {
+                                Navigator.of(
+                                  dialogContext,
+                                ).pop();
+                              },
+                              icon:
+                              const Icon(
+                                Icons.close,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(
+                          height: 10,
+                        ),
+
+                        Expanded(
+                          child:
+                          InteractiveViewer(
+                            minScale:
+                            0.5,
+                            maxScale:
+                            4,
+                            child:
+                            Center(
+                              child:
+                              Image.network(
+                                url,
+                                width:
+                                width,
+                                fit: BoxFit
+                                    .contain,
+                                loadingBuilder:
+                                    (
+                                    context,
+                                    child,
+                                    progress,
+                                    ) {
+                                  if (progress ==
+                                      null) {
+                                    return child;
+                                  }
+
+                                  return const Center(
+                                    child:
+                                    CircularProgressIndicator(),
+                                  );
+                                },
+                                errorBuilder:
+                                    (
+                                    context,
+                                    error,
+                                    stackTrace,
+                                    ) {
+                                  return const Center(
+                                    child:
+                                    Padding(
+                                      padding:
+                                      EdgeInsets
+                                          .all(
+                                        24,
+                                      ),
+                                      child:
+                                      Text(
+                                        'Unable to load payment screenshot.',
+                                        textAlign:
+                                        TextAlign
+                                            .center,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         );
       },
     );
   }
 
-  void _showMessage(String message) {
+  void _showMessage(
+      String message,
+      ) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context)
         .showSnackBar(
       SnackBar(
+        behavior:
+        SnackBarBehavior.floating,
         content: Text(message),
       ),
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     final state =
     ref.watch(
       adminSubscriptionNotifierProvider,
@@ -344,14 +462,17 @@ class _AdminSubscriptionsScreenState
         title: const Text(
           'Subscriptions',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: state.isLoading ||
-                state.isActionInProgress
+            onPressed:
+            state.isLoading ||
+                state
+                    .isActionInProgress
                 ? null
                 : () {
               ref
@@ -365,6 +486,9 @@ class _AdminSubscriptionsScreenState
               Icons.refresh,
             ),
           ),
+          const SizedBox(
+            width: 4,
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -376,64 +500,97 @@ class _AdminSubscriptionsScreenState
           )
               .refresh();
         },
-        child: SingleChildScrollView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            32,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 1100,
+        child: LayoutBuilder(
+          builder: (
+              context,
+              constraints,
+              ) {
+            final width =
+                constraints.maxWidth;
+
+            final horizontalPadding =
+            width < 360
+                ? 12.0
+                : width < 600
+                ? 16.0
+                : 20.0;
+
+            final maxWidth =
+            width >= 1400
+                ? 1200.0
+                : 1100.0;
+
+            return SingleChildScrollView(
+              physics:
+              const AlwaysScrollableScrollPhysics(),
+              padding:
+              EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                32,
               ),
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeader(
-                    context,
-                    state,
+              child: Center(
+                child:
+                ConstrainedBox(
+                  constraints:
+                  BoxConstraints(
+                    maxWidth:
+                    maxWidth,
                   ),
-                  const SizedBox(height: 20),
-                  if (state.isLoading &&
-                      state.pendingRequests
-                          .isEmpty)
-                    const Center(
-                      child:
-                      CircularProgressIndicator(),
-                    )
-                  else if (state.hasError &&
-                      state.pendingRequests
-                          .isEmpty)
-                    _buildError(
-                      context,
-                      state,
-                    )
-                  else if (state
-                        .pendingRequests
-                        .isEmpty)
-                      _buildEmptyState(
-                        context,
-                      )
-                    else
-                      _buildRequestList(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
+                    children: [
+                      _buildHeader(
                         context,
                         state,
                       ),
-                ],
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      if (state.isLoading &&
+                          state.pendingRequests
+                              .isEmpty)
+                        const Center(
+                          child:
+                          CircularProgressIndicator(),
+                        )
+                      else if (state.hasError &&
+                          state.pendingRequests
+                              .isEmpty)
+                        _buildError(
+                          context,
+                          state,
+                        )
+                      else if (state
+                            .pendingRequests
+                            .isEmpty)
+                          _buildEmptyState(
+                            context,
+                          )
+                        else
+                          _buildRequestList(
+                            context,
+                            state,
+                          ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // HEADER
+  // ============================================================
 
   Widget _buildHeader(
       BuildContext context,
@@ -444,7 +601,8 @@ class _AdminSubscriptionsScreenState
 
     return Column(
       crossAxisAlignment:
-      CrossAxisAlignment.start,
+      CrossAxisAlignment
+          .start,
       children: [
         Text(
           'Subscription Requests',
@@ -456,7 +614,9 @@ class _AdminSubscriptionsScreenState
             FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(
+          height: 6,
+        ),
         Text(
           '${state.pendingRequests.length} pending request'
               '${state.pendingRequests.length == 1 ? '' : 's'}',
@@ -473,12 +633,17 @@ class _AdminSubscriptionsScreenState
     );
   }
 
+  // ============================================================
+  // REQUEST LIST
+  // ============================================================
+
   Widget _buildRequestList(
       BuildContext context,
       AdminSubscriptionState state,
       ) {
     return Column(
-      children: state.pendingRequests
+      children: state
+          .pendingRequests
           .map(
             (request) => Padding(
           padding:
@@ -497,9 +662,14 @@ class _AdminSubscriptionsScreenState
     );
   }
 
+  // ============================================================
+  // REQUEST CARD
+  // ============================================================
+
   Widget _buildRequestCard(
       BuildContext context,
-      PendingSubscriptionRequestResponse request,
+      PendingSubscriptionRequestResponse
+      request,
       AdminSubscriptionState state,
       ) {
     final processing =
@@ -511,59 +681,86 @@ class _AdminSubscriptionsScreenState
       Clip.antiAlias,
       child: Padding(
         padding:
-        const EdgeInsets.all(20),
+        const EdgeInsets.all(
+          18,
+        ),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment.start,
+          CrossAxisAlignment
+              .start,
           children: [
-            Row(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (
+                  context,
+                  constraints,
+                  ) {
+                final compact =
+                    constraints
+                        .maxWidth <
+                        430;
+
+                if (compact) {
+                  return Column(
                     crossAxisAlignment:
                     CrossAxisAlignment
                         .start,
                     children: [
-                      Text(
-                        request.businessName,
-                        style:
-                        const TextStyle(
-                          fontSize: 18,
-                          fontWeight:
-                          FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        request.planName,
-                        style:
-                        TextStyle(
-                          fontSize: 15,
-                          color: Theme.of(
-                            context,
-                          )
-                              .colorScheme
-                              .primary,
-                          fontWeight:
-                          FontWeight.w700,
-                        ),
+                      Row(
+                        crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                        children: [
+                          Expanded(
+                            child:
+                            _buildRequestTitle(
+                              context,
+                              request,
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 8,
+                          ),
+                          _CycleChip(
+                            cycle: request
+                                .billingCycle,
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ),
-                _CycleChip(
-                  cycle:
-                  request.billingCycle,
-                ),
-              ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+                  children: [
+                    Expanded(
+                      child:
+                      _buildRequestTitle(
+                        context,
+                        request,
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 12,
+                    ),
+                    _CycleChip(
+                      cycle: request
+                          .billingCycle,
+                    ),
+                  ],
+                );
+              },
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(
+              height: 18,
+            ),
 
             _InfoRow(
-              label: 'Transaction ID',
+              label:
+              'Transaction ID',
               value:
               request.transactionId
                   .trim()
@@ -581,26 +778,37 @@ class _AdminSubscriptionsScreenState
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 10,
+            ),
 
             if (request
                 .paymentScreenshotUrl
                 ?.trim()
                 .isNotEmpty ==
                 true)
-              OutlinedButton.icon(
-                onPressed: processing
-                    ? null
-                    : () =>
-                    _showScreenshot(
-                      request,
-                    ),
-                icon: const Icon(
-                  Icons
-                      .image_outlined,
-                ),
-                label: const Text(
-                  'View Payment Screenshot',
+              SizedBox(
+                width:
+                double.infinity,
+                child:
+                OutlinedButton
+                    .icon(
+                  onPressed:
+                  processing
+                      ? null
+                      : () =>
+                      _showScreenshot(
+                        request,
+                      ),
+                  icon:
+                  const Icon(
+                    Icons
+                        .image_outlined,
+                  ),
+                  label:
+                  const Text(
+                    'View Payment Screenshot',
+                  ),
                 ),
               )
             else
@@ -615,49 +823,65 @@ class _AdminSubscriptionsScreenState
                 ),
               ),
 
-            const SizedBox(height: 18),
+            const SizedBox(
+              height: 18,
+            ),
 
             LayoutBuilder(
-              builder:
-                  (context, constraints) {
-                if (constraints.maxWidth <
-                    520) {
+              builder: (
+                  context,
+                  constraints,
+                  ) {
+                final compact =
+                    constraints.maxWidth <
+                        520;
+
+                if (compact) {
                   return Column(
                     crossAxisAlignment:
                     CrossAxisAlignment
                         .stretch,
                     children: [
-                      FilledButton(
-                        onPressed:
-                        processing ||
-                            state
-                                .isActionInProgress
-                            ? null
-                            : () =>
-                            _approveRequest(
-                              request,
-                            ),
-                        child: Text(
-                          processing
-                              ? 'Processing...'
-                              : 'Approve',
+                      SizedBox(
+                        height: 48,
+                        child:
+                        FilledButton(
+                          onPressed:
+                          processing ||
+                              state
+                                  .isActionInProgress
+                              ? null
+                              : () =>
+                              _approveRequest(
+                                request,
+                              ),
+                          child: Text(
+                            processing
+                                ? 'Processing...'
+                                : 'Approve',
+                          ),
                         ),
                       ),
                       const SizedBox(
                         height: 10,
                       ),
-                      OutlinedButton(
-                        onPressed:
-                        processing ||
-                            state
-                                .isActionInProgress
-                            ? null
-                            : () =>
-                            _rejectRequest(
-                              request,
-                            ),
-                        child: const Text(
-                          'Reject',
+                      SizedBox(
+                        height: 48,
+                        child:
+                        OutlinedButton(
+                          onPressed:
+                          processing ||
+                              state
+                                  .isActionInProgress
+                              ? null
+                              : () =>
+                              _rejectRequest(
+                                request,
+                              ),
+                          child:
+                          const Text(
+                            'Reject',
+                          ),
                         ),
                       ),
                     ],
@@ -668,20 +892,24 @@ class _AdminSubscriptionsScreenState
                   children: [
                     Expanded(
                       child:
-                      FilledButton(
-                        onPressed:
-                        processing ||
-                            state
-                                .isActionInProgress
-                            ? null
-                            : () =>
-                            _approveRequest(
-                              request,
-                            ),
-                        child: Text(
-                          processing
-                              ? 'Processing...'
-                              : 'Approve',
+                      SizedBox(
+                        height: 48,
+                        child:
+                        FilledButton(
+                          onPressed:
+                          processing ||
+                              state
+                                  .isActionInProgress
+                              ? null
+                              : () =>
+                              _approveRequest(
+                                request,
+                              ),
+                          child: Text(
+                            processing
+                                ? 'Processing...'
+                                : 'Approve',
+                          ),
                         ),
                       ),
                     ),
@@ -690,18 +918,23 @@ class _AdminSubscriptionsScreenState
                     ),
                     Expanded(
                       child:
-                      OutlinedButton(
-                        onPressed:
-                        processing ||
-                            state
-                                .isActionInProgress
-                            ? null
-                            : () =>
-                            _rejectRequest(
-                              request,
-                            ),
-                        child: const Text(
-                          'Reject',
+                      SizedBox(
+                        height: 48,
+                        child:
+                        OutlinedButton(
+                          onPressed:
+                          processing ||
+                              state
+                                  .isActionInProgress
+                              ? null
+                              : () =>
+                              _rejectRequest(
+                                request,
+                              ),
+                          child:
+                          const Text(
+                            'Reject',
+                          ),
                         ),
                       ),
                     ),
@@ -715,48 +948,111 @@ class _AdminSubscriptionsScreenState
     );
   }
 
+  Widget _buildRequestTitle(
+      BuildContext context,
+      PendingSubscriptionRequestResponse
+      request,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment
+          .start,
+      children: [
+        Text(
+          request.businessName,
+          maxLines: 2,
+          overflow:
+          TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight:
+            FontWeight.w800,
+          ),
+        ),
+        const SizedBox(
+          height: 6,
+        ),
+        Text(
+          request.planName,
+          maxLines: 2,
+          overflow:
+          TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 15,
+            color: theme
+                .colorScheme
+                .primary,
+            fontWeight:
+            FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // EMPTY
+  // ============================================================
+
   Widget _buildEmptyState(
       BuildContext context,
       ) {
+    final theme =
+    Theme.of(context);
+
     return Padding(
       padding:
-      const EdgeInsets.all(48),
+      const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 48,
+      ),
       child: Column(
         children: [
           Icon(
             Icons
                 .assignment_turned_in_outlined,
             size: 56,
-            color: Theme.of(context)
+            color: theme
                 .colorScheme
                 .primary,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(
+            height: 14,
+          ),
           const Text(
             'No pending subscription requests.',
+            textAlign:
+            TextAlign.center,
             style: TextStyle(
               fontSize: 18,
               fontWeight:
               FontWeight.w700,
             ),
-            textAlign:
-            TextAlign.center,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(
+            height: 6,
+          ),
           Text(
             'New requests will appear here for review.',
+            textAlign:
+            TextAlign.center,
             style: TextStyle(
-              color: Theme.of(context)
+              color: theme
                   .colorScheme
                   .onSurfaceVariant,
             ),
-            textAlign:
-            TextAlign.center,
           ),
         ],
       ),
     );
   }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
 
   Widget _buildError(
       BuildContext context,
@@ -764,38 +1060,75 @@ class _AdminSubscriptionsScreenState
       ) {
     return Padding(
       padding:
-      const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 48,
+      const EdgeInsets.all(
+        24,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints:
+          const BoxConstraints(
+            maxWidth: 420,
           ),
-          const SizedBox(height: 12),
-          Text(
-            state.errorMessage ??
-                'Unable to load subscription requests.',
-            textAlign:
-            TextAlign.center,
+          child: Column(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              Icon(
+                Icons
+                    .error_outline_rounded,
+                size: 48,
+                color: Theme.of(
+                  context,
+                )
+                    .colorScheme
+                    .error,
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Text(
+                state.errorMessage ??
+                    'Unable to load subscription requests.',
+                textAlign:
+                TextAlign.center,
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              SizedBox(
+                width:
+                double.infinity,
+                child:
+                FilledButton.icon(
+                  onPressed: () {
+                    ref
+                        .read(
+                      adminSubscriptionNotifierProvider
+                          .notifier,
+                    )
+                        .refresh();
+                  },
+                  icon:
+                  const Icon(
+                    Icons
+                        .refresh_rounded,
+                  ),
+                  label:
+                  const Text(
+                    'Retry',
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () {
-              ref
-                  .read(
-                adminSubscriptionNotifierProvider
-                    .notifier,
-              )
-                  .refresh();
-            },
-            child: const Text(
-              'Retry',
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+
+  // ============================================================
+  // DATE
+  // ============================================================
 
   String _formatDateTime(
       DateTime? dateTime,
@@ -815,7 +1148,12 @@ class _AdminSubscriptionsScreenState
   }
 }
 
-class _CycleChip extends StatelessWidget {
+// ================================================================
+// BILLING CYCLE CHIP
+// ================================================================
+
+class _CycleChip
+    extends StatelessWidget {
   const _CycleChip({
     required this.cycle,
   });
@@ -826,7 +1164,8 @@ class _CycleChip extends StatelessWidget {
   Widget build(
       BuildContext context,
       ) {
-    final label = switch (cycle) {
+    final label =
+    switch (cycle) {
       AdminBillingCycle.monthly =>
       'Monthly',
       AdminBillingCycle.yearly =>
@@ -835,14 +1174,18 @@ class _CycleChip extends StatelessWidget {
       'Unknown',
     };
 
+    final theme =
+    Theme.of(context);
+
     return Container(
       padding:
       const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 6,
       ),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
+      decoration:
+      BoxDecoration(
+        color: theme
             .colorScheme
             .secondaryContainer,
         borderRadius:
@@ -852,11 +1195,14 @@ class _CycleChip extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow:
+        TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 12,
           fontWeight:
           FontWeight.w700,
-          color: Theme.of(context)
+          color: theme
               .colorScheme
               .onSecondaryContainer,
         ),
@@ -865,7 +1211,12 @@ class _CycleChip extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
+// ================================================================
+// INFO ROW
+// ================================================================
+
+class _InfoRow
+    extends StatelessWidget {
   const _InfoRow({
     required this.label,
     required this.value,
@@ -878,38 +1229,106 @@ class _InfoRow extends StatelessWidget {
   Widget build(
       BuildContext context,
       ) {
+    final theme =
+    Theme.of(context);
+
     return Padding(
       padding:
       const EdgeInsets.only(
         bottom: 8,
       ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 125,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant,
-                fontSize: 13,
+      child: LayoutBuilder(
+        builder: (
+            context,
+            constraints,
+            ) {
+          final compact =
+              constraints.maxWidth <
+                  380;
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+              children: [
+                Text(
+                  label,
+                  style: theme
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(
+                  height: 2,
+                ),
+                Text(
+                  value.isEmpty
+                      ? '—'
+                      : value,
+                  softWrap: true,
+                  maxLines: 4,
+                  overflow:
+                  TextOverflow
+                      .ellipsis,
+                  style:
+                  const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment:
+            CrossAxisAlignment
+                .start,
+            children: [
+              SizedBox(
+                width: 125,
+                child: Text(
+                  label,
+                  style: theme
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style:
-              const TextStyle(
-                fontWeight:
-                FontWeight.w600,
+              const SizedBox(
+                width: 10,
               ),
-            ),
-          ),
-        ],
+              Expanded(
+                child: Text(
+                  value.isEmpty
+                      ? '—'
+                      : value,
+                  softWrap: true,
+                  maxLines: 4,
+                  overflow:
+                  TextOverflow
+                      .ellipsis,
+                  style:
+                  const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
