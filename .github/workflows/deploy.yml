@@ -12,30 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ------------------------------------------------------------
-      # Checkout
-      # ------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------
-      # Flutter
-      # ------------------------------------------------------------
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # ------------------------------------------------------------
-      # Dependencies
-      # ------------------------------------------------------------
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      # ------------------------------------------------------------
-      # Build production web application
-      # ------------------------------------------------------------
       - name: Build Flutter Web
         run: |
           flutter build web \
@@ -43,9 +31,6 @@ jobs:
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
-      # ------------------------------------------------------------
-      # Verify production API configuration
-      # ------------------------------------------------------------
       - name: Verify production API URL
         shell: bash
         run: |
@@ -65,9 +50,6 @@ jobs:
             echo "No localhost:8080 found."
           fi
 
-      # ------------------------------------------------------------
-      # Deploy to Hostinger
-      # ------------------------------------------------------------
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
