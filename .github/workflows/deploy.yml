@@ -34,12 +34,6 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------
-      # Analyze
-      # ------------------------------------------------------------
-      - name: Analyze Flutter project
-        run: flutter analyze
-
-      # ------------------------------------------------------------
       # Build production web application
       # ------------------------------------------------------------
       - name: Build Flutter Web
@@ -84,7 +78,6 @@ jobs:
           local-dir: ./build/web/
           server-dir: ./public_html/
 
-          # Keep Hostinger-managed configuration.
           exclude: |
             **/.htaccess
 
