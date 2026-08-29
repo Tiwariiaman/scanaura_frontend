@@ -781,14 +781,13 @@ class _AdminBusinessesScreenState
                   '—',
             ),
 
-            if (business.subscriptionStatus !=
-                null)
+            if (business.subscriptionStatus != null)
               _DetailRow(
                 label:
                 'Subscription',
                 value:
                 business
-                    .subscriptionStatus!
+                    .subscriptionStatus
                     .name,
               ),
 

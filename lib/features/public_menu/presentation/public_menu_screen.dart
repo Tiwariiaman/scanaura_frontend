@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:go_router/go_router.dart';
 
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
@@ -206,74 +206,79 @@ class _PublicMenuScreenState
           width < 360 ? 12.0 : width < 600 ? 16.0 : 20.0;
           final maxContentWidth = width >= 1000 ? 1000.0 : 700.0;
 
-          return Column(
-            children: [
-              // ========================================================
-              // STICKY SEARCH + FILTER AREA
-              // ========================================================
-              Material(
-                elevation: 2,
-                color: Theme.of(context).colorScheme.surface,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    12,
-                    horizontalPadding,
-                    10,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxContentWidth),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildSearchField(context, terminology),
-                          const SizedBox(height: 10),
-                          _buildCategoryFilters(menu.menu),
-                          const SizedBox(height: 8),
-                          _buildAttributeFilters(),
-                        ],
+          return RefreshIndicator(
+            onRefresh: () async {
+              await ref
+                  .read(publicNotifierProvider.notifier)
+                  .refreshMenu();
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // ======================================================
+                // SCROLLABLE SEARCH + FILTER AREA
+                // These controls are part of the same scroll view as
+                // the menu, so they naturally move off-screen.
+                // ======================================================
+                SliverToBoxAdapter(
+                  child: Material(
+                    elevation: 2,
+                    color: Theme.of(context).colorScheme.surface,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        12,
+                        horizontalPadding,
+                        10,
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: maxContentWidth,
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.stretch,
+                            children: [
+                              _buildSearchField(
+                                context,
+                                terminology,
+                              ),
+                              const SizedBox(height: 10),
+                              _buildCategoryFilters(menu.menu),
+                              const SizedBox(height: 8),
+                              _buildAttributeFilters(),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              // ========================================================
-              // SCROLLABLE CONTENT
-              // ========================================================
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await ref
-                        .read(publicNotifierProvider.notifier)
-                        .refreshMenu();
-                  },
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 16),
-                      ),
-                      _buildMenuList(
-                        context,
-                        horizontalPadding,
-                        maxContentWidth,
-                      ),
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 28),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _buildFooter(),
-                      ),
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 32),
-                      ),
-                    ],
-                  ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 16),
                 ),
-              ),
-            ],
+
+                _buildMenuList(
+                  context,
+                  horizontalPadding,
+                  maxContentWidth,
+                ),
+
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 28),
+                ),
+
+                SliverToBoxAdapter(
+                  child: _buildFooter(),
+                ),
+
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 32),
+                ),
+              ],
+            ),
           );
         },
       ),

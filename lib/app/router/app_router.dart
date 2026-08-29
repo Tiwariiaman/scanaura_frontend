@@ -18,6 +18,7 @@ import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/business/presentation/business_onboarding_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/landing/presentation/ScanAuraNotFoundScreen.dart';
 import '../../features/landing/presentation/landing_gate.dart';
 import '../../features/menu/presentation/add_menu_item_screen.dart';
 import '../../features/menu/presentation/category_management_screen.dart';
@@ -467,6 +468,9 @@ class AppRouter {
           ],
         ),
       ],
+      errorBuilder: (context, state) {
+        return const ScanAuraNotFoundScreen();
+      },
     );
   }
 }

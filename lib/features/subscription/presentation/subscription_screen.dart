@@ -73,8 +73,8 @@ class _SubscriptionScreenState
       );
     }
 
-    final theme =
-    Theme.of(context);
+    // final theme =
+    // Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -878,7 +878,7 @@ class _SubscriptionScreenState
                 itemCount:
                 history.length,
                 separatorBuilder:
-                    (_, __) =>
+                    (_, _) =>
                 const SizedBox(
                   height: 12,
                 ),

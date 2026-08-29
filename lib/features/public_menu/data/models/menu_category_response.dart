@@ -12,7 +12,8 @@ class MenuCategoryResponse {
   factory MenuCategoryResponse.fromJson(
       Map<String, dynamic> json,
       ) {
-    final rawItems = json['items'];
+    final rawItems =
+    json['items'];
 
     return MenuCategoryResponse(
       categoryName:
@@ -26,5 +27,16 @@ class MenuCategoryResponse {
           .toList()
           : const [],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'categoryName': categoryName,
+      'items': items
+          .map(
+            (item) => item.toJson(),
+      )
+          .toList(),
+    };
   }
 }

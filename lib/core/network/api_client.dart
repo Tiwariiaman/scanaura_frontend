@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
 import '../constants/api_constants.dart';
@@ -10,7 +11,7 @@ class ApiClient {
   }) {
     _dio = Dio(
       BaseOptions(
-        baseUrl: ApiConstants.webBaseUrl,
+        baseUrl: _resolveBaseUrl(),
         connectTimeout: Duration(
           seconds: AppConstants.connectTimeoutSeconds,
         ),
@@ -36,6 +37,57 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  // ------------------------------------------------------------
+  // BASE URL
+  // ------------------------------------------------------------
+
+  String _resolveBaseUrl() {
+    // 1. Explicit build-time override.
+    //
+    // Example:
+    // flutter run -d edge
+    //   --dart-define=API_BASE_URL=https://api.scanaura.in
+    //
+    // This takes priority over automatic detection.
+    const configuredBaseUrl =
+    String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: '',
+    );
+
+    if (configuredBaseUrl.isNotEmpty) {
+      return configuredBaseUrl;
+    }
+
+    // 2. Flutter Web automatic environment detection.
+    if (kIsWeb) {
+      final host = Uri.base.host.toLowerCase();
+
+      // Local Flutter Web development.
+      if (host == 'localhost' ||
+          host == '127.0.0.1' ||
+          host == '::1') {
+        return ApiConstants.webBaseUrl;
+      }
+
+      // Deployed web application.
+      return ApiConstants.productionBaseUrl;
+    }
+
+    // 3. Android emulator.
+    if (defaultTargetPlatform ==
+        TargetPlatform.android) {
+      return ApiConstants.androidBaseUrl;
+    }
+
+    // 4. Fallback.
+    return ApiConstants.productionBaseUrl;
+  }
+
+  // ------------------------------------------------------------
+  // INTERCEPTORS
+  // ------------------------------------------------------------
+
   void _setupInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -44,7 +96,8 @@ class ApiClient {
           await _secureStorageService.getAccessToken();
 
           if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+            options.headers['Authorization'] =
+            'Bearer $token';
           }
 
           handler.next(options);
@@ -52,6 +105,10 @@ class ApiClient {
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // GET
+  // ------------------------------------------------------------
 
   Future<Response<T>> get<T>(
       String path, {
@@ -62,15 +119,10 @@ class ApiClient {
       queryParameters: queryParameters,
     );
   }
-  Future<Response<T>> patch<T>(
-      String path, {
-        dynamic data,
-      }) {
-    return _dio.patch<T>(
-      path,
-      data: data,
-    );
-  }
+
+  // ------------------------------------------------------------
+  // POST
+  // ------------------------------------------------------------
 
   Future<Response<T>> post<T>(
       String path, {
@@ -84,6 +136,10 @@ class ApiClient {
     );
   }
 
+  // ------------------------------------------------------------
+  // PUT
+  // ------------------------------------------------------------
+
   Future<Response<T>> put<T>(
       String path, {
         dynamic data,
@@ -93,6 +149,24 @@ class ApiClient {
       data: data,
     );
   }
+
+  // ------------------------------------------------------------
+  // PATCH
+  // ------------------------------------------------------------
+
+  Future<Response<T>> patch<T>(
+      String path, {
+        dynamic data,
+      }) {
+    return _dio.patch<T>(
+      path,
+      data: data,
+    );
+  }
+
+  // ------------------------------------------------------------
+  // DELETE
+  // ------------------------------------------------------------
 
   Future<Response<T>> delete<T>(
       String path, {

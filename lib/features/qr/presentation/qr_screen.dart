@@ -54,7 +54,7 @@ class _QrScreenState
   String _publicQrUrl(
       String qrCode,
       ) {
-    return 'https://scanaura.in/q/$qrCode';
+    return 'https://scanaura.in/#/q/$qrCode';
   }
 
   // ============================================================
@@ -211,7 +211,7 @@ class _QrScreenState
       );
 
       final publicUrl =
-          'https://scanaura.in/q/${qr.qrCode}';
+          'https://scanaura.in/#/q/${qr.qrCode}';
 
       final shareText =
       businessName != null &&

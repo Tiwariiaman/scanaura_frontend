@@ -14,19 +14,37 @@ class MenuResponse {
   factory MenuResponse.fromJson(
       Map<String, dynamic> json,
       ) {
-    final rawMenu = json['menu'];
+    final rawMenu =
+    json['menu'];
 
     return MenuResponse(
       businessName:
-      json['businessName'] as String? ?? '',
+      json['businessName']
+      as String? ??
+          '',
       logoUrl:
       json['logoUrl'] as String?,
       menu: rawMenu is List
           ? rawMenu
           .whereType<Map<String, dynamic>>()
-          .map(MenuCategoryResponse.fromJson)
+          .map(
+        MenuCategoryResponse.fromJson,
+      )
           .toList()
           : const [],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'businessName': businessName,
+      'logoUrl': logoUrl,
+      'menu': menu
+          .map(
+            (category) =>
+            category.toJson(),
+      )
+          .toList(),
+    };
   }
 }

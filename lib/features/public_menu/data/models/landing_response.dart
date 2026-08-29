@@ -33,4 +33,15 @@ class LandingResponse {
       json['paymentEnabled'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'businessName': businessName,
+      'businessType': businessType,
+      'city': city,
+      'logoUrl': logoUrl,
+      'menuAvailable': menuAvailable,
+      'paymentEnabled': paymentEnabled,
+    };
+  }
 }

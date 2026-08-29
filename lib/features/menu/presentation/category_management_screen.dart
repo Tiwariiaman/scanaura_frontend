@@ -147,7 +147,7 @@ class _CategoryManagementScreenState
             itemCount:
             state.categories.length,
             separatorBuilder:
-                (_, __) =>
+                (_, _) =>
             const SizedBox(
               height: 10,
             ),
@@ -723,7 +723,7 @@ class _CategoryManagementScreenState
                 if (isEditing) {
                   await notifier
                       .updateCategory(
-                    categoryId!,
+                    categoryId,
                     CategoryRequest(
                       name: name,
                       displayOrder:

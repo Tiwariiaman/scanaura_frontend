@@ -19,24 +19,34 @@ class ScanAuraLandingScreen extends StatefulWidget {
 
 class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   late final PageController _pageController;
+
   int _currentPage = 0;
 
   static const int _pageCount = 5;
 
+  // Fixed design canvas.
+  // The whole canvas scales down on smaller screens instead
+  // of allowing individual elements to stretch.
+  static const double _designWidth = 760;
+  static const double _designHeight = 500;
+
   @override
   void initState() {
     super.initState();
+
     _pageController = PageController();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+
     super.dispose();
   }
 
   void _goToPage(int page) {
     final target = page.clamp(0, _pageCount - 1);
+
     _pageController.animateToPage(
       target,
       duration: const Duration(milliseconds: 450),
@@ -49,11 +59,15 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       widget.onGetStarted();
       return;
     }
+
     _goToPage(_currentPage + 1);
   }
 
   void _previous() {
-    if (_currentPage == 0) return;
+    if (_currentPage == 0) {
+      return;
+    }
+
     _goToPage(_currentPage - 1);
   }
 
@@ -62,6 +76,7 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       widget.onSkip!();
       return;
     }
+
     _goToPage(_pageCount - 1);
   }
 
@@ -73,18 +88,23 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
         child: Column(
           children: [
             _buildHeader(context),
+
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: _pageCount,
                 physics: const PageScrollPhysics(),
                 onPageChanged: (page) {
-                  setState(() => _currentPage = page);
+                  setState(() {
+                    _currentPage = page;
+                  });
                 },
-                itemBuilder: (context, index) =>
-                    _buildPage(context, index),
+                itemBuilder: (context, index) {
+                  return _buildPage(context, index);
+                },
               ),
             ),
+
             _buildNavigation(context),
           ],
         ),
@@ -114,21 +134,21 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   }
 
   Widget _buildBrand(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-         Image.asset(
-            'assets/images/scanaura_logo.png',
-            width: 32,
-            height: 32,
-            fit: BoxFit.contain,
-          ),
+        Image.asset(
+          'assets/images/scanaura_logo.png',
+          width: 32,
+          height: 32,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(width: 10),
         Text(
           'ScanAura',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,
           ),
@@ -145,18 +165,27 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     switch (index) {
       case 0:
         return _buildPage1(context);
+
       case 1:
         return _buildPage2(context);
+
       case 2:
         return _buildPage3(context);
+
       case 3:
         return _buildPage4(context);
+
       case 4:
         return _buildPage5(context);
+
       default:
         return const SizedBox.shrink();
     }
   }
+
+  // ============================================================
+  // SLIDE 1
+  // ============================================================
 
   Widget _buildPage1(BuildContext context) {
     return _buildCenteredSlide(
@@ -168,6 +197,10 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       visual: _buildBusinessFlow(context),
     );
   }
+
+  // ============================================================
+  // SLIDE 2
+  // ============================================================
 
   Widget _buildPage2(BuildContext context) {
     return _buildCenteredSlide(
@@ -181,37 +214,58 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     );
   }
 
+  // ============================================================
+  // SLIDE 3
+  // ============================================================
+
   Widget _buildPage3(BuildContext context) {
     return _buildCenteredSlide(
       context,
+      pill: 'For every business',
+      pillUsesPrimary: true,
       title: 'Built for every business.',
       subtitle: 'One platform. Any business.',
       visual: _buildBusinessTypeGrid(context),
     );
   }
 
+  // ============================================================
+  // SLIDE 4
+  // ============================================================
+
   Widget _buildPage4(BuildContext context) {
     return _buildCenteredSlide(
       context,
+      pill: 'One QR, many possibilities',
+      pillUsesPrimary: true,
       title: 'Scan. View. Pay.',
       subtitle: 'One QR. One digital destination.',
       visual: _buildScanViewPay(context),
     );
   }
 
+  // ============================================================
+  // SLIDE 5
+  // ============================================================
+
   Widget _buildPage5(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return _buildCenteredSlide(
-      context,
-      title: 'Go digital from ₹99/month.',
-      subtitle: 'Start simple. Grow with ScanAura.',
+        context,
+        pill: 'Simple & affordable',
+        pillUsesPrimary: true,
+        title: 'Go digital from ₹99/month.',
+        subtitle: 'Start simple. Grow with ScanAura.',
       visual: _buildWhiteCard(
         context,
-        maxWidth: 390,
+        maxWidth: 410,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 26,
+            vertical: 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -219,7 +273,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
                 context,
                 'Starting plan',
               ),
+
               const SizedBox(height: 20),
+
               RichText(
                 text: TextSpan(
                   children: [
@@ -241,7 +297,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 10),
+
               Text(
                 'Your digital business presence. One QR. Start simple.',
                 textAlign: TextAlign.center,
@@ -250,7 +308,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
                   height: 1.35,
                 ),
               ),
+
               const SizedBox(height: 18),
+
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 10,
@@ -266,7 +326,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 14),
+
               Text(
                 'Scan. View. Pay.',
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -283,7 +345,7 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
 
   // ============================================================
   // COMMON SLIDE LAYOUT
-  // Headline + tagline first, then white elevated visual card.
+  // Fixed presentation canvas.
   // ============================================================
 
   Widget _buildCenteredSlide(
@@ -300,197 +362,140 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: 20,
+        horizontal: 16,
         vertical: 8,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact =
-              constraints.maxHeight < 620;
-
-          final titleSize =
-          constraints.maxWidth < 380
-              ? 28.0
-              : 34.0;
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 1000,
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: _designWidth,
+            height: _designHeight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 28,
+                vertical: 22,
               ),
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal:
-                  constraints.maxWidth < 500
-                      ? 18
-                      : 28,
-                  vertical:
-                  compact ? 14 : 22,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: colorScheme.outlineVariant,
                 ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius:
-                  BorderRadius.circular(28),
-                  border: Border.all(
-                    color:
-                    colorScheme.outlineVariant,
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withValues(
+                      alpha: 0.10,
+                    ),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow
-                          .withValues(
-                        alpha: 0.10,
-                      ),
-                      blurRadius: 28,
-                      offset:
-                      const Offset(0, 12),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // -------------------------------------------------
+                  // PILL
+                  // -------------------------------------------------
+
+                  if (pill != null) ...[
+                    _buildPill(
+                      context,
+                      pill,
+                      usePrimary: pillUsesPrimary,
                     ),
+                    const SizedBox(height: 10),
                   ],
-                ),
-                child: Column(
-                  mainAxisAlignment:
-                  MainAxisAlignment.start,
-                  crossAxisAlignment:
-                  CrossAxisAlignment.center,
-                  children: [
-                    // -----------------------------------------------
-                    // PILL
-                    // -----------------------------------------------
 
-                    if (pill != null) ...[
-                      _buildPill(
-                        context,
-                        pill,
-                        usePrimary:
-                        pillUsesPrimary,
-                      ),
-                      SizedBox(
-                        height:
-                        compact ? 7 : 10,
-                      ),
-                    ],
+                  // -------------------------------------------------
+                  // TITLE
+                  // -------------------------------------------------
 
-                    // -----------------------------------------------
-                    // HEADLINE
-                    // -----------------------------------------------
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1.0,
+                      height: 1.02,
+                    ),
+                  ),
 
+                  const SizedBox(height: 8),
+
+                  // -------------------------------------------------
+                  // SUBTITLE
+                  // -------------------------------------------------
+
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  // -------------------------------------------------
+                  // HINT
+                  // -------------------------------------------------
+
+                  if (hint != null) ...[
+                    const SizedBox(height: 4),
                     Text(
-                      title,
-                      textAlign:
-                      TextAlign.center,
-                      maxLines: 2,
-                      overflow:
-                      TextOverflow.ellipsis,
-                      style: theme
-                          .textTheme
-                          .displaySmall
-                          ?.copyWith(
-                        fontSize:
-                        titleSize,
-                        fontWeight:
-                        FontWeight.w800,
-                        letterSpacing:
-                        -1.0,
-                        height: 1.02,
-                      ),
-                    ),
-
-                    SizedBox(
-                      height:
-                      compact ? 5 : 8,
-                    ),
-
-                    // -----------------------------------------------
-                    // TAGLINE
-                    // -----------------------------------------------
-
-                    Text(
-                      subtitle,
-                      textAlign:
-                      TextAlign.center,
-                      maxLines: 2,
-                      overflow:
-                      TextOverflow.ellipsis,
-                      style: theme
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
-                        color: colorScheme
-                            .onSurfaceVariant,
-                        fontWeight:
-                        FontWeight.w600,
-                      ),
-                    ),
-
-                    // -----------------------------------------------
-                    // HINT
-                    // -----------------------------------------------
-
-                    if (hint != null) ...[
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        hint,
-                        textAlign:
-                        TextAlign.center,
-                        maxLines: 1,
-                        overflow:
-                        TextOverflow.ellipsis,
-                        style: theme
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                          color: colorScheme
-                              .onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-
-                    SizedBox(
-                      height:
-                      compact ? 8 : 12,
-                    ),
-
-                    // -----------------------------------------------
-                    // VISUAL CONTENT
-                    // -----------------------------------------------
-
-                    Expanded(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints:
-                          const BoxConstraints(
-                            maxWidth: 900,
-                          ),
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: visual,
-                          ),
-                        ),
+                      hint,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
-                ),
+
+                  const SizedBox(height: 10),
+
+                  // -------------------------------------------------
+                  // FIXED VISUAL AREA
+                  //
+                  // IMPORTANT:
+                  // Do NOT use Expanded here.
+                  // The visual has its own design size and is scaled
+                  // as a complete unit when necessary.
+                  // -------------------------------------------------
+
+                  Expanded(
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.fill,
+                        child: visual,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
-
   Widget _buildWhiteCard(
       BuildContext context, {
         required Widget child,
-        double? maxWidth,
+        double maxWidth = 900,
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth ?? 900),
+      constraints: BoxConstraints(
+        maxWidth: maxWidth,
+      ),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -501,7 +506,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.10),
+              color: colorScheme.shadow.withValues(
+                alpha: 0.10,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -521,7 +528,10 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 7,
+      ),
       decoration: BoxDecoration(
         color: usePrimary
             ? colorScheme.primary
@@ -542,33 +552,45 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   }
 
   // ============================================================
-  // SLIDE 1: BUSINESS -> LOGO -> CUSTOMER
+  // SLIDE 1
+  // BUSINESS -> LOGO IMAGE -> CUSTOMER
   // ============================================================
 
   Widget _buildBusinessFlow(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 680),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          _buildFlowNode(
-            context,
-            icon: Icons.storefront_outlined,
-            label: 'Business',
-          ),
-          _buildHorizontalConnector(context),
-          _buildLogoBlock(context, size: 86),
-          _buildHorizontalConnector(context),
-          _buildFlowNode(
-            context,
-            icon: Icons.smartphone_outlined,
-            label: 'Customer',
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _buildFlowNode(
+          context,
+          icon: Icons.storefront_outlined,
+          label: 'Business',
+        ),
+
+        const SizedBox(width: 22),
+
+        _buildHorizontalConnector(context),
+
+        const SizedBox(width: 22),
+
+        // No green/primary decoration.
+        // Keep only the actual ScanAura logo image.
+        _buildLogoImage(
+          size: 118,
+        ),
+
+        const SizedBox(width: 22),
+
+        _buildHorizontalConnector(context),
+
+        const SizedBox(width: 22),
+
+        _buildFlowNode(
+          context,
+          icon: Icons.smartphone_outlined,
+          label: 'Customer',
+        ),
+      ],
     );
   }
 
@@ -580,27 +602,34 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      width: 150,
+      height: 74,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: colorScheme.outlineVariant,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
+            color: colorScheme.shadow.withValues(
+              alpha: 0.08,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer,
               shape: BoxShape.circle,
@@ -608,15 +637,22 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
             alignment: Alignment.center,
             child: Icon(
               icon,
-              size: 18,
+              size: 19,
               color: colorScheme.primary,
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
+
+          const SizedBox(width: 9),
+
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
             ),
           ),
         ],
@@ -624,25 +660,15 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     );
   }
 
-  Widget _buildLogoBlock(
-      BuildContext context, {
-        required double size,
-      }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
+  Widget _buildLogoImage({
+    required double size,
+  }) {
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: colorScheme.primary,
-        shape: BoxShape.rectangle,
-      ),
-      alignment: Alignment.center,
       child: Image.asset(
         'assets/images/scanaura_logo_white.png',
-        width: size * 0.92,
-        height: size * 0.92,
-        fit: BoxFit.fill,
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -651,32 +677,54 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: 32,
+      width: 34,
       height: 2,
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.40),
+        color: colorScheme.primary.withValues(
+          alpha: 0.40,
+        ),
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
   // ============================================================
-  // SLIDE 2: AI IMPORT
+  // SLIDE 2
   // ============================================================
 
   Widget _buildAiFlow(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final cardWidth = width < 600 ? 125.0 : 170.0;
+    return SizedBox(
+      width: 590,
+      height: 150,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildOldListCard(
+            context,
+            width: 175,
+          ),
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildOldListCard(context, width: cardWidth),
-        _buildHorizontalConnector(context),
-        _buildAiCircle(context),
-        _buildHorizontalConnector(context),
-        _buildCatalogCard(context, width: cardWidth),
-      ],
+          const SizedBox(width: 14),
+
+          _buildHorizontalConnector(context),
+
+          const SizedBox(width: 14),
+
+          _buildAiCircle(context),
+
+          const SizedBox(width: 14),
+
+          _buildHorizontalConnector(context),
+
+          const SizedBox(width: 14),
+
+          _buildCatalogCard(
+            context,
+            width: 175,
+          ),
+        ],
+      ),
     );
   }
 
@@ -686,52 +734,61 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+    return SizedBox(
+      width: 175,
+      height: 138,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (int i = 0; i < 4; i++) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: i == 1 ? 0.70 : 0.90,
-                child: Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(5),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(
+                alpha: 0.08,
+              ),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < 4; i++) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: i == 1 ? 0.70 : 0.90,
+                  child: Container(
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
                 ),
               ),
+              if (i != 3)
+                const SizedBox(height: 7),
+            ],
+
+            const SizedBox(height: 8),
+
+            Text(
+              'OLD LIST',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
             ),
-            if (i != 3) const SizedBox(height: 9),
           ],
-          const SizedBox(height: 8),
-          Text(
-            'OLD LIST',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -740,14 +797,16 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: 82,
-      height: 82,
+      width: 90,
+      height: 90,
       decoration: BoxDecoration(
         color: colorScheme.primary,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.28),
+            color: colorScheme.primary.withValues(
+              alpha: 0.28,
+            ),
             blurRadius: 24,
             spreadRadius: 2,
           ),
@@ -767,6 +826,7 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
             style: TextStyle(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.w800,
+              fontSize: 16,
             ),
           ),
         ],
@@ -780,113 +840,143 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
+    return SizedBox(
+      width: 175,
+      height: 126,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (int i = 0; i < 3; i++) ...[
-            Row(
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: i.isEven
-                        ? colorScheme.primaryContainer
-                        : colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  '₹—',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(
+                alpha: 0.08,
+              ),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
-            if (i != 2) const SizedBox(height: 9),
           ],
-          const SizedBox(height: 8),
-          Text(
-            'DIGITAL CATALOG',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < 3; i++) ...[
+              SizedBox(
+                height: 23,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 23,
+                      height: 23,
+                      decoration: BoxDecoration(
+                        color: i.isEven
+                            ? colorScheme.primaryContainer
+                            : colorScheme.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                    ),
+
+                    const SizedBox(width: 6),
+
+                    Expanded(
+                      child: Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 5),
+
+                    Text(
+                      '₹—',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              if (i != 2)
+                const SizedBox(height: 5),
+            ],
+
+            const SizedBox(height: 6),
+
+            Text(
+              'DIGITAL CATALOG',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontSize: 9,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   // ============================================================
-  // SLIDE 3: TWO CARDS PER ROW
+  // SLIDE 3
+  // FIXED BUSINESS CARDS
   // ============================================================
 
   Widget _buildBusinessTypeGrid(BuildContext context) {
     const types = <(IconData, String)>[
-      (Icons.restaurant_menu_outlined, 'Food'),
-      (Icons.storefront_outlined, 'Retail'),
-      (Icons.shopping_bag_outlined, 'E-commerce'),
-      (Icons.work_outline_rounded, 'Services'),
-      (Icons.person_outline_rounded, 'Personal Brand'),
-      (Icons.apps_outlined, 'Other'),
+      (
+      Icons.restaurant_menu_outlined,
+      'Food',
+      ),
+      (
+      Icons.storefront_outlined,
+      'Retail',
+      ),
+      (
+      Icons.shopping_bag_outlined,
+      'E-commerce',
+      ),
+      (
+      Icons.work_outline_rounded,
+      'Services',
+      ),
+      (
+      Icons.person_outline_rounded,
+      'Personal Brand',
+      ),
+      (
+      Icons.apps_outlined,
+      'Other',
+      ),
     ];
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 720),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final spacing = 12.0;
-          final cardWidth =
-              (constraints.maxWidth - spacing) / 2;
-
-          return Wrap(
-            alignment: WrapAlignment.center,
-            spacing: spacing,
-            runSpacing: spacing,
-            children: types.map((type) {
-              return SizedBox(
-                width: cardWidth,
-                child: _buildBusinessTypeCard(
-                  context,
-                  icon: type.$1,
-                  label: type.$2,
-                ),
-              );
-            }).toList(),
+    return SizedBox(
+      width: 460,
+      height: 260,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 14,
+        runSpacing: 14,
+        children: types.map((type) {
+          return _buildBusinessTypeCard(
+            context,
+            icon: type.$1,
+            label: type.$2,
           );
-        },
+        }).toList(),
       ),
     );
   }
@@ -898,152 +988,212 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 90),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
+    return SizedBox(
+      width: 223,
+      height: 76,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: colorScheme.outlineVariant,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(
+                alpha: 0.08,
+              ),
+              blurRadius: 16,
+              offset: const Offset(0, 7),
             ),
-            alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 23,
-              color: colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 22,
+                color: colorScheme.onPrimary,
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 11),
+
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // ============================================================
-  // SLIDE 4: SCAN -> VIEW -> PAY
+  // SLIDE 4
+  //
+  //             LOGO
+  //            /    \
+  //           ↓      ↓
+  //   1. BUSINESS   2. PAY
   // ============================================================
 
   Widget _buildScanViewPay(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 620;
-        final visualSize = compact ? 82.0 : 112.0;
+    return SizedBox(
+      width: 500,
+      height: 300,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLogoImage(
+            size: 64,
+          ),
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildStep(
-              context,
-              label: 'SCAN',
-              child: _buildLogoScanCard(
+          const SizedBox(height: 4),
+
+          _buildBranchLine(context),
+
+          const SizedBox(height: 4),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStepCard(
                 context,
-                size: visualSize,
+                number: '1',
+                label: 'Business View',
+                icon: Icons.storefront_outlined,
+                child: _buildPhoneMockup(
+                  context,
+                  compact: true,
+                ),
               ),
-            ),
-            _buildHorizontalConnector(context),
-            _buildStep(
-              context,
-              label: 'VIEW',
-              child: _buildPhoneMockup(
+
+              const SizedBox(width: 20),
+
+              _buildStepCard(
                 context,
-                compact: compact,
+                number: '2',
+                label: 'Pay',
+                icon: Icons.payments_outlined,
+                child: _buildPaymentMockup(
+                  context,
+                  compact: true,
+                ),
               ),
-            ),
-            _buildHorizontalConnector(context),
-            _buildStep(
-              context,
-              label: 'PAY',
-              child: _buildPaymentMockup(
-                context,
-                compact: compact,
-              ),
-            ),
-          ],
-        );
-      },
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildLogoScanCard(
+  Widget _buildBranchLine(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      width: 300,
+      height: 23,
+      child: CustomPaint(
+        painter: _BranchPainter(
+          color: colorScheme.primary.withValues(
+            alpha: 0.55,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepCard(
       BuildContext context, {
-        required double size,
+        required String number,
+        required String label,
+        required IconData icon,
+        required Widget child,
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.24),
-              blurRadius: 26,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Image.asset(
-          'assets/images/scanaura_logo_white.png',
-          width: 22,
-          height: 22,
-          fit: BoxFit.contain,
-        )
-    );
-  }
+    return SizedBox(
+      width: 210,
+      height: 205,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 27,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    number,
+                    style: TextStyle(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
 
-  Widget _buildStep(
-      BuildContext context, {
-        required String label,
-        required Widget child,
-      }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurfaceVariant,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
+                const SizedBox(width: 6),
+
+                Icon(
+                  icon,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+
+                const SizedBox(width: 5),
+
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
+
+          const SizedBox(height: 5),
+
+          // The visual itself is fixed and centered.
+          SizedBox(
+            height: 148,
+            child: Center(
+              child: child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1052,84 +1202,96 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
         required bool compact,
       }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final width = compact ? 112.0 : 156.0;
-    final height = compact ? 198.0 : 270.0;
 
-    return Container(
+    const double width = 108;
+    const double height = 148;
+
+    return SizedBox(
       width: width,
       height: height,
-      padding: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: colorScheme.onSurface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.22),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
       child: Container(
+        padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(11),
-              color: colorScheme.primary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your Business',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: colorScheme.onPrimary,
-                      fontSize: compact ? 9 : 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Digital page',
-                    style: TextStyle(
-                      color: colorScheme.onPrimary.withValues(alpha: 0.78),
-                      fontSize: compact ? 7 : 10,
-                    ),
-                  ),
-                ],
+          color: colorScheme.onSurface,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(
+                alpha: 0.20,
               ),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            Padding(
-              padding: const EdgeInsets.all(9),
-              child: Wrap(
-                spacing: 4,
-                children: const [
-                  _MiniChip('All'),
-                  _MiniChip('Popular'),
-                ],
-              ),
-            ),
-            _PhoneItem(
-              title: 'Signature Item',
-              price: '₹249',
-              tag: 'Best Seller',
-              compact: compact,
-            ),
-            _PhoneItem(
-              title: 'Recommended',
-              price: '₹399',
-              tag: 'Recommended',
-              compact: compact,
-            ),
-            const Spacer(),
           ],
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(17),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 39,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 6,
+                ),
+                color: colorScheme.primary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Business',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colorScheme.onPrimary,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Digital page',
+                      style: TextStyle(
+                        color: colorScheme.onPrimary.withValues(
+                          alpha: 0.78,
+                        ),
+                        fontSize: 6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(5),
+                child: Wrap(
+                  spacing: 3,
+                  children: const [
+                    _MiniChip('All'),
+                    _MiniChip('Popular'),
+                  ],
+                ),
+              ),
+
+              const _PhoneItem(
+                title: 'Signature',
+                price: '₹249',
+                tag: 'Best Seller',
+                compact: true,
+              ),
+
+              const _PhoneItem(
+                title: 'Recommended',
+                price: '₹399',
+                tag: 'Recommended',
+                compact: true,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1140,61 +1302,70 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
         required bool compact,
       }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final width = compact ? 108.0 : 148.0;
 
-    return Container(
-      width: width,
-      padding: EdgeInsets.all(compact ? 14 : 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
+    return SizedBox(
+      width: 108,
+      height: 148,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(
+                alpha: 0.10,
+              ),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.10),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: compact ? 42 : 50,
-            height: compact ? 42 : 50,
-            decoration: BoxDecoration(
-              color: colorScheme.tertiaryContainer,
-              shape: BoxShape.circle,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: colorScheme.tertiaryContainer,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.check_rounded,
+                color: colorScheme.onTertiaryContainer,
+                size: 20,
+              ),
             ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.check_rounded,
-              color: colorScheme.onTertiaryContainer,
-              size: compact ? 22 : 28,
+
+            const SizedBox(height: 7),
+
+            const Text(
+              '₹249',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          SizedBox(height: compact ? 9 : 14),
-          Text(
-            '₹249',
-            style: TextStyle(
-              fontSize: compact ? 19 : 24,
-              fontWeight: FontWeight.w800,
+
+            const SizedBox(height: 2),
+
+            Text(
+              'Payment confirmed',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 7,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Payment confirmed',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontSize: compact ? 8 : null,
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1208,14 +1379,24 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final isLast = _currentPage == _pageCount - 1;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        8,
+        18,
+        14,
+      ),
       child: Row(
         children: [
           IconButton(
             tooltip: 'Previous',
-            onPressed: _currentPage == 0 ? null : _previous,
-            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: _currentPage == 0
+                ? null
+                : _previous,
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+            ),
           ),
+
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1223,22 +1404,30 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
                 _pageCount,
                     (index) {
                   final active = index == _currentPage;
+
                   return AnimatedContainer(
-                    duration: const Duration(milliseconds: 260),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    duration: const Duration(
+                      milliseconds: 260,
+                    ),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                    ),
                     width: active ? 28 : 8,
                     height: 8,
                     decoration: BoxDecoration(
                       color: active
                           ? theme.colorScheme.primary
                           : theme.colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(
+                        999,
+                      ),
                     ),
                   );
                 },
               ),
             ),
           ),
+
           FilledButton.icon(
             onPressed: _next,
             icon: Icon(
@@ -1248,7 +1437,9 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
               size: 18,
             ),
             label: Text(
-              isLast ? 'Get Started' : 'Next',
+              isLast
+                  ? 'Get Started'
+                  : 'Next',
             ),
           ),
         ],
@@ -1257,9 +1448,129 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   }
 }
 
-// ================================================================
+// ============================================================================
+// BRANCH PAINTER
+// ============================================================================
+
+class _BranchPainter extends CustomPainter {
+  const _BranchPainter({
+    required this.color,
+  });
+
+  final Color color;
+
+  @override
+  void paint(
+      Canvas canvas,
+      Size size,
+      ) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final centerX = size.width / 2;
+
+    final leftX = 48.0;
+    final rightX = size.width - 48;
+
+    final startY = 0.0;
+    final middleY = 12.0;
+    final endY = size.height;
+
+    final path = Path()
+      ..moveTo(
+        centerX,
+        startY,
+      )
+      ..lineTo(
+        centerX,
+        middleY,
+      )
+      ..lineTo(
+        leftX,
+        middleY,
+      )
+      ..lineTo(
+        leftX,
+        endY - 5,
+      )
+      ..moveTo(
+        centerX,
+        middleY,
+      )
+      ..lineTo(
+        rightX,
+        middleY,
+      )
+      ..lineTo(
+        rightX,
+        endY - 5,
+      );
+
+    canvas.drawPath(
+      path,
+      paint,
+    );
+
+    _drawArrow(
+      canvas,
+      Offset(
+        leftX,
+        endY - 1,
+      ),
+      paint,
+    );
+
+    _drawArrow(
+      canvas,
+      Offset(
+        rightX,
+        endY - 1,
+      ),
+      paint,
+    );
+  }
+
+  void _drawArrow(
+      Canvas canvas,
+      Offset tip,
+      Paint paint,
+      ) {
+    const arrowSize = 5.0;
+
+    final path = Path()
+      ..moveTo(
+        tip.dx - arrowSize,
+        tip.dy - arrowSize,
+      )
+      ..lineTo(
+        tip.dx,
+        tip.dy,
+      )
+      ..lineTo(
+        tip.dx + arrowSize,
+        tip.dy - arrowSize,
+      );
+
+    canvas.drawPath(
+      path,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+      covariant _BranchPainter oldDelegate,
+      ) {
+    return oldDelegate.color != color;
+  }
+}
+
+// ============================================================================
 // SMALL PHONE COMPONENTS
-// ================================================================
+// ============================================================================
 
 class _MiniChip extends StatelessWidget {
   const _MiniChip(this.label);
@@ -1271,7 +1582,10 @@ class _MiniChip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 7,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
@@ -1319,7 +1633,11 @@ class _PhoneItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          SizedBox(width: compact ? 5 : 7),
+
+          SizedBox(
+            width: compact ? 5 : 7,
+          ),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1333,6 +1651,7 @@ class _PhoneItem extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+
                 if (tag != null)
                   Text(
                     tag!,
@@ -1345,6 +1664,7 @@ class _PhoneItem extends StatelessWidget {
               ],
             ),
           ),
+
           Text(
             price,
             style: TextStyle(

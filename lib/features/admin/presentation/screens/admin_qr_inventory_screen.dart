@@ -602,7 +602,7 @@ class _AdminQrInventoryScreenState
                 itemCount:
                 qrs.length,
                 separatorBuilder:
-                    (_, __) =>
+                    (_, _) =>
                 const Divider(),
                 itemBuilder:
                     (

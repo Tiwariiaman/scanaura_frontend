@@ -23,21 +23,40 @@ class MenuItemResponse {
       Map<String, dynamic> json,
       ) {
     return MenuItemResponse(
-      name: json['name'] as String? ?? '',
+      name:
+      json['name'] as String? ?? '',
       description:
       json['description'] as String?,
       price:
-      (json['price'] as num?)?.toDouble() ?? 0,
+      (json['price'] as num?)
+          ?.toDouble() ??
+          0,
       imageUrl:
       json['imageUrl'] as String?,
       veg:
       json['veg'] as bool? ?? true,
       available:
-      json['available'] as bool? ?? false,
+      json['available'] as bool? ??
+          false,
       bestSeller:
-      json['bestSeller'] as bool? ?? false,
+      json['bestSeller'] as bool? ??
+          false,
       recommended:
-      json['recommended'] as bool? ?? false,
+      json['recommended'] as bool? ??
+          false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'price': price,
+      'imageUrl': imageUrl,
+      'veg': veg,
+      'available': available,
+      'bestSeller': bestSeller,
+      'recommended': recommended,
+    };
   }
 }

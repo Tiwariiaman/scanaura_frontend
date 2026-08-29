@@ -1104,7 +1104,7 @@ class _AssignBusinessDialogState
       itemCount: state.businesses.length,
       separatorBuilder: (
           _,
-          __,
+          _,
           ) =>
       const Divider(height: 1),
       itemBuilder: (
