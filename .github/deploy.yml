@@ -1,0 +1,91 @@
+name: Deploy Flutter Web to Hostinger
+
+on:
+  push:
+    branches:
+      - master
+
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------
+      # Flutter
+      # ------------------------------------------------------------
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # ------------------------------------------------------------
+      # Dependencies
+      # ------------------------------------------------------------
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      # ------------------------------------------------------------
+      # Analyze
+      # ------------------------------------------------------------
+      - name: Analyze Flutter project
+        run: flutter analyze
+
+      # ------------------------------------------------------------
+      # Build production web application
+      # ------------------------------------------------------------
+      - name: Build Flutter Web
+        run: |
+          flutter build web \
+            --release \
+            --dart-define=API_BASE_URL=https://api.scanaura.in \
+            --no-wasm-dry-run
+
+      # ------------------------------------------------------------
+      # Verify production API configuration
+      # ------------------------------------------------------------
+      - name: Verify production API URL
+        shell: bash
+        run: |
+          echo "Checking compiled Flutter application..."
+
+          if grep -a -q "api.scanaura.in" build/web/main.dart.js; then
+            echo "Production API URL found."
+          else
+            echo "ERROR: api.scanaura.in was not found in main.dart.js"
+            exit 1
+          fi
+
+          if grep -a -q "localhost:8080" build/web/main.dart.js; then
+            echo "ERROR: localhost:8080 found in production build."
+            exit 1
+          else
+            echo "No localhost:8080 found."
+          fi
+
+      # ------------------------------------------------------------
+      # Deploy to Hostinger
+      # ------------------------------------------------------------
+      - name: Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+
+          local-dir: ./build/web/
+          server-dir: ./public_html/
+
+          # Keep Hostinger-managed configuration.
+          exclude: |
+            **/.htaccess
+
+          state-name: .ftp-deploy-sync-state.json
