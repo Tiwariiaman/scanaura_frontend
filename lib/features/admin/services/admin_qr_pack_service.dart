@@ -31,7 +31,7 @@ class AdminQrPackService {
       final qr = qrCodes[index];
 
       final publicUrl =
-          'https://scanaura.in/q/$qr.qrCode';
+          'https://scanaura.in/#/q/$qr.qrCode';
 
       final imageBytes =
       await _controller.captureFromWidget(
