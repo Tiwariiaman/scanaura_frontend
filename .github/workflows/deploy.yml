@@ -60,7 +60,4 @@ jobs:
           local-dir: ./build/web/
           server-dir: ./public_html/
 
-          exclude: |
-            **/.htaccess
-
           state-name: .ftp-deploy-sync-state.json
