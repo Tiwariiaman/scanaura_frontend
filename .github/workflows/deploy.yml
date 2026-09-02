@@ -18,7 +18,7 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: "3.44.8"
           cache: true
 
       - name: Get Flutter dependencies
@@ -33,7 +33,7 @@ jobs:
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
-      - name: Remove unwanted legacy PWA files
+      - name: Remove legacy PWA files
         shell: bash
         run: |
           rm -f build/web/flutter_service_worker.js
@@ -41,7 +41,7 @@ jobs:
           rm -f build/web/service-worker.js
           rm -f build/web/sw.js
 
-      - name: Add deployment build ID
+      - name: Add deployment version
         shell: bash
         run: |
           BUILD_ID="${GITHUB_SHA}"
@@ -52,29 +52,30 @@ jobs:
           path = Path("build/web/index.html")
           text = path.read_text()
 
-          old = '<script src="flutter_bootstrap.js" async></script>'
-          new = '<script src="flutter_bootstrap.js?v=${BUILD_ID}" async></script>'
+          marker = "flutter_bootstrap.js"
 
-          if old not in text:
+          if marker not in text:
               raise SystemExit(
-                  "ERROR: flutter_bootstrap.js script tag not found"
+                  "ERROR: flutter_bootstrap.js not found in build/web/index.html"
               )
 
-          text = text.replace(old, new, 1)
-          path.write_text(text)
-          PY
+          text = text.replace(
+              marker,
+              f"{marker}?v={BUILD_ID}",
+              1,
+          )
 
-          echo "Deployment build ID: ${BUILD_ID}"
+          path.write_text(text)
+          print(f"Deployment build ID: {BUILD_ID}")
+          PY
 
       - name: Verify production build
         shell: bash
         run: |
           echo "Checking production build..."
 
-          if ! grep -a -q "api.scanaura.in" build/web/main.dart.js; then
-            echo "ERROR: Production API URL not found."
-            exit 1
-          fi
+          grep -a -q "api.scanaura.in" build/web/main.dart.js \
+            || { echo "ERROR: Production API URL missing."; exit 1; }
 
           if grep -a -q "localhost:8080" build/web/main.dart.js; then
             echo "ERROR: localhost:8080 found in production build."
