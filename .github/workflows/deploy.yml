@@ -43,31 +43,37 @@ jobs:
 
       - name: Add deployment version
         shell: bash
+        env:
+            BUILD_ID: ${{ github.sha }}
         run: |
-          BUILD_ID="${GITHUB_SHA}"
-
-          python3 - <<PY
-          from pathlib import Path
-
-          path = Path("build/web/index.html")
-          text = path.read_text()
-
-          marker = "flutter_bootstrap.js"
-
-          if marker not in text:
-              raise SystemExit(
-                  "ERROR: flutter_bootstrap.js not found in build/web/index.html"
-              )
-
-          text = text.replace(
-              marker,
-              f"{marker}?v={BUILD_ID}",
-              1,
-          )
-
-          path.write_text(text)
-          print(f"Deployment build ID: {BUILD_ID}")
-          PY
+            python3 - <<'PY'
+            from pathlib import Path
+            import os
+            import re
+            
+            path = Path("build/web/index.html")
+            text = path.read_text(encoding="utf-8")
+            
+            build_id = os.environ["BUILD_ID"]
+            
+            pattern = r'flutter_bootstrap\.js(?=["\'])'
+            
+            updated, count = re.subn(
+                pattern,
+                f"flutter_bootstrap.js?v={build_id}",
+                text,
+                count=1,
+            )
+            
+            if count != 1:
+                raise SystemExit(
+                    "ERROR: Could not find flutter_bootstrap.js in build/web/index.html"
+                )
+            
+            path.write_text(updated, encoding="utf-8")
+            
+            print(f"Deployment build ID: {build_id}")
+            ```
 
       - name: Verify production build
         shell: bash
