@@ -112,57 +112,9 @@
           sizes="180x180"
           href="icons/apple-icon-180x180.png"
   >
-
-  <!-- ============================================================
-       WEB APP MANIFEST
-       ============================================================ -->
-
-<!--  <link-->
-<!--          rel="manifest"-->
-<!--          href="manifest.json"-->
-<!--  >-->
-
 </head>
 
 <body>
-<!-- Force PWA Update Logic for Old Devices -->
-<!--<script>-->
-<!--  if ('serviceWorker' in navigator) {-->
-<!--    navigator.serviceWorker.getRegistrations().then(function(registrations) {-->
-<!--      for (let registration of registrations) {-->
-<!--        // Force the waiting service worker containing the production API to take over instantly-->
-<!--        if (registration.waiting) {-->
-<!--          registration.waiting.postMessage({ type: 'SKIP_WAITING' });-->
-<!--          window.location.reload();-->
-<!--        }-->
-
-<!--        // Listen for new service workers installing in the background-->
-<!--        registration.addEventListener('updatefound', function() {-->
-<!--          const installingWorker = registration.installing;-->
-<!--          if (installingWorker) {-->
-<!--            installingWorker.addEventListener('statechange', function() {-->
-<!--              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {-->
-<!--                // Instantly refresh when the updated bundle finishes downloading-->
-<!--                installingWorker.postMessage({ type: 'SKIP_WAITING' });-->
-<!--                window.location.reload();-->
-<!--              }-->
-<!--            });-->
-<!--          }-->
-<!--        });-->
-<!--      }-->
-<!--    });-->
-
-<!--    // Ensure the new active service worker reclaims control of open tabs immediately-->
-<!--    let refreshing = false;-->
-<!--    navigator.serviceWorker.addEventListener('controllerchange', function() {-->
-<!--      if (!refreshing) {-->
-<!--        refreshing = true;-->
-<!--        window.location.reload();-->
-<!--      }-->
-<!--    });-->
-<!--  }-->
-<!--</script>-->
-
 <!-- Flutter Web bootstrap -->
 <script
         src="flutter_bootstrap.js"
