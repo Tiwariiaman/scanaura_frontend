@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/business/presentation/providers/business_notifier.dart';
@@ -103,6 +104,52 @@ class _AppShellState
     }
   }
 
+  Future<void> _openScanAuraSupport() async {
+    const phone = '917056222557';
+    const message =
+        'Hi ScanAura Support, I need help with my business account.';
+
+    final uri = Uri.parse(
+      'https://wa.me/$phone?text=${Uri.encodeComponent(message)}',
+    );
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Unable to open WhatsApp.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Unable to open WhatsApp.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      }
+    }
+  }
+
+  void _openContactUs() {
+    context.go('/contact-us');
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final location =
@@ -136,6 +183,7 @@ class _AppShellState
           return Scaffold(
             appBar: _MobileHeader(
               logoUrl: business?.logoUrl,
+              onContactUs: _openContactUs,
               onLogout: _logout,
             ),
             body: SafeArea(
@@ -154,6 +202,20 @@ class _AppShellState
                 );
               },
             ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _openScanAuraSupport,
+              backgroundColor: const Color(0xFF00674F),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.message_rounded),
+              label: const Text(
+                'Support',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            floatingActionButtonLocation:
+            FloatingActionButtonLocation.endFloat,
           );
         }
 
@@ -186,6 +248,7 @@ class _AppShellState
                       _DesktopHeader(
                         logoUrl:
                         business?.logoUrl,
+                        onContactUs: _openContactUs,
                         onLogout: _logout,
                       ),
                       Expanded(
@@ -196,6 +259,20 @@ class _AppShellState
                 ),
               ],
             ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _openScanAuraSupport,
+              backgroundColor: const Color(0xFF00674F),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.message_rounded),
+              label: const Text(
+                'Support',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            floatingActionButtonLocation:
+            FloatingActionButtonLocation.endFloat,
           );
         }
 
@@ -229,6 +306,7 @@ class _AppShellState
                       logoUrl:
                       business?.logoUrl,
                       onLogout: _logout,
+                      onContactUs: _openContactUs,
                     ),
                     Expanded(
                       child: widget.child,
@@ -238,6 +316,20 @@ class _AppShellState
               ),
             ],
           ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _openScanAuraSupport,
+            backgroundColor: const Color(0xFF00674F),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.message_rounded),
+            label: const Text(
+              'Support',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat,
         );
       },
     );
@@ -632,10 +724,12 @@ class _DesktopHeader
     extends StatelessWidget {
   const _DesktopHeader({
     required this.logoUrl,
+    required this.onContactUs,
     required this.onLogout,
   });
 
   final String? logoUrl;
+  final VoidCallback onContactUs;
   final VoidCallback onLogout;
 
   @override
@@ -669,6 +763,18 @@ class _DesktopHeader
           ),
 
           IconButton(
+            tooltip: 'Contact Us',
+            onPressed: onContactUs,
+            icon: const Icon(
+              Icons.support_agent_rounded,
+            ),
+          ),
+
+          const SizedBox(
+            width: 4,
+          ),
+
+          IconButton(
             tooltip: 'Logout',
             onPressed: onLogout,
             icon: const Icon(
@@ -690,10 +796,12 @@ class _MobileHeader
     implements PreferredSizeWidget {
   const _MobileHeader({
     required this.logoUrl,
+    required this.onContactUs,
     required this.onLogout,
   });
 
   final String? logoUrl;
+  final VoidCallback onContactUs;
   final VoidCallback onLogout;
 
   @override
@@ -738,6 +846,18 @@ class _MobileHeader
         _BusinessAvatar(
           logoUrl: logoUrl,
           size: 36,
+        ),
+
+        const SizedBox(
+          width: 2,
+        ),
+
+        IconButton(
+          tooltip: 'Contact Us',
+          onPressed: onContactUs,
+          icon: const Icon(
+            Icons.support_agent_rounded,
+          ),
         ),
 
         const SizedBox(
