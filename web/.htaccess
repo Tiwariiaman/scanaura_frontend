@@ -1,26 +1,18 @@
 RewriteEngine On
 
-# ============================================================
-# FLUTTER WEB SPA FALLBACK
-# ============================================================
-
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
 
-# ============================================================
-# NEVER CACHE FLUTTER APP ENTRY FILES
-# ============================================================
-
 <IfModule mod_headers.c>
 
-    <FilesMatch "^(index\.html|flutter_bootstrap\.js)$">
+    <FilesMatch "^index\.html$">
         Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
         Header always set Pragma "no-cache"
         Header always set Expires "0"
     </FilesMatch>
 
-    <FilesMatch "\.(js|json|wasm)$">
+    <FilesMatch "\.(js|wasm|json)$">
         Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
         Header always set Pragma "no-cache"
         Header always set Expires "0"

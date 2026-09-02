@@ -116,6 +116,48 @@
 
 <body>
 <!-- Flutter Web bootstrap -->
+<script>
+  (async function cleanupLegacyScanAuraPWA() {
+    if (!('serviceWorker' in navigator)) {
+      return;
+    }
+
+    try {
+      const registrations =
+          await navigator.serviceWorker.getRegistrations();
+
+      let changed = false;
+
+      for (const registration of registrations) {
+        const scope = registration. Scope || '';
+
+        if (scope === `${window.location.origin}/` ||
+            scope.startsWith(`${window.location.origin}/`)) {
+          const unregistered = await registration.unregister();
+          changed = changed || unregistered;
+        }
+      }
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.warn(
+        'ScanAura legacy cache cleanup failed:',
+        error,
+      );
+    }
+  })();
+</script>
 <script
         src="flutter_bootstrap.js"
         async
