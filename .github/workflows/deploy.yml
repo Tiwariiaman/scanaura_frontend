@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-
   workflow_dispatch:
 
 jobs:
@@ -12,18 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout source
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # 2. Install exact Flutter version
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.44.8"
+          channel: stable
           cache: true
 
+      # 3. Get dependencies
       - name: Get Flutter dependencies
         run: flutter pub get
 
+      # 4. Build Flutter Web
       - name: Build Flutter Web
         run: |
           flutter clean
@@ -33,6 +37,7 @@ jobs:
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
+      # 5. Remove generated/legacy PWA files
       - name: Remove legacy PWA files
         shell: bash
         run: |
@@ -41,52 +46,47 @@ jobs:
           rm -f build/web/service-worker.js
           rm -f build/web/sw.js
 
+      # 6. Cache-bust Flutter bootstrap file
       - name: Add deployment version
         shell: bash
-        env:
-            BUILD_ID: ${{ github.sha }}
         run: |
-            python3 - <<'PY'
-            from pathlib import Path
-            import os
-            import re
-            
-            path = Path("build/web/index.html")
-            text = path.read_text(encoding="utf-8")
-            
-            build_id = os.environ["BUILD_ID"]
-            
-            pattern = r'flutter_bootstrap\.js(?=["\'])'
-            
-            updated, count = re.subn(
-                pattern,
-                f"flutter_bootstrap.js?v={build_id}",
-                text,
-                count=1,
-            )
-            
-            if count != 1:
-                raise SystemExit(
-                    "ERROR: Could not find flutter_bootstrap.js in build/web/index.html"
-                )
-            
-            path.write_text(updated, encoding="utf-8")
-            
-            print(f"Deployment build ID: {build_id}")
-            ```
+          set -e
 
+          test -f build/web/index.html
+
+          sed -i \
+            "s#flutter_bootstrap\.js#flutter_bootstrap.js?v=${GITHUB_SHA}#" \
+            build/web/index.html
+
+          echo "Deployment build ID: ${GITHUB_SHA}"
+
+          grep -a -q "flutter_bootstrap.js?v=${GITHUB_SHA}" build/web/index.html || {
+            echo "ERROR: Failed to add deployment version to flutter_bootstrap.js"
+            exit 1
+          }
+
+      # 7. Verify production build
       - name: Verify production build
         shell: bash
         run: |
+          set -e
+
           echo "Checking production build..."
 
-          grep -a -q "api.scanaura.in" build/web/main.dart.js \
-            || { echo "ERROR: Production API URL missing."; exit 1; }
+          test -f build/web/index.html
+          test -f build/web/flutter_bootstrap.js
+          test -f build/web/main.dart.js
 
+          echo "Checking production API URL..."
+          grep -a -q "api.scanaura.in" build/web/main.dart.js
+
+          echo "Checking for localhost API..."
           if grep -a -q "localhost:8080" build/web/main.dart.js; then
             echo "ERROR: localhost:8080 found in production build."
             exit 1
           fi
+
+          echo "Checking for legacy PWA files..."
 
           if [ -f "build/web/flutter_service_worker.js" ]; then
             echo "ERROR: flutter_service_worker.js still exists."
@@ -98,16 +98,25 @@ jobs:
             exit 1
           fi
 
-          echo "Production build verified."
+          if [ -f "build/web/service-worker.js" ]; then
+            echo "ERROR: service-worker.js still exists."
+            exit 1
+          fi
 
+          if [ -f "build/web/sw.js" ]; then
+            echo "ERROR: sw.js still exists."
+            exit 1
+          fi
+
+          echo "Production build verification passed."
+
+      # 8. Deploy to Hostinger
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./build/web/
           server-dir: ./public_html/
-
           state-name: .ftp-deploy-sync-state.json
