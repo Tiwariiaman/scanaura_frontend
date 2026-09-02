@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
@@ -16,33 +13,26 @@ class PublicRepository {
 
   final ApiClient apiClient;
 
-  static const String _menuCachePrefix =
-      'scanaura_public_menu_';
-
-  static const String _landingCachePrefix =
-      'scanaura_public_landing_';
-
   // ============================================================
-  // LANDING
+  // LANDING PAGE
   // ============================================================
 
   Future<LandingResponse> getLandingPage(
       String qrCode,
       ) async {
-    final normalizedQrCode =
-    qrCode.trim();
+    final code = qrCode.trim();
 
-    final cacheKey =
-        '$_landingCachePrefix$normalizedQrCode';
+    if (code.isEmpty) {
+      throw Exception('QR code is missing.');
+    }
 
     try {
       final response =
       await apiClient.get<Map<String, dynamic>>(
-        '${ApiConstants.publicLanding}/$normalizedQrCode',
+        '${ApiConstants.publicLanding}/$code',
       );
 
-      final body =
-          response.data;
+      final body = response.data;
 
       if (body == null) {
         throw Exception(
@@ -50,69 +40,47 @@ class PublicRepository {
         );
       }
 
-      final data =
-      body['data'];
+      final data = body['data'];
 
       if (data is! Map<String, dynamic>) {
-        final message =
-        body['message'];
+        final message = body['message'];
 
         throw Exception(
-          message is String &&
-              message.isNotEmpty
-              ? message
+          message is String && message.trim().isNotEmpty
+              ? message.trim()
               : 'Unable to load business page.',
         );
       }
 
-      final landing =
-      LandingResponse.fromJson(data);
-
-      await _saveLandingCache(
-        cacheKey,
-        landing,
-      );
-
-      return landing;
+      return LandingResponse.fromJson(data);
     } on DioException catch (error) {
-      final cachedLanding =
-      await _getCachedLanding(
-        cacheKey,
-      );
-
-      if (cachedLanding != null) {
-        return cachedLanding;
-      }
-
       throw _handleError(
         error,
-        fallback:
-        'Unable to load business page.',
+        fallback: 'Unable to load business page.',
       );
     }
   }
 
   // ============================================================
-  // MENU / CATALOG
+  // MENU
   // ============================================================
 
   Future<MenuResponse> getMenu(
       String qrCode,
       ) async {
-    final normalizedQrCode =
-    qrCode.trim();
+    final code = qrCode.trim();
 
-    final cacheKey =
-        '$_menuCachePrefix$normalizedQrCode';
+    if (code.isEmpty) {
+      throw Exception('QR code is missing.');
+    }
 
     try {
       final response =
       await apiClient.get<Map<String, dynamic>>(
-        '${ApiConstants.publicMenu}/$normalizedQrCode/menu',
+        '${ApiConstants.publicMenu}/$code/menu',
       );
 
-      final body =
-          response.data;
+      final body = response.data;
 
       if (body == null) {
         throw Exception(
@@ -120,63 +88,47 @@ class PublicRepository {
         );
       }
 
-      final data =
-      body['data'];
+      final data = body['data'];
 
       if (data is! Map<String, dynamic>) {
-        final message =
-        body['message'];
+        final message = body['message'];
 
         throw Exception(
-          message is String &&
-              message.isNotEmpty
-              ? message
+          message is String && message.trim().isNotEmpty
+              ? message.trim()
               : 'Unable to load menu.',
         );
       }
 
-      final menu =
-      MenuResponse.fromJson(data);
-
-      await _saveMenuCache(
-        cacheKey,
-        menu,
-      );
-
-      return menu;
+      return MenuResponse.fromJson(data);
     } on DioException catch (error) {
-      final cachedMenu =
-      await _getCachedMenu(
-        cacheKey,
-      );
-
-      if (cachedMenu != null) {
-        return cachedMenu;
-      }
-
       throw _handleError(
         error,
-        fallback:
-        'Unable to load menu.',
+        fallback: 'Unable to load menu.',
       );
     }
   }
 
   // ============================================================
-  // PAYMENT
+  // PAYMENT DETAILS
   // ============================================================
 
   Future<PaymentResponse> getPaymentDetails(
       String qrCode,
       ) async {
+    final code = qrCode.trim();
+
+    if (code.isEmpty) {
+      throw Exception('QR code is missing.');
+    }
+
     try {
       final response =
       await apiClient.get<Map<String, dynamic>>(
-        '${ApiConstants.publicPayment}/$qrCode/payment',
+        '${ApiConstants.publicPayment}/$code/payment',
       );
 
-      final body =
-          response.data;
+      final body = response.data;
 
       if (body == null) {
         throw Exception(
@@ -184,17 +136,14 @@ class PublicRepository {
         );
       }
 
-      final data =
-      body['data'];
+      final data = body['data'];
 
       if (data is! Map<String, dynamic>) {
-        final message =
-        body['message'];
+        final message = body['message'];
 
         throw Exception(
-          message is String &&
-              message.isNotEmpty
-              ? message
+          message is String && message.trim().isNotEmpty
+              ? message.trim()
               : 'Unable to load payment details.',
         );
       }
@@ -203,127 +152,8 @@ class PublicRepository {
     } on DioException catch (error) {
       throw _handleError(
         error,
-        fallback:
-        'Unable to load payment details.',
+        fallback: 'Unable to load payment details.',
       );
-    }
-  }
-
-  // ============================================================
-  // LANDING CACHE
-  // ============================================================
-
-  Future<void> _saveLandingCache(
-      String cacheKey,
-      LandingResponse landing,
-      ) async {
-    try {
-      final preferences =
-      await SharedPreferences
-          .getInstance();
-
-      await preferences.setString(
-        cacheKey,
-        jsonEncode(
-          landing.toJson(),
-        ),
-      );
-    } catch (_) {
-      // Cache failure must never
-      // break the public experience.
-    }
-  }
-
-  Future<LandingResponse?> _getCachedLanding(
-      String cacheKey,
-      ) async {
-    try {
-      final preferences =
-      await SharedPreferences
-          .getInstance();
-
-      final cachedJson =
-      preferences.getString(
-        cacheKey,
-      );
-
-      if (cachedJson == null ||
-          cachedJson.isEmpty) {
-        return null;
-      }
-
-      final decoded =
-      jsonDecode(cachedJson);
-
-      if (decoded
-      is! Map<String, dynamic>) {
-        return null;
-      }
-
-      return LandingResponse.fromJson(
-        decoded,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // ============================================================
-  // MENU CACHE
-  // ============================================================
-
-  Future<void> _saveMenuCache(
-      String cacheKey,
-      MenuResponse menu,
-      ) async {
-    try {
-      final preferences =
-      await SharedPreferences
-          .getInstance();
-
-      await preferences.setString(
-        cacheKey,
-        jsonEncode(
-          menu.toJson(),
-        ),
-      );
-    } catch (_) {
-      // Cache failure must never
-      // break the public experience.
-    }
-  }
-
-  Future<MenuResponse?> _getCachedMenu(
-      String cacheKey,
-      ) async {
-    try {
-      final preferences =
-      await SharedPreferences
-          .getInstance();
-
-      final cachedJson =
-      preferences.getString(
-        cacheKey,
-      );
-
-      if (cachedJson == null ||
-          cachedJson.isEmpty) {
-        return null;
-      }
-
-      final decoded =
-      jsonDecode(cachedJson);
-
-      if (decoded
-      is! Map<String, dynamic>) {
-        return null;
-      }
-
-      return MenuResponse.fromJson(
-        decoded,
-      );
-    } catch (_) {
-      return null;
     }
   }
 
@@ -335,30 +165,40 @@ class PublicRepository {
       DioException error, {
         required String fallback,
       }) {
-    final responseData =
-        error.response?.data;
+    final responseData = error.response?.data;
 
-    if (responseData
-    is Map<String, dynamic>) {
-      final message =
-      responseData['message'];
+    if (responseData is Map<String, dynamic>) {
+      final message = responseData['message'];
 
-      if (message is String &&
-          message.isNotEmpty) {
-        return Exception(message);
+      if (message is String && message.trim().isNotEmpty) {
+        return Exception(message.trim());
+      }
+
+      final backendError = responseData['error'];
+
+      if (backendError is String &&
+          backendError.trim().isNotEmpty) {
+        return Exception(backendError.trim());
       }
     }
 
-    switch (
-    error.response?.statusCode) {
+    switch (error.response?.statusCode) {
       case 400:
+        return Exception('Invalid public page request.');
+
+      case 401:
         return Exception(
-          'Invalid public page request.',
+          'Your session has expired. Please login again.',
+        );
+
+      case 403:
+        return Exception(
+          'This business page is not available.',
         );
 
       case 404:
         return Exception(
-          'Business or QR code not found.',
+          'Business not found or QR code is invalid.',
         );
 
       case 409:
@@ -366,16 +206,28 @@ class PublicRepository {
           'This QR code is not available.',
         );
 
+      case 429:
+        return Exception(
+          'Too many requests. Please try again shortly.',
+        );
+
       case 500:
         return Exception(
-          'Unable to load this page right now.',
+          'Server error. Please try again shortly.',
         );
 
       default:
-        if (error.type ==
-            DioExceptionType.connectionError) {
+        if (error.type == DioExceptionType.connectionError) {
           return Exception(
             'Unable to connect to ScanAura.',
+          );
+        }
+
+        if (error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.sendTimeout) {
+          return Exception(
+            'ScanAura server request timed out.',
           );
         }
 

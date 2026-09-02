@@ -7,13 +7,12 @@ import 'app/app.dart';
 import 'app/router/app_router.dart';
 import 'features/auth/presentation/providers/auth_notifier.dart';
 import 'features/auth/presentation/providers/auth_state.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
+
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  usePathUrlStrategy();
 
   final container = ProviderContainer();
 
