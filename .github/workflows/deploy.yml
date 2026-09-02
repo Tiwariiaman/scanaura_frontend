@@ -11,11 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      # 2. Install exact Flutter version
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -23,11 +21,9 @@ jobs:
           channel: stable
           cache: true
 
-      # 3. Get dependencies
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      # 4. Build Flutter Web
       - name: Build Flutter Web
         run: |
           flutter clean
@@ -37,7 +33,6 @@ jobs:
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
-      # 5. Remove generated/legacy PWA files
       - name: Remove legacy PWA files
         shell: bash
         run: |
@@ -46,7 +41,6 @@ jobs:
           rm -f build/web/service-worker.js
           rm -f build/web/sw.js
 
-      # 6. Cache-bust Flutter bootstrap file
       - name: Add deployment version
         shell: bash
         run: |
@@ -61,11 +55,10 @@ jobs:
           echo "Deployment build ID: ${GITHUB_SHA}"
 
           grep -a -q "flutter_bootstrap.js?v=${GITHUB_SHA}" build/web/index.html || {
-            echo "ERROR: Failed to add deployment version to flutter_bootstrap.js"
+            echo "ERROR: Failed to add deployment version."
             exit 1
           }
 
-      # 7. Verify production build
       - name: Verify production build
         shell: bash
         run: |
@@ -80,43 +73,42 @@ jobs:
           echo "Checking production API URL..."
           grep -a -q "api.scanaura.in" build/web/main.dart.js
 
-          echo "Checking for localhost API..."
+          echo "Checking for localhost..."
           if grep -a -q "localhost:8080" build/web/main.dart.js; then
             echo "ERROR: localhost:8080 found in production build."
             exit 1
           fi
 
-          echo "Checking for legacy PWA files..."
+          echo "Checking PWA files..."
 
-          if [ -f "build/web/flutter_service_worker.js" ]; then
-            echo "ERROR: flutter_service_worker.js still exists."
+          if [ -f build/web/flutter_service_worker.js ]; then
+            echo "ERROR: flutter_service_worker.js exists."
             exit 1
           fi
 
-          if [ -f "build/web/manifest.json" ]; then
-            echo "ERROR: manifest.json still exists."
+          if [ -f build/web/manifest.json ]; then
+            echo "ERROR: manifest.json exists."
             exit 1
           fi
 
-          if [ -f "build/web/service-worker.js" ]; then
-            echo "ERROR: service-worker.js still exists."
+          if [ -f build/web/service-worker.js ]; then
+            echo "ERROR: service-worker.js exists."
             exit 1
           fi
 
-          if [ -f "build/web/sw.js" ]; then
-            echo "ERROR: sw.js still exists."
+          if [ -f build/web/sw.js ]; then
+            echo "ERROR: sw.js exists."
             exit 1
           fi
 
           echo "Production build verification passed."
 
-      # 8. Deploy to Hostinger
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
           local-dir: ./build/web/
           server-dir: ./public_html/
           state-name: .ftp-deploy-sync-state.json
