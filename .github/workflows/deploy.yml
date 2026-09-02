@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Flutter
         uses: subosito/flutter-action@v2
@@ -26,29 +26,72 @@ jobs:
 
       - name: Build Flutter Web
         run: |
+          flutter clean
           flutter build web \
             --release \
+            --pwa-strategy=none \
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
-      - name: Verify production API URL
+      - name: Remove unwanted legacy PWA files
         shell: bash
         run: |
-          echo "Checking compiled Flutter application..."
+          rm -f build/web/flutter_service_worker.js
+          rm -f build/web/manifest.json
+          rm -f build/web/service-worker.js
+          rm -f build/web/sw.js
 
-          if grep -a -q "api.scanaura.in" build/web/main.dart.js; then
-            echo "Production API URL found."
-          else
-            echo "ERROR: api.scanaura.in was not found in main.dart.js"
+      - name: Add deployment build ID
+        shell: bash
+        run: |
+          BUILD_ID="${GITHUB_SHA}"
+
+          python3 - <<PY
+          from pathlib import Path
+
+          path = Path("build/web/index.html")
+          text = path.read_text()
+
+          old = '<script src="flutter_bootstrap.js" async></script>'
+          new = '<script src="flutter_bootstrap.js?v=${BUILD_ID}" async></script>'
+
+          if old not in text:
+              raise SystemExit(
+                  "ERROR: flutter_bootstrap.js script tag not found"
+              )
+
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+
+          echo "Deployment build ID: ${BUILD_ID}"
+
+      - name: Verify production build
+        shell: bash
+        run: |
+          echo "Checking production build..."
+
+          if ! grep -a -q "api.scanaura.in" build/web/main.dart.js; then
+            echo "ERROR: Production API URL not found."
             exit 1
           fi
 
           if grep -a -q "localhost:8080" build/web/main.dart.js; then
             echo "ERROR: localhost:8080 found in production build."
             exit 1
-          else
-            echo "No localhost:8080 found."
           fi
+
+          if [ -f "build/web/flutter_service_worker.js" ]; then
+            echo "ERROR: flutter_service_worker.js still exists."
+            exit 1
+          fi
+
+          if [ -f "build/web/manifest.json" ]; then
+            echo "ERROR: manifest.json still exists."
+            exit 1
+          fi
+
+          echo "Production build verified."
 
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4

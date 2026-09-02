@@ -1,8 +1,16 @@
 RewriteEngine On
 
+# ============================================================
+# FLUTTER SPA ROUTING
+# ============================================================
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
+
+# ============================================================
+# FRESH APPLICATION CODE
+# ============================================================
 
 <IfModule mod_headers.c>
 
