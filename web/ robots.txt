@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# ==========================================================
+# PRIVATE SCANAURA APPLICATION ROUTES
+# ==========================================================
+
+Disallow: /login
+Disallow: /register
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Disallow: /dashboard
+Disallow: /business
+Disallow: /business-onboarding
+Disallow: /menu
+Disallow: /ai-import
+Disallow: /qr
+Disallow: /subscription
+
+Disallow: /admin
+
+# ==========================================================
+# XML SITEMAP
+# ==========================================================
+
+Sitemap: https://scanaura.in/sitemap.xml

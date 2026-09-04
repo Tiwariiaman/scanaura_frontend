@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -295,25 +296,22 @@ class ScanAuraQrCard extends StatelessWidget {
                         // TAGLINE
                         // ==============================================
 
-                        Text(
-                          'SCAN ~ VIEW ~ PAY',
-                          textAlign:
-                          TextAlign.center,
-                          maxLines: 1,
-                          overflow:
-                          TextOverflow
-                              .ellipsis,
-                          style:
-                          TextStyle(
-                            color:
-                            Colors.white,
-                            fontSize:
-                            taglineFontSize,
-                            fontWeight:
-                            FontWeight
-                                .w800,
-                            letterSpacing:
-                            0.2,
+                        SizedBox(
+                          width: double.infinity,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'SCAN • CONNECT • EXPERIENCE',
+                              maxLines: 1,
+                              softWrap: false,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
 
@@ -324,26 +322,33 @@ class ScanAuraQrCard extends StatelessWidget {
                               : 10,
                         ),
 
-                        Text(
-                          'Scan to view menu & pay with any UPI app',
-                          textAlign:
-                          TextAlign.center,
-                          maxLines:
-                          compact
-                              ? 2
-                              : 2,
-                          overflow:
-                          TextOverflow
-                              .ellipsis,
-                          style:
-                          TextStyle(
-                            color:
-                            scanAuraLightGreen,
-                            fontSize:
-                            descriptionFontSize,
-                            fontWeight:
-                            FontWeight.w500,
-                            height: 1.35,
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: TextStyle(
+                              color: scanAuraLightGreen,
+                              fontSize: descriptionFontSize,
+                              fontWeight: FontWeight.w500,
+                              height: 1.35,
+                            ),
+                            children: const [
+                              TextSpan(
+                                text: 'Scan',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              TextSpan(text: ' to unlock the '),
+                              TextSpan(
+                                text: 'Aura',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              TextSpan(text: ' of this business.'),
+                            ],
                           ),
                         ),
                       ],

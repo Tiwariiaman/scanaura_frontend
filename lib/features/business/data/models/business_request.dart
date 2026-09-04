@@ -69,11 +69,15 @@ class BusinessRequest {
     this.website,
     this.description,
     this.upiId,
+    this.googleReviewUrl,
+    this.googleReviewEnabled,
+    this.paymentEnabled,
   });
 
   final String businessName;
   final BusinessType businessType;
   final String phone;
+
   final String? whatsapp;
   final String? email;
   final String? address;
@@ -81,9 +85,16 @@ class BusinessRequest {
   final String? state;
   final String? country;
   final String? pincode;
+
   final String? website;
   final String? description;
+
   final String? upiId;
+
+  final String? googleReviewUrl;
+  final bool? googleReviewEnabled;
+  final bool? paymentEnabled;
+
   final String? logoUrl;
 
   Map<String, dynamic> toJson() {
@@ -101,6 +112,9 @@ class BusinessRequest {
       'website': website,
       'description': description,
       'upiId': upiId,
+      'googleReviewUrl': googleReviewUrl,
+      'googleReviewEnabled': googleReviewEnabled,
+      'paymentEnabled': paymentEnabled,
       'logoUrl': logoUrl,
     };
   }

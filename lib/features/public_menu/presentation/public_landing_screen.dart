@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/models/landing_response.dart';
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
@@ -106,6 +107,67 @@ class _PublicLandingScreenState
           SnackBarBehavior.floating,
           content: Text(
             'Share message copied to clipboard.',
+          ),
+        ),
+      );
+    }
+  }
+
+  // ============================================================
+  // OPEN EXTERNAL LINK
+  // ============================================================
+
+  Future<void> _openExternalLink(
+      String url,
+      ) async {
+    final normalized =
+    url.trim();
+
+    if (normalized.isEmpty) {
+      return;
+    }
+
+    final uri =
+    Uri.tryParse(normalized);
+
+    if (uri == null ||
+        !uri.hasScheme ||
+        (!uri.isScheme('http') &&
+            !uri.isScheme('https'))) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          behavior:
+          SnackBarBehavior.floating,
+          content: Text(
+            'Unable to open this link.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    final launched =
+    await launchUrl(
+      uri,
+      mode: LaunchMode
+          .externalApplication,
+    );
+
+    if (!launched &&
+        mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          behavior:
+          SnackBarBehavior.floating,
+          content: Text(
+            'Unable to open this link.',
           ),
         ),
       );
@@ -392,7 +454,8 @@ class _PublicLandingScreenState
       children: [
         IconButton(
           tooltip: 'Share',
-          onPressed: _sharePage,
+          onPressed:
+          _sharePage,
           icon: const Icon(
             Icons.share_outlined,
           ),
@@ -465,10 +528,11 @@ class _PublicLandingScreenState
                 .isNotEmpty ==
                 true)
               _InfoChip(
-                icon:
-                Icons.location_on_outlined,
+                icon: Icons
+                    .location_on_outlined,
                 label:
-                landing.city!.trim(),
+                landing.city!
+                    .trim(),
               ),
           ],
         ),
@@ -590,16 +654,52 @@ class _PublicLandingScreenState
 
   // ============================================================
   // ACTION BUTTONS
+  //
+  // This section is intentionally structured around
+  // independent customer actions so future buttons such as
+  // Instagram, YouTube, WhatsApp or custom links can be added
+  // without changing the page structure.
   // ============================================================
 
   Widget _buildActionButtons(
       BuildContext context,
       LandingResponse landing,
       ) {
+    final isFood =
+        landing.businessType
+            .trim()
+            .toUpperCase() ==
+            'FOOD';
+
+    final primaryLabel =
+    isFood
+        ? 'Menu'
+        : 'View';
+
+    final primaryIcon =
+    isFood
+        ? Icons.restaurant_menu_outlined
+        : Icons.visibility_outlined;
+
+    final hasPayment =
+        landing.paymentEnabled;
+
+    final hasReview =
+        landing.googleReviewEnabled &&
+            landing.googleReviewUrl !=
+                null &&
+            landing.googleReviewUrl!
+                .trim()
+                .isNotEmpty;
+
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.stretch,
       children: [
+        // ========================================================
+        // PRIMARY ACTION
+        // ========================================================
+
         SizedBox(
           height: 54,
           child:
@@ -609,44 +709,11 @@ class _PublicLandingScreenState
                 ? widget
                 .onOpenMenu
                 : null,
-            icon: const Icon(
-              Icons
-                  .visibility_outlined,
-            ),
-            label: const Text(
-              'View',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight:
-                FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(
-          height: 12,
-        ),
-
-        SizedBox(
-          height: 54,
-          child:
-          OutlinedButton.icon(
-            onPressed:
-            landing
-                .paymentEnabled
-                ? widget
-                .onOpenPayment
-                : null,
-            icon: const Icon(
-              Icons
-                  .account_balance_wallet_outlined,
+            icon: Icon(
+              primaryIcon,
             ),
             label: Text(
-              landing
-                  .paymentEnabled
-                  ? 'Pay via UPI'
-                  : 'Payment Unavailable',
+              primaryLabel,
               style:
               const TextStyle(
                 fontSize: 16,
@@ -656,6 +723,75 @@ class _PublicLandingScreenState
             ),
           ),
         ),
+
+        // ========================================================
+        // UPI PAYMENT
+        // ========================================================
+
+        if (hasPayment) ...[
+          const SizedBox(
+            height: 12,
+          ),
+
+          SizedBox(
+            height: 54,
+            child:
+            OutlinedButton.icon(
+              onPressed:
+              widget
+                  .onOpenPayment,
+              icon: const Icon(
+                Icons
+                    .account_balance_wallet_outlined,
+              ),
+              label: const Text(
+                'Pay via UPI',
+                style:
+                TextStyle(
+                  fontSize: 16,
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+
+        // ========================================================
+        // GOOGLE REVIEW
+        // ========================================================
+
+        if (hasReview) ...[
+          const SizedBox(
+            height: 12,
+          ),
+
+          SizedBox(
+            height: 54,
+            child:
+            OutlinedButton.icon(
+              onPressed: () {
+                _openExternalLink(
+                  landing
+                      .googleReviewUrl!,
+                );
+              },
+              icon: const Icon(
+                Icons
+                    .star_outline_rounded,
+              ),
+              label: const Text(
+                'Review Us',
+                style:
+                TextStyle(
+                  fontSize: 16,
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -692,8 +828,7 @@ class _PublicLandingScreenState
         CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons
-                .info_outline,
+            Icons.info_outline,
             color: theme
                 .colorScheme
                 .primary,
@@ -770,68 +905,54 @@ class _PublicLandingScreenState
       BuildContext context,
       PublicState state,
       ) {
+    if (state.isBusinessUnavailable) {
+      return _buildMaintenancePage(context);
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child:
-          SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 420,
               ),
               child: Column(
-                mainAxisSize:
-                MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons
-                        .error_outline,
+                    Icons.error_outline,
                     size: 52,
-                    color: Theme.of(
-                      context,
-                    )
+                    color: Theme.of(context)
                         .colorScheme
                         .error,
                   ),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
 
                   const Text(
                     'Unable to load business',
-                    textAlign:
-                    TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight:
-                      FontWeight.w700,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 8,
-                  ),
+                  const SizedBox(height: 8),
 
                   Text(
                     state.errorMessage ??
                         'Unable to load business.',
-                    textAlign:
-                    TextAlign.center,
+                    textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
 
                   SizedBox(
-                    width:
-                    double.infinity,
-                    child:
-                    FilledButton.icon(
+                    width: double.infinity,
+                    child: FilledButton.icon(
                       onPressed: () {
                         ref
                             .read(
@@ -842,15 +963,97 @@ class _PublicLandingScreenState
                           widget.qrCode,
                         );
                       },
-                      icon:
-                      const Icon(
-                        Icons
-                            .refresh_rounded,
+                      icon: const Icon(
+                        Icons.refresh_rounded,
                       ),
-                      label:
-                      const Text(
+                      label: const Text(
                         'Retry',
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaintenancePage(
+      BuildContext context,
+      ) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor:
+      theme.colorScheme.surface,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 460,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: theme
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons
+                          .engineering_outlined,
+                      size: 44,
+                      color: theme
+                          .colorScheme
+                          .primary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'This page is temporarily unavailable',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'This business\'s ScanAura page is '
+                        'currently under maintenance. '
+                        'Please check back later.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Text(
+                    'Powered by ScanAura',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],

@@ -1,5 +1,3 @@
-
-
 import '../../data/models/landing_response.dart';
 import '../../data/models/menu_response.dart';
 import 'package:scanaura_frontend/features/public_menu/data/models/payment_response.dart';
@@ -44,6 +42,26 @@ class PublicState {
 
   bool get hasPayment =>
       payment != null;
+
+  bool get isBusinessUnavailable {
+    final message = errorMessage
+        ?.trim()
+        .toLowerCase();
+
+    if (message == null || message.isEmpty) {
+      return false;
+    }
+
+    return message.contains(
+      'this business is currently unavailable',
+    ) ||
+        message.contains(
+          'this business page is not available',
+        ) ||
+        message.contains(
+          'subscription has expired',
+        );
+  }
 
   PublicState copyWith({
     PublicStatus? status,

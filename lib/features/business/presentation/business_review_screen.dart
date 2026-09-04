@@ -23,6 +23,9 @@ class BusinessReviewScreen
     required this.website,
     required this.description,
     required this.upiId,
+    required this.googleReviewUrl,
+    this.googleReviewEnabled,
+    this.paymentEnabled,
     this.isEditMode = false,
   });
 
@@ -39,6 +42,9 @@ class BusinessReviewScreen
   final String website;
   final String description;
   final String upiId;
+  final String googleReviewUrl;
+  final bool? googleReviewEnabled;
+  final bool? paymentEnabled;
 
   final bool isEditMode;
 
@@ -123,6 +129,17 @@ class _BusinessReviewScreenState
       widget.upiId.isEmpty
           ? null
           : widget.upiId,
+
+      googleReviewUrl:
+      widget.googleReviewUrl.isEmpty
+          ? null
+          : widget.googleReviewUrl,
+
+      googleReviewEnabled:
+      widget.googleReviewEnabled,
+
+      paymentEnabled:
+      widget.paymentEnabled,
     );
 
     final notifier =
@@ -453,12 +470,12 @@ class _BusinessReviewScreenState
                             .info_outline_rounded,
                         children: [
                           if (widget
-                              .website
+                              .googleReviewUrl
                               .isNotEmpty)
                             _infoRow(
                               context,
-                              'Website',
-                              widget.website,
+                              'Google Review Link',
+                              widget.googleReviewUrl,
                             ),
 
                           if (widget

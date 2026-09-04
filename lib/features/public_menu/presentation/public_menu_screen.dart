@@ -709,6 +709,11 @@ class _PublicMenuScreenState
       BuildContext context,
       PublicState state,
       ) {
+
+    if (state.isBusinessUnavailable) {
+      return _buildMaintenancePage(context);
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -760,6 +765,90 @@ class _PublicMenuScreenState
       ),
     );
   }
+
+  Widget _buildMaintenancePage(
+      BuildContext context,
+      ) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor:
+      theme.colorScheme.surface,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 460,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: theme
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.engineering_outlined,
+                      size: 44,
+                      color: theme
+                          .colorScheme
+                          .primary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'This page is temporarily unavailable',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'This business\'s ScanAura page is '
+                        'currently under maintenance. '
+                        'Please check back later.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Text(
+                    'Powered by ScanAura',
+                    style: TextStyle(
+                      color: theme
+                          .colorScheme
+                          .onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 }
 
 class _PublicMenuItem {

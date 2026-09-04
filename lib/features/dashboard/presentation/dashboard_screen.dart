@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../subscription/data/models/subscription_response.dart';
 import 'providers/dashboard_notifier.dart';
@@ -306,39 +307,27 @@ class _DashboardScreenState
       SubscriptionResponse?
       subscription,
       ) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
     if (subscription == null) {
       return Card(
         child: Padding(
-          padding:
-          const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Subscription',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight:
-                  FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(
-                height: 8,
-              ),
+              const SizedBox(height: 8),
               Text(
                 'Subscription information is unavailable.',
-                style: theme
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(
-                  color: theme
-                      .colorScheme
-                      .onSurfaceVariant,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -347,44 +336,46 @@ class _DashboardScreenState
       );
     }
 
+    final isExpired =
+        subscription.status == SubscriptionStatus.expired;
+
     final statusLabel =
-    subscription.status.name
-        .toUpperCase();
+    subscription.status.name.toUpperCase();
 
     return Card(
       child: Padding(
-        padding:
-        const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment
-              .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (isExpired) ...[
+              _buildExpiredSubscriptionWarning(
+                context,
+                subscription,
+              ),
+              const SizedBox(height: 18),
+            ],
+
             LayoutBuilder(
               builder: (
                   context,
                   constraints,
                   ) {
                 final compact =
-                    constraints.maxWidth <
-                        420;
+                    constraints.maxWidth < 420;
 
                 if (compact) {
                   return Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
                     children: [
                       _subscriptionTitle(
                         context,
                         subscription,
                       ),
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
                       _StatusChip(
-                        label:
-                        statusLabel,
+                        label: statusLabel,
                       ),
                     ],
                   );
@@ -392,68 +383,54 @@ class _DashboardScreenState
 
                 return Row(
                   crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child:
-                      _subscriptionTitle(
+                      child: _subscriptionTitle(
                         context,
                         subscription,
                       ),
                     ),
-                    const SizedBox(
-                      width: 12,
-                    ),
+                    const SizedBox(width: 12),
                     _StatusChip(
-                      label:
-                      statusLabel,
+                      label: statusLabel,
                     ),
                   ],
                 );
               },
             ),
 
-            const SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
 
             Wrap(
               spacing: 16,
               runSpacing: 10,
               children: [
                 _InfoRow(
-                  icon: Icons
-                      .calendar_today_outlined,
+                  icon: Icons.calendar_today_outlined,
                   text:
                   'Ends ${_formatDate(subscription.endDate)}',
                 ),
                 _InfoRow(
-                  icon: Icons
-                      .autorenew_outlined,
-                  text: subscription
-                      .billingCycle
-                      .name
+                  icon: Icons.autorenew_outlined,
+                  text: subscription.billingCycle.name
                       .toUpperCase(),
                 ),
               ],
             ),
 
-            const SizedBox(
-              height: 18,
-            ),
+            const SizedBox(height: 18),
 
             SizedBox(
-              width:
-              double.infinity,
+              width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  context.push(
-                    '/subscription',
-                  );
+                  context.push('/subscription');
                 },
-                child: const Text(
-                  'Manage Subscription',
+                child: Text(
+                  isExpired
+                      ? 'Renew Subscription'
+                      : 'Manage Subscription',
                 ),
               ),
             ),
@@ -461,6 +438,111 @@ class _DashboardScreenState
         ),
       ),
     );
+  }
+
+  Widget _buildExpiredSubscriptionWarning(
+      BuildContext context,
+      SubscriptionResponse subscription,
+      ) {
+    final theme = Theme.of(context);
+
+    final planName = subscription.planName.trim();
+
+    final isTrial = subscription.status ==
+        SubscriptionStatus.expired &&
+        planName.toLowerCase() == 'trial';
+
+    final title = isTrial
+        ? 'Your Trial Has Expired'
+        : 'Your $planName Plan Has Expired';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(
+            alpha: 0.35,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: theme.colorScheme.error,
+                size: 26,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            'Your ScanAura account is currently inactive. '
+                'Renew your plan to make your QR page available again.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              height: 1.45,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.push('/subscription');
+                  },
+                  child: const Text('Renew Plan'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _openSupportWhatsApp,
+                  child: const Text('Contact Us'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openSupportWhatsApp() async {
+    const supportNumber = '917056222557';
+
+    final uri = Uri.parse(
+      'https://wa.me/$supportNumber?text=${Uri.encodeComponent(
+        'Hello ScanAura Support, my subscription has expired and I need help renewing my plan.',
+      )}',
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
   }
 
   Widget _subscriptionTitle(

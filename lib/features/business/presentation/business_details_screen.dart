@@ -63,6 +63,12 @@ class _BusinessDetailsScreenState
   final _upiController =
   TextEditingController();
 
+  final _googleReviewController =
+  TextEditingController();
+
+  bool? _googleReviewEnabled;
+  bool? _paymentEnabled;
+
   bool _loadingBusiness = false;
   bool _loadedBusiness = false;
 
@@ -87,6 +93,7 @@ class _BusinessDetailsScreenState
     _websiteController.dispose();
     _descriptionController.dispose();
     _upiController.dispose();
+    _googleReviewController.dispose();
 
     super.dispose();
   }
@@ -157,6 +164,15 @@ class _BusinessDetailsScreenState
 
     _upiController.text =
         business.upiId ?? '';
+
+    _googleReviewController.text =
+        business.googleReviewUrl ?? '';
+
+    _googleReviewEnabled =
+        business.googleReviewEnabled;
+
+    _paymentEnabled =
+        business.paymentEnabled;
   }
 
   // ============================================================
@@ -204,6 +220,13 @@ class _BusinessDetailsScreenState
               upiId:
               _upiController.text
                   .trim(),
+              googleReviewUrl:
+              _googleReviewController.text
+                  .trim(),
+              googleReviewEnabled:
+              _googleReviewEnabled,
+              paymentEnabled:
+              _paymentEnabled,
               isEditMode:
               widget.isEditMode,
             ),
@@ -317,8 +340,8 @@ class _BusinessDetailsScreenState
 
                         Text(
                           widget.isEditMode
-                              ? 'Update your business location, contact and payment information.'
-                              : 'Add your location and other information customers may need.',
+                              ? 'Update your business location, customer links and payment information.'
+                              : 'Add your location and links customers may need.',
                           textAlign:
                           width < 600
                               ? TextAlign.center
@@ -494,7 +517,7 @@ class _BusinessDetailsScreenState
 
                         TextFormField(
                           controller:
-                          _websiteController,
+                          _googleReviewController,
                           keyboardType:
                           TextInputType.url,
                           textInputAction:
@@ -502,15 +525,37 @@ class _BusinessDetailsScreenState
                           decoration:
                           const InputDecoration(
                             labelText:
-                            'Website',
+                            'Google Review Link',
                             hintText:
-                            'https://example.com',
+                            'https://g.page/...',
                             prefixIcon:
                             Icon(
                               Icons
-                                  .language_outlined,
+                                  .reviews_outlined,
                             ),
+                            helperText:
+                            'Optional — add your Google review link so customers can review your business.',
                           ),
+                          validator: (value) {
+                            final reviewUrl =
+                                value?.trim() ?? '';
+
+                            if (reviewUrl.isEmpty) {
+                              return null;
+                            }
+
+                            final uri =
+                            Uri.tryParse(reviewUrl);
+
+                            if (uri == null ||
+                                (uri.scheme != 'http' &&
+                                    uri.scheme != 'https') ||
+                                uri.host.isEmpty) {
+                              return 'Enter a valid Google Review URL';
+                            }
+
+                            return null;
+                          },
                         ),
 
                         const SizedBox(

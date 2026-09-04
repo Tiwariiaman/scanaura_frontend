@@ -45,7 +45,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     ref.watch(businessNotifierProvider);
 
     final showVegIndicator =
-        businessState.business?.businessType == 'FOOD';
+        businessState.business?.businessType
+            .toString()
+            .split('.')
+            .last
+            .toUpperCase() ==
+            'FOOD';
 
     return Scaffold(
       appBar: AppBar(
@@ -80,57 +85,27 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             ),
           ),
 
+          IconButton(
+            tooltip: 'Add Item',
+            onPressed: () {
+              context.push(
+                '/menu/add',
+              );
+            },
+            icon: const Icon(
+              Icons.add_circle_outline_rounded,
+            ),
+          ),
+
           const SizedBox(width: 4),
         ],
       ),
-
-      floatingActionButton:
-      _buildResponsiveFab(context),
 
       body: _buildBody(
         context,
         state,
         notifier,
         showVegIndicator,
-      ),
-    );
-  }
-
-  // ============================================================
-  // RESPONSIVE FAB
-  // ============================================================
-
-  Widget _buildResponsiveFab(
-      BuildContext context,
-      ) {
-    final width =
-        MediaQuery.sizeOf(context).width;
-
-    if (width < 400) {
-      return FloatingActionButton(
-        tooltip: 'Add Item',
-        onPressed: () {
-          context.push(
-            '/menu/add',
-          );
-        },
-        child: const Icon(
-          Icons.add,
-        ),
-      );
-    }
-
-    return FloatingActionButton.extended(
-      onPressed: () {
-        context.push(
-          '/menu/add',
-        );
-      },
-      icon: const Icon(
-        Icons.add,
-      ),
-      label: const Text(
-        'Add Item',
       ),
     );
   }

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +16,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/business/presentation/business_onboarding_screen.dart';
+import '../../features/common/presentation/screens/contact_us_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/landing/presentation/ScanAuraNotFoundScreen.dart';
 import '../../features/landing/presentation/landing_gate.dart';
@@ -303,7 +303,7 @@ class AppRouter {
           },
         ),
 
-         //Admin Shell
+        //Admin Shell
         ShellRoute(
           builder: (context, state, child) {
             return AdminShell(
@@ -430,6 +430,13 @@ class AppRouter {
               path: '/subscription',
               builder: (context, state) {
                 return const SubscriptionScreen();
+              },
+            ),
+
+            GoRoute(
+              path: '/contact-us',
+              builder: (context, state) {
+                return const ContactUsScreen();
               },
             ),
 

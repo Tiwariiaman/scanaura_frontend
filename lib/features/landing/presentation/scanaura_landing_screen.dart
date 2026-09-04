@@ -236,11 +236,11 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   Widget _buildPage4(BuildContext context) {
     return _buildCenteredSlide(
       context,
-      pill: 'One QR, many possibilities',
+      pill: 'One QR, endless possibilities',
       pillUsesPrimary: true,
-      title: 'Scan. View. Pay.',
-      subtitle: 'One QR. One digital destination.',
-      visual: _buildScanViewPay(context),
+      title: 'One QR. Multiple experiences.',
+      subtitle: 'One scan can open your digital business experience.',
+      visual: _buildOneQrExperience(context),
     );
   }
 
@@ -253,11 +253,11 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     final colorScheme = theme.colorScheme;
 
     return _buildCenteredSlide(
-        context,
-        pill: 'Simple & affordable',
-        pillUsesPrimary: true,
-        title: 'Go digital from ₹99/month.',
-        subtitle: 'Start simple. Grow with ScanAura.',
+      context,
+      pill: 'Simple & affordable',
+      pillUsesPrimary: true,
+      title: 'Go digital from ₹99/month.',
+      subtitle: 'Start simple. Grow with ScanAura.',
       visual: _buildWhiteCard(
         context,
         maxWidth: 410,
@@ -1049,246 +1049,430 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
   }
 
   // ============================================================
+  // ============================================================
   // SLIDE 4
+  // ONE QR -> MULTIPLE BUSINESS EXPERIENCES
   //
-  //             LOGO
-  //            /    \
-  //           ↓      ↓
-  //   1. BUSINESS   2. PAY
+  // The message is intentionally generic so new ScanAura features
+  // can be added later without needing to redesign this slide.
   // ============================================================
 
-  Widget _buildScanViewPay(BuildContext context) {
+  Widget _buildOneQrExperience(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
-      width: 500,
-      height: 300,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      width: 590,
+      height: 250,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
         children: [
-          _buildLogoImage(
-            size: 64,
+          // ---------------------------------------------------------
+          // Left: one QR
+          // ---------------------------------------------------------
+          Positioned(
+            left: 12,
+            top: 58,
+            child: _buildQrFeatureCard(
+              context,
+              label: 'ONE QR',
+            ),
           ),
 
-          const SizedBox(height: 4),
+          // ---------------------------------------------------------
+          // Connector: QR -> phone
+          // ---------------------------------------------------------
+          Positioned(
+            left: 151,
+            top: 117,
+            child: _buildSimpleConnector(
+              context,
+              width: 76,
+            ),
+          ),
 
-          _buildBranchLine(context),
+          // ---------------------------------------------------------
+          // Center: ScanAura digital destination on a phone
+          // ---------------------------------------------------------
+          Positioned(
+            left: 215,
+            top: 10,
+            child: _buildExperiencePhoneMockup(context),
+          ),
 
-          const SizedBox(height: 4),
+          // ---------------------------------------------------------
+          // Right: current + future experiences
+          // ---------------------------------------------------------
+          Positioned(
+            right: 8,
+            top: 26,
+            child: _buildExperiencePill(
+              context,
+              icon: Icons.menu_book_outlined,
+              label: 'Menu',
+              emphasized: true,
+            ),
+          ),
+          Positioned(
+            right: 8,
+            top: 83,
+            child: _buildExperiencePill(
+              context,
+              icon: Icons.payments_outlined,
+              label: 'Payments',
+            ),
+          ),
+          Positioned(
+            right: 8,
+            top: 140,
+            child: _buildExperiencePill(
+              context,
+              icon: Icons.star_outline_rounded,
+              label: 'Reviews',
+            ),
+          ),
+          Positioned(
+            right: 8,
+            top: 197,
+            child: _buildExperiencePill(
+              context,
+              icon: Icons.add_rounded,
+              label: 'More',
+            ),
+          ),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStepCard(
-                context,
-                number: '1',
-                label: 'Business View',
-                icon: Icons.storefront_outlined,
-                child: _buildPhoneMockup(
-                  context,
-                  compact: true,
-                ),
-              ),
+          // Small caption underneath the QR to reinforce the idea.
+          // Positioned(
+          //   left: 10,
+          //   bottom: 10,
+          //   child: Text(
+          //     'One scan. Everything your business needs.',
+          //     style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          //       color: colorScheme.onSurfaceVariant,
+          //       fontWeight: FontWeight.w700,
+          //     ),
+          //   ),
+          // ),
+        ],
+      ),
+    );
+  }
 
-              const SizedBox(width: 20),
+  Widget _buildQrFeatureCard(
+      BuildContext context, {
+        required String label,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-              _buildStepCard(
-                context,
-                number: '2',
-                label: 'Pay',
-                icon: Icons.payments_outlined,
-                child: _buildPaymentMockup(
-                  context,
-                  compact: true,
-                ),
-              ),
-            ],
+    return Container(
+      width: 122,
+      height: 122,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(
+              alpha: 0.10,
+            ),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.qr_code_2_rounded,
+              size: 48,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBranchLine(BuildContext context) {
+  Widget _buildSimpleConnector(
+      BuildContext context, {
+        required double width,
+      }) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
-      width: 300,
-      height: 23,
+      width: width,
+      height: 34,
       child: CustomPaint(
-        painter: _BranchPainter(
+        painter: _ArrowConnectorPainter(
           color: colorScheme.primary.withValues(
-            alpha: 0.55,
+            alpha: 0.50,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStepCard(
-      BuildContext context, {
-        required String number,
-        required String label,
-        required IconData icon,
-        required Widget child,
-      }) {
+  Widget _buildExperiencePhoneMockup(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
-      width: 210,
-      height: 205,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 27,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    number,
-                    style: TextStyle(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 6),
-
-                Icon(
-                  icon,
-                  size: 16,
-                  color: colorScheme.primary,
-                ),
-
-                const SizedBox(width: 5),
-
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          // The visual itself is fixed and centered.
-          SizedBox(
-            height: 148,
-            child: Center(
-              child: child,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhoneMockup(
-      BuildContext context, {
-        required bool compact,
-      }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    const double width = 108;
-    const double height = 148;
+    const double width = 154;
+    const double height = 226;
 
     return SizedBox(
       width: width,
       height: height,
       child: Container(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: colorScheme.onSurface,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
               color: colorScheme.shadow.withValues(
-                alpha: 0.20,
+                alpha: 0.22,
               ),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              blurRadius: 26,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
         child: Container(
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(17),
+            borderRadius: BorderRadius.circular(22),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
+              // Top app bar
               Container(
-                height: 39,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 6,
+                height: 52,
+                padding: const EdgeInsets.fromLTRB(
+                  11,
+                  8,
+                  11,
+                  7,
                 ),
                 color: colorScheme.primary,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Your Business',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: colorScheme.onPrimary,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      'Digital page',
-                      style: TextStyle(
+                    Container(
+                      width: 27,
+                      height: 27,
+                      decoration: BoxDecoration(
                         color: colorScheme.onPrimary.withValues(
-                          alpha: 0.78,
+                          alpha: 0.18,
                         ),
-                        fontSize: 6,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.storefront_outlined,
+                        size: 15,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'YOUR BUSINESS',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colorScheme.onPrimary,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'One digital destination',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colorScheme.onPrimary.withValues(
+                                alpha: 0.78,
+                              ),
+                              fontSize: 6.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
+              // Quick experience row
               Padding(
-                padding: const EdgeInsets.all(5),
-                child: Wrap(
-                  spacing: 3,
-                  children: const [
-                    _MiniChip('All'),
-                    _MiniChip('Popular'),
+                padding: const EdgeInsets.fromLTRB(
+                  8,
+                  8,
+                  8,
+                  5,
+                ),
+                child: Row(
+                  children: [
+                    _buildMiniExperienceChip(
+                      context,
+                      icon: Icons.menu_book_outlined,
+                      label: 'Menu',
+                      active: true,
+                    ),
+                    const SizedBox(width: 4),
+                    _buildMiniExperienceChip(
+                      context,
+                      icon: Icons.payments_outlined,
+                      label: 'Pay',
+                    ),
+                    const SizedBox(width: 4),
+                    _buildMiniExperienceChip(
+                      context,
+                      icon: Icons.star_outline_rounded,
+                      label: 'Review',
+                    ),
                   ],
                 ),
               ),
 
-              const _PhoneItem(
-                title: 'Signature',
-                price: '₹249',
-                tag: 'Best Seller',
-                compact: true,
+              // Main content card
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 31,
+                            height: 31,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.restaurant_menu_outlined,
+                              size: 17,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Digital menu',
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w900,
+                                    color:
+                                    colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Fresh • Simple • Updated',
+                                  style: TextStyle(
+                                    fontSize: 6,
+                                    color: colorScheme
+                                        .onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      _buildPhoneContentRow(
+                        context,
+                        title: 'Signature',
+                        trailing: '₹249',
+                        tag: 'Popular',
+                      ),
+                      _buildPhoneContentRow(
+                        context,
+                        title: 'Recommended',
+                        trailing: '₹399',
+                        tag: 'Featured',
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
-              const _PhoneItem(
-                title: 'Recommended',
-                price: '₹399',
-                tag: 'Recommended',
-                compact: true,
+              // Future-ready action area
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    8,
+                    3,
+                    8,
+                    8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildPhoneAction(
+                          context,
+                          icon: Icons.phone_outlined,
+                          label: 'Contact',
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: _buildPhoneAction(
+                          context,
+                          icon: Icons.open_in_new_rounded,
+                          label: 'Explore',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -1297,71 +1481,54 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     );
   }
 
-  Widget _buildPaymentMockup(
+  Widget _buildMiniExperienceChip(
       BuildContext context, {
-        required bool compact,
+        required IconData icon,
+        required String label,
+        bool active = false,
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
-      width: 108,
-      height: 148,
+    return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        height: 25,
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: active
+              ? colorScheme.primaryContainer
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: colorScheme.outlineVariant,
+            color: active
+                ? colorScheme.primary.withValues(
+              alpha: 0.22,
+            )
+                : colorScheme.outlineVariant,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(
-                alpha: 0.10,
-              ),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
         ),
-        child: Column(
+        alignment: Alignment.center,
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: colorScheme.tertiaryContainer,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.check_rounded,
-                color: colorScheme.onTertiaryContainer,
-                size: 20,
-              ),
+            Icon(
+              icon,
+              size: 10,
+              color: active
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
-
-            const SizedBox(height: 7),
-
-            const Text(
-              '₹249',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-
-            const SizedBox(height: 2),
-
-            Text(
-              'Payment confirmed',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontSize: 7,
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 5.8,
+                  fontWeight: FontWeight.w800,
+                  color: active
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -1370,7 +1537,179 @@ class _ScanAuraLandingScreenState extends State<ScanAuraLandingScreen> {
     );
   }
 
-  // ============================================================
+  Widget _buildPhoneContentRow(
+      BuildContext context, {
+        required String title,
+        required String trailing,
+        required String tag,
+      }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        children: [
+          Container(
+            width: 19,
+            height: 19,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 6.5,
+                    fontWeight: FontWeight.w900,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  tag,
+                  style: TextStyle(
+                    fontSize: 5.3,
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            trailing,
+            style: TextStyle(
+              fontSize: 6.5,
+              fontWeight: FontWeight.w900,
+              color: colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneAction(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+      }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 28,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 11,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 6,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperiencePill(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        bool emphasized = false,
+      }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 142,
+      height: 43,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+      ),
+      decoration: BoxDecoration(
+        color: emphasized
+            ? colorScheme.primaryContainer
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: emphasized
+              ? colorScheme.primary.withValues(
+            alpha: 0.28,
+          )
+              : colorScheme.outlineVariant,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(
+              alpha: emphasized ? 0.08 : 0.05,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 27,
+            height: 27,
+            decoration: BoxDecoration(
+              color: emphasized
+                  ? colorScheme.primary
+                  : colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 14,
+              color: emphasized
+                  ? colorScheme.onPrimary
+                  : colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // NAVIGATION
   // ============================================================
 
@@ -1567,6 +1906,76 @@ class _BranchPainter extends CustomPainter {
     return oldDelegate.color != color;
   }
 }
+
+// ============================================================
+// CONNECTOR PAINTER
+// ============================================================
+
+class _ArrowConnectorPainter extends CustomPainter {
+  const _ArrowConnectorPainter({
+    required this.color,
+  });
+
+  final Color color;
+
+  @override
+  void paint(
+      Canvas canvas,
+      Size size,
+      ) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final start = Offset(
+      2,
+      size.height / 2,
+    );
+
+    final end = Offset(
+      size.width - 3,
+      size.height / 2,
+    );
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(
+        size.width * 0.28,
+        0,
+        size.width * 0.66,
+        size.height,
+        end.dx - 8,
+        end.dy,
+      )
+      ..lineTo(
+        end.dx - 8,
+        end.dy - 4,
+      )
+      ..moveTo(
+        end.dx,
+        end.dy,
+      )
+      ..lineTo(
+        end.dx - 8,
+        end.dy + 4,
+      );
+
+    canvas.drawPath(
+      path,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+      covariant _ArrowConnectorPainter oldDelegate,
+      ) {
+    return oldDelegate.color != color;
+  }
+}
+
 
 // ============================================================================
 // SMALL PHONE COMPONENTS
