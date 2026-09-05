@@ -13,6 +13,10 @@ class AdminQrPackService {
   static final ScreenshotController _controller =
   ScreenshotController();
 
+  // ============================================================
+  // GENERATE PHYSICAL QR ZIP PACK
+  // ============================================================
+
   static Future<Uint8List> generateZip({
     required BuildContext context,
     required List<QrResponse> qrCodes,
@@ -25,13 +29,33 @@ class AdminQrPackService {
 
     final archive = Archive();
 
-    for (var index = 0;
-    index < qrCodes.length;
-    index++) {
+    for (var index = 0; index < qrCodes.length; index++) {
       final qr = qrCodes[index];
 
+      // IMPORTANT:
+      // Always use the actual QR code value from the
+      // QrResponse object.
+      //
+      // Correct:
+      //   ${qr.qrCode}
+      //
+      // NOT:
+      //   $qr.qrCode
+      //
+      // The latter becomes:
+      //   Instance of 'QrResponse'.qrCode
+      //
+      // The old working ScanAura physical QR format uses /q/{code}.
+      final qrCode = qr.qrCode.trim();
+
+      if (qrCode.isEmpty) {
+        throw Exception(
+          'QR code value is empty at index ${index + 1}.',
+        );
+      }
+
       final publicUrl =
-          'https://scanaura.in/#/q/$qr.qrCode';
+          'https://scanaura.in/q/$qrCode';
 
       final imageBytes =
       await _controller.captureFromWidget(
@@ -56,8 +80,7 @@ class AdminQrPackService {
         ),
       );
 
-      final safeQrCode =
-      qr.qrCode.replaceAll(
+      final safeQrCode = qrCode.replaceAll(
         RegExp(r'[^a-zA-Z0-9_-]'),
         '_',
       );
@@ -71,8 +94,7 @@ class AdminQrPackService {
       );
     }
 
-    final zipBytes =
-    ZipEncoder().encodeBytes(
+    final zipBytes = ZipEncoder().encodeBytes(
       archive,
       level: DeflateLevel.bestSpeed,
     );

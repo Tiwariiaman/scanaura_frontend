@@ -914,122 +914,73 @@ $publicUrl
       ThemeData theme,
       QrResponse qr,
       ) {
+    final publicUrl = _publicQrUrl(qr.qrCode);
+
     return Container(
-      width:
-      double.infinity,
-      margin:
-      const EdgeInsets.only(
-        bottom: 8,
-      ),
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
-      ),
-      decoration:
-      BoxDecoration(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
         border: Border.all(
-          color: theme
-              .colorScheme
-              .outlineVariant,
+          color: theme.colorScheme.outlineVariant,
         ),
-        borderRadius:
-        BorderRadius.circular(
-          12,
-        ),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment
-            .start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment:
-            Alignment.center,
-            decoration:
-            BoxDecoration(
-              color: theme
-                  .colorScheme
-                  .surfaceContainerHighest,
-              borderRadius:
-              BorderRadius.circular(
-                10,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  qr.qrCode,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                qr.active
+                    ? Icons.check_circle
+                    : Icons.cancel,
+                color: qr.active
+                    ? Colors.green
+                    : theme.colorScheme.error,
+                size: 21,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 540,
+              ),
+              child: ScanAuraQrCard(
+                qrData: publicUrl,
+                businessName: qr.businessName,
+                showBusinessName: true,
               ),
             ),
-            child: Icon(
-              Icons
-                  .qr_code_2_rounded,
-              size: 22,
-              color: theme
-                  .colorScheme
-                  .onSurfaceVariant,
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            qr.active ? 'Active' : 'Inactive',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: qr.active
+                  ? Colors.green
+                  : theme.colorScheme.error,
             ),
-          ),
-
-          const SizedBox(
-            width: 12,
-          ),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
-              children: [
-                Text(
-                  qr.qrCode,
-                  maxLines: 2,
-                  overflow:
-                  TextOverflow.ellipsis,
-                  style: theme
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(
-                    fontWeight:
-                    FontWeight.w700,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 4,
-                ),
-
-                Text(
-                  qr.active
-                      ? 'Active'
-                      : 'Inactive',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight:
-                    FontWeight.w600,
-                    color: qr.active
-                        ? Colors.green
-                        : theme
-                        .colorScheme
-                        .error,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(
-            width: 8,
-          ),
-
-          Icon(
-            qr.active
-                ? Icons
-                .check_circle
-                : Icons.cancel,
-            color: qr.active
-                ? Colors.green
-                : theme
-                .colorScheme
-                .error,
-            size: 21,
           ),
         ],
       ),

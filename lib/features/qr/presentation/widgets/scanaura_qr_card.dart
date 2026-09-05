@@ -203,82 +203,48 @@ class ScanAuraQrCard extends StatelessWidget {
                         // SCANAURA LOGO
                         // ==============================================
 
+                        // ==============================================
+// SCANAURA LOGO — PERMANENT WHITE
+// ==============================================
+
                         Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment
-                              .center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width:
-                              businessLogoSize,
-                              height:
-                              businessLogoSize,
-                              decoration:
-                              BoxDecoration(
-                                color:
-                                Colors.white,
-                                borderRadius:
-                                BorderRadius.circular(
-                                  compact
-                                      ? 10
-                                      : 12,
-                                ),
-                              ),
-                              clipBehavior:
-                              Clip.antiAlias,
-                              child:
-                              Image.asset(
+                            SizedBox(
+                              width: businessLogoSize,
+                              height: businessLogoSize,
+                              child: Image.asset(
                                 topLogo,
-                                fit: BoxFit
-                                    .cover,
-                                errorBuilder:
-                                    (
+                                fit: BoxFit.contain,
+                                errorBuilder: (
                                     context,
                                     error,
                                     stackTrace,
                                     ) {
+                                  // Keep fallback WHITE as well.
                                   return Icon(
-                                    Icons
-                                        .qr_code_rounded,
-                                    color:
-                                    scanAuraGreen,
-                                    size:
-                                    compact
-                                        ? 24
-                                        : 28,
+                                    Icons.qr_code_rounded,
+                                    color: Colors.white,
+                                    size: compact ? 24 : 28,
                                   );
                                 },
                               ),
                             ),
 
                             SizedBox(
-                              width:
-                              compact
-                                  ? 8
-                                  : 12,
+                              width: compact ? 8 : 12,
                             ),
 
                             Flexible(
-                              child:
-                              Text(
+                              child: Text(
                                 'ScanAura',
                                 maxLines: 1,
-                                overflow:
-                                TextOverflow
-                                    .ellipsis,
-                                style:
-                                TextStyle(
-                                  color:
-                                  Colors.white,
-                                  fontSize:
-                                  compact
-                                      ? 22
-                                      : 28,
-                                  fontWeight:
-                                  FontWeight
-                                      .w700,
-                                  letterSpacing:
-                                  -0.5,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: compact ? 22 : 28,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
                             ),
@@ -301,7 +267,7 @@ class ScanAuraQrCard extends StatelessWidget {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              'SCAN • CONNECT • EXPERIENCE',
+                              'SCAN • CONNECT • EXPLORE',
                               maxLines: 1,
                               softWrap: false,
                               textAlign: TextAlign.center,
