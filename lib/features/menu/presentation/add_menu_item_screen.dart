@@ -47,6 +47,7 @@ class _AddMenuItemScreenState
   _displayOrderController;
 
   String? _categoryId;
+  String? _imagePublicId;
 
   bool _veg = true;
   bool _available = true;
@@ -64,6 +65,8 @@ class _AddMenuItemScreenState
     super.initState();
 
     final item = widget.item;
+    _imagePublicId = item?.imagePublicId;
+
 
     _nameController =
         TextEditingController(

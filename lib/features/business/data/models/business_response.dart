@@ -20,6 +20,13 @@ class BusinessResponse {
     this.paymentEnabled,
     this.qrSlug,
     this.active,
+    this.logoPublicId,
+    this.instagramUrl,
+    this.instagramEnabled = false,
+    this.facebookUrl,
+    this.facebookEnabled = false,
+    this.youtubeUrl,
+    this.youtubeEnabled = false,
   });
 
   final String id;
@@ -44,6 +51,16 @@ class BusinessResponse {
   final String? googleReviewUrl;
   final bool? googleReviewEnabled;
   final bool? paymentEnabled;
+  final String? logoPublicId;
+
+  final String? instagramUrl;
+  final bool instagramEnabled;
+
+  final String? facebookUrl;
+  final bool facebookEnabled;
+
+  final String? youtubeUrl;
+  final bool youtubeEnabled;
 
   final String? qrSlug;
   final bool? active;
@@ -91,6 +108,20 @@ class BusinessResponse {
       json['qrSlug'] as String?,
       active:
       json['active'] as bool?,
+      logoPublicId:
+      json['logoPublicId'],
+      instagramUrl:
+      json['instagramUrl'] as String?,
+      instagramEnabled:
+      json['instagramEnabled'] as bool? ?? false,
+      facebookUrl:
+      json['facebookUrl'] as String?,
+      facebookEnabled:
+      json['facebookEnabled'] as bool? ?? false,
+      youtubeUrl:
+      json['youtubeUrl'] as String?,
+      youtubeEnabled:
+      json['youtubeEnabled'] as bool? ?? false,
     );
   }
 }

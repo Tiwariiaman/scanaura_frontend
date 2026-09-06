@@ -13,6 +13,7 @@ class CatalogResponse {
     required this.recommended,
     required this.displayOrder,
     required this.active,
+    this.imagePublicId,
   });
 
   final String id;
@@ -31,6 +32,8 @@ class CatalogResponse {
 
   final int displayOrder;
   final bool active;
+
+  final String? imagePublicId;
 
   factory CatalogResponse.fromJson(
       Map<String, dynamic> json,
@@ -72,6 +75,9 @@ class CatalogResponse {
 
       active:
       json['active'] as bool? ?? true,
+
+      imagePublicId:
+      json['imagePublicId'],
     );
   }
 }

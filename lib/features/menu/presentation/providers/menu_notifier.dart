@@ -43,6 +43,7 @@ class MenuNotifier extends Notifier<MenuState> {
         bestSeller: item.bestSeller,
         recommended: item.recommended,
         displayOrder: item.displayOrder,
+        imagePublicId: item.imagePublicId,
       );
 
       await _repository.updateCatalog(

@@ -21,6 +21,16 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
   bool _logoUploading = false;
   bool _googleReviewUpdating = false;
   bool _paymentUpdating = false;
+  bool _instagramUpdating = false;
+  bool _facebookUpdating = false;
+  bool _youtubeUpdating = false;
+
+  final TextEditingController _instagramController =
+  TextEditingController();
+  final TextEditingController _facebookController =
+  TextEditingController();
+  final TextEditingController _youtubeController =
+  TextEditingController();
 
   @override
   void initState() {
@@ -28,6 +38,14 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkBusiness();
     });
+  }
+
+  @override
+  void dispose() {
+    _instagramController.dispose();
+    _facebookController.dispose();
+    _youtubeController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkBusiness() async {
@@ -41,7 +59,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
     final state = ref.read(businessNotifierProvider);
 
-    if (state.business != null) return;
+    if (state.business != null) {
+      _syncSocialControllers(state.business);
+      return;
+    }
 
     if (state.status == BusinessStatus.error &&
         state.errorMessage == 'Business not found.') {
@@ -61,6 +82,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   Future<void> _refreshBusiness() async {
     await ref.read(businessNotifierProvider.notifier).loadMyBusiness();
+
+    if (!mounted) return;
+
+    final business = ref.read(businessNotifierProvider).business;
+    if (business != null) {
+      _syncSocialControllers(business);
+    }
   }
 
   Future<void> _pickAndUploadLogo() async {
@@ -128,6 +156,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         googleReviewUrl: business.googleReviewUrl,
         googleReviewEnabled: business.googleReviewEnabled,
         paymentEnabled: business.paymentEnabled,
+        instagramUrl: business.instagramUrl,
+        instagramEnabled: business.instagramEnabled,
+        facebookUrl: business.facebookUrl,
+        facebookEnabled: business.facebookEnabled,
+        youtubeUrl: business.youtubeUrl,
+        youtubeEnabled: business.youtubeEnabled,
       );
 
       await ref
@@ -205,6 +239,273 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
+  Future<void> _setInstagramEnabled(bool value) async {
+    if (_instagramUpdating) return;
+
+    final business = ref.read(businessNotifierProvider).business;
+    if (business == null) {
+      _showMessage('Business details are not available.');
+      return;
+    }
+
+    if (value && !_hasValue(business.instagramUrl)) {
+      _showMessage('Add your Instagram link first.');
+      return;
+    }
+
+    await _updateSocialFeature(
+      feature: 'instagram',
+      value: value,
+      url: business.instagramUrl,
+    );
+  }
+
+  Future<void> _setFacebookEnabled(bool value) async {
+    if (_facebookUpdating) return;
+
+    final business = ref.read(businessNotifierProvider).business;
+    if (business == null) {
+      _showMessage('Business details are not available.');
+      return;
+    }
+
+    if (value && !_hasValue(business.facebookUrl)) {
+      _showMessage('Add your Facebook link first.');
+      return;
+    }
+
+    await _updateSocialFeature(
+      feature: 'facebook',
+      value: value,
+      url: business.facebookUrl,
+    );
+  }
+
+  Future<void> _setYoutubeEnabled(bool value) async {
+    if (_youtubeUpdating) return;
+
+    final business = ref.read(businessNotifierProvider).business;
+    if (business == null) {
+      _showMessage('Business details are not available.');
+      return;
+    }
+
+    if (value && !_hasValue(business.youtubeUrl)) {
+      _showMessage('Add your YouTube link first.');
+      return;
+    }
+
+    await _updateSocialFeature(
+      feature: 'youtube',
+      value: value,
+      url: business.youtubeUrl,
+    );
+  }
+
+  Future<void> _saveSocialLink(String feature) async {
+    final business = ref.read(businessNotifierProvider).business;
+    if (business == null) {
+      _showMessage('Business details are not available.');
+      return;
+    }
+
+    final controller = switch (feature) {
+      'instagram' => _instagramController,
+      'facebook' => _facebookController,
+      'youtube' => _youtubeController,
+      _ => null,
+    };
+
+    if (controller == null) return;
+
+    final url = controller.text.trim();
+    if (!_isHttpUrl(url)) {
+      _showMessage('Enter a valid http:// or https:// link.');
+      return;
+    }
+
+    final enabled = switch (feature) {
+      'instagram' => business.instagramEnabled == true,
+      'facebook' => business.facebookEnabled == true,
+      'youtube' => business.youtubeEnabled == true,
+      _ => false,
+    };
+
+    await _updateSocialFeature(
+      feature: feature,
+      value: enabled,
+      url: url,
+    );
+  }
+
+  Future<void> _updateSocialFeature({
+    required String feature,
+    required bool value,
+    required String? url,
+  }) async {
+    setState(() {
+      switch (feature) {
+        case 'instagram':
+          _instagramUpdating = true;
+          break;
+        case 'facebook':
+          _facebookUpdating = true;
+          break;
+        case 'youtube':
+          _youtubeUpdating = true;
+          break;
+      }
+    });
+
+    try {
+      final business = ref.read(businessNotifierProvider).business;
+      if (business == null) {
+        _showMessage('Business details are not available.');
+        return;
+      }
+
+      final businessType = _parseBusinessType(business.businessType);
+      if (businessType == null) {
+        _showMessage('Unable to determine business type.');
+        return;
+      }
+
+      final updatedRequest = BusinessRequest(
+        businessName: business.businessName,
+        businessType: businessType,
+        phone: business.phone,
+        logoUrl: business.logoUrl,
+        whatsapp: business.whatsapp,
+        email: business.email,
+        address: business.address,
+        city: business.city,
+        state: business.state,
+        country: business.country,
+        pincode: business.pincode,
+        website: business.website,
+        description: business.description,
+        upiId: business.upiId,
+        googleReviewUrl: business.googleReviewUrl,
+        googleReviewEnabled: business.googleReviewEnabled,
+        paymentEnabled: business.paymentEnabled,
+        instagramUrl:
+        feature == 'instagram' ? url : business.instagramUrl,
+        instagramEnabled:
+        feature == 'instagram' ? value : business.instagramEnabled,
+        facebookUrl:
+        feature == 'facebook' ? url : business.facebookUrl,
+        facebookEnabled:
+        feature == 'facebook' ? value : business.facebookEnabled,
+        youtubeUrl:
+        feature == 'youtube' ? url : business.youtubeUrl,
+        youtubeEnabled:
+        feature == 'youtube' ? value : business.youtubeEnabled,
+      );
+
+      await ref
+          .read(businessNotifierProvider.notifier)
+          .updateBusiness(updatedRequest);
+
+      if (!mounted) return;
+
+      final state = ref.read(businessNotifierProvider);
+      if (state.status != BusinessStatus.success ||
+          state.business == null) {
+        _showMessage(
+          state.errorMessage ?? 'Unable to save the social link.',
+        );
+        return;
+      }
+
+      await _refreshBusiness();
+      if (!mounted) return;
+
+      final refreshed = ref.read(businessNotifierProvider).business;
+      if (refreshed == null) {
+        _showMessage('Unable to refresh business details.');
+        return;
+      }
+
+      final savedUrl = switch (feature) {
+        'instagram' => refreshed.instagramUrl,
+        'facebook' => refreshed.facebookUrl,
+        'youtube' => refreshed.youtubeUrl,
+        _ => null,
+      };
+
+      final savedValue = switch (feature) {
+        'instagram' => refreshed.instagramEnabled == true,
+        'facebook' => refreshed.facebookEnabled == true,
+        'youtube' => refreshed.youtubeEnabled == true,
+        _ => false,
+      };
+
+      if (savedUrl != url || savedValue != value) {
+        _showMessage('The setting could not be saved. Please try again.');
+        return;
+      }
+
+      _showMessage(
+        value
+            ? '${_socialName(feature)} enabled.'
+            : '${_socialName(feature)} disabled.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+      await _refreshBusiness();
+    } finally {
+      if (mounted) {
+        setState(() {
+          switch (feature) {
+            case 'instagram':
+              _instagramUpdating = false;
+              break;
+            case 'facebook':
+              _facebookUpdating = false;
+              break;
+            case 'youtube':
+              _youtubeUpdating = false;
+              break;
+          }
+        });
+      }
+    }
+  }
+
+  bool _isHttpUrl(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null) return false;
+    return (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  String _socialName(String feature) {
+    return switch (feature) {
+      'instagram' => 'Instagram',
+      'facebook' => 'Facebook',
+      'youtube' => 'YouTube',
+      _ => 'Social link',
+    };
+  }
+
+  void _syncSocialControllers(dynamic business) {
+    final values = <TextEditingController, String>{
+      _instagramController: business.instagramUrl ?? '',
+      _facebookController: business.facebookUrl ?? '',
+      _youtubeController: business.youtubeUrl ?? '',
+    };
+
+    values.forEach((controller, value) {
+      if (controller.text != value) {
+        controller.text = value;
+      }
+    });
+  }
+
   Future<void> _updateCustomerFeature({
     required bool value,
     required String feature,
@@ -255,6 +556,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         isGoogleReview ? value : business.googleReviewEnabled,
         paymentEnabled:
         isGoogleReview ? business.paymentEnabled : value,
+        instagramUrl: business.instagramUrl,
+        instagramEnabled: business.instagramEnabled,
+        facebookUrl: business.facebookUrl,
+        facebookEnabled: business.facebookEnabled,
+        youtubeUrl: business.youtubeUrl,
+        youtubeEnabled: business.youtubeEnabled,
       );
 
       await ref
@@ -667,6 +974,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             value: business.googleReviewEnabled == true,
             loading: _googleReviewUpdating,
             onChanged: _setGoogleReviewEnabled,
+            brandColor: const Color(0xFF4285F4),
           ),
           const SizedBox(height: 12),
           _buildFeatureTile(
@@ -682,10 +990,213 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             value: business.paymentEnabled == true,
             loading: _paymentUpdating,
             onChanged: _setPaymentEnabled,
+            brandColor: const Color(0xFF00674F),
+          ),
+          const SizedBox(height: 12),
+          _buildSocialFeatureTile(
+            context,
+            title: 'Instagram',
+            icon: Icons.photo_camera_rounded,
+            brandColor: const Color(0xFFE1306C),
+            controller: _instagramController,
+            enabled: _hasValue(business.instagramUrl),
+            value: business.instagramEnabled == true,
+            loading: _instagramUpdating,
+            onChanged: _setInstagramEnabled,
+            onSave: () => _saveSocialLink('instagram'),
+          ),
+          const SizedBox(height: 12),
+          _buildSocialFeatureTile(
+            context,
+            title: 'Facebook',
+            icon: Icons.facebook,
+            brandColor: const Color(0xFF1877F2),
+            controller: _facebookController,
+            enabled: _hasValue(business.facebookUrl),
+            value: business.facebookEnabled == true,
+            loading: _facebookUpdating,
+            onChanged: _setFacebookEnabled,
+            onSave: () => _saveSocialLink('facebook'),
+          ),
+          const SizedBox(height: 12),
+          _buildSocialFeatureTile(
+            context,
+            title: 'YouTube',
+            icon: Icons.play_circle_filled_rounded,
+            brandColor: const Color(0xFFFF0000),
+            controller: _youtubeController,
+            enabled: _hasValue(business.youtubeUrl),
+            value: business.youtubeEnabled == true,
+            loading: _youtubeUpdating,
+            onChanged: _setYoutubeEnabled,
+            onSave: () => _saveSocialLink('youtube'),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildSocialFeatureTile(
+      BuildContext context, {
+        required String title,
+        required IconData icon,
+        required Color brandColor,
+        required TextEditingController controller,
+        required bool enabled,
+        required bool value,
+        required bool loading,
+        required ValueChanged<bool> onChanged,
+        required VoidCallback onSave,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: brandColor.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: brandColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      enabled
+                          ? 'Show this link to customers on your public page.'
+                          : 'Add your link to enable this feature.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (loading)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Switch.adaptive(
+                  value: value,
+                  onChanged: enabled ? onChanged : null,
+                  activeColor: brandColor,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.done,
+            enabled: !loading,
+            onSubmitted: (_) => onSave(),
+            decoration: InputDecoration(
+              labelText: '$title link',
+              hintText: _socialHint(title),
+              prefixIcon: Icon(
+                icon,
+                color: brandColor,
+              ),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: loading ? null : onSave,
+              icon: Icon(
+                Icons.save_outlined,
+                color: brandColor,
+              ),
+              label: Text(
+                'Save $title Link',
+                style: TextStyle(
+                  color: brandColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: brandColor.withValues(alpha: 0.45),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                value && enabled
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.visibility_off_outlined,
+                size: 15,
+                color: value && enabled
+                    ? brandColor
+                    : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  value && enabled
+                      ? 'Active on public page'
+                      : enabled
+                      ? 'Saved but hidden from customers'
+                      : 'Setup required',
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _socialHint(String title) {
+    return switch (title) {
+      'Instagram' => 'https://instagram.com/yourbusiness',
+      'Facebook' => 'https://facebook.com/yourbusiness',
+      'YouTube' => 'https://youtube.com/@yourbusiness',
+      _ => 'https://example.com',
+    };
   }
 
   Widget _buildFeatureTile(
@@ -697,6 +1208,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         required bool value,
         required bool loading,
         required ValueChanged<bool> onChanged,
+        Color? brandColor,
       }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -718,7 +1230,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             height: 42,
             decoration: BoxDecoration(
               color: enabled
-                  ? colorScheme.primaryContainer
+                  ? (brandColor?.withValues(alpha: 0.12) ??
+                  colorScheme.primaryContainer)
                   : colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1235,3 +1748,4 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         .join(' ');
   }
 }
+

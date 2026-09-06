@@ -612,46 +612,17 @@ class _BusinessDetailsScreenState
                         ),
 
                         TextFormField(
-                          controller:
-                          _upiController,
-                          keyboardType:
-                          TextInputType
-                              .emailAddress,
-                          textInputAction:
-                          TextInputAction.done,
-                          decoration:
-                          const InputDecoration(
-                            labelText:
-                            'UPI ID',
-                            hintText:
-                            'business@upi',
-                            prefixIcon:
-                            Icon(
-                              Icons
-                                  .account_balance_wallet_outlined,
+                          controller: _upiController,
+                          enabled: false,
+                          decoration: const InputDecoration(
+                            labelText: 'UPI ID',
+                            hintText: 'Coming soon',
+                            prefixIcon: Icon(
+                              Icons.account_balance_wallet_outlined,
                             ),
                             helperText:
-                            'Optional — you can add this later.',
+                            'UPI payments are temporarily unavailable. Coming soon.',
                           ),
-                          validator:
-                              (value) {
-                            final upi =
-                                value
-                                    ?.trim() ??
-                                    '';
-
-                            if (upi.isEmpty) {
-                              return null;
-                            }
-
-                            if (!upi.contains(
-                              '@',
-                            )) {
-                              return 'Enter a valid UPI ID';
-                            }
-
-                            return null;
-                          },
                         ),
 
                         const SizedBox(

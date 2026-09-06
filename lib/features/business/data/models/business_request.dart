@@ -72,6 +72,13 @@ class BusinessRequest {
     this.googleReviewUrl,
     this.googleReviewEnabled,
     this.paymentEnabled,
+    this.logoPublicId,
+    this.instagramUrl,
+    this.instagramEnabled,
+    this.facebookUrl,
+    this.facebookEnabled,
+    this.youtubeUrl,
+    this.youtubeEnabled,
   });
 
   final String businessName;
@@ -95,7 +102,17 @@ class BusinessRequest {
   final bool? googleReviewEnabled;
   final bool? paymentEnabled;
 
+  final String? instagramUrl;
+  final bool? instagramEnabled;
+
+  final String? facebookUrl;
+  final bool? facebookEnabled;
+
+  final String? youtubeUrl;
+  final bool? youtubeEnabled;
+
   final String? logoUrl;
+  final String? logoPublicId;
 
   Map<String, dynamic> toJson() {
     return {
@@ -116,6 +133,13 @@ class BusinessRequest {
       'googleReviewEnabled': googleReviewEnabled,
       'paymentEnabled': paymentEnabled,
       'logoUrl': logoUrl,
+      'logoPublicId': logoPublicId,
+      'instagramUrl': instagramUrl,
+      'instagramEnabled': instagramEnabled,
+      'facebookUrl': facebookUrl,
+      'facebookEnabled': facebookEnabled,
+      'youtubeUrl': youtubeUrl,
+      'youtubeEnabled': youtubeEnabled,
     };
   }
 }

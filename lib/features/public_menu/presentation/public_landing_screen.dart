@@ -218,18 +218,15 @@ class _PublicLandingScreenState
   Widget build(
       BuildContext context,
       ) {
-    final state =
-    ref.watch(
+    final state = ref.watch(
       publicNotifierProvider,
     );
 
-    if (state.status ==
-        PublicStatus.loading) {
+    if (state.status == PublicStatus.loading) {
       return _buildLoading();
     }
 
-    if (state.status ==
-        PublicStatus.error &&
+    if (state.status == PublicStatus.error &&
         state.landing == null) {
       return _buildError(
         context,
@@ -237,25 +234,23 @@ class _PublicLandingScreenState
       );
     }
 
-    final landing =
-        state.landing;
+    final landing = state.landing;
 
     if (landing == null) {
       return _buildUnavailable();
     }
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor:
-      Theme.of(context)
-          .colorScheme
-          .surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: RefreshIndicator(
+          color: const Color(0xFF00674F),
           onRefresh: () async {
             await ref
                 .read(
-              publicNotifierProvider
-                  .notifier,
+              publicNotifierProvider.notifier,
             )
                 .refreshLanding();
           },
@@ -264,8 +259,7 @@ class _PublicLandingScreenState
                 context,
                 constraints,
                 ) {
-              final width =
-                  constraints.maxWidth;
+              final width = constraints.maxWidth;
 
               final horizontalPadding =
               width < 360
@@ -275,40 +269,34 @@ class _PublicLandingScreenState
                   : 24.0;
 
               final contentMaxWidth =
-              width >= 900
-                  ? 620.0
+              width >= 1000
+                  ? 760.0
+                  : width >= 700
+                  ? 660.0
                   : 560.0;
 
               return SingleChildScrollView(
                 physics:
                 const AlwaysScrollableScrollPhysics(),
-                padding:
-                EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   horizontalPadding,
                   8,
                   horizontalPadding,
-                  28,
+                  32,
                 ),
                 child: Center(
-                  child:
-                  ConstrainedBox(
-                    constraints:
-                    BoxConstraints(
-                      maxWidth:
-                      contentMaxWidth,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: contentMaxWidth,
                     ),
                     child: Column(
                       crossAxisAlignment:
-                      CrossAxisAlignment
-                          .stretch,
+                      CrossAxisAlignment.stretch,
                       children: [
                         _buildTopBar(),
 
                         SizedBox(
-                          height:
-                          width < 400
-                              ? 16
-                              : 24,
+                          height: width < 400 ? 12 : 18,
                         ),
 
                         _buildBusinessIdentity(
@@ -316,34 +304,30 @@ class _PublicLandingScreenState
                           landing,
                         ),
 
-                        SizedBox(
-                          height:
-                          width < 400
-                              ? 20
-                              : 24,
-                        ),
+                        const SizedBox(height: 22),
 
                         _buildActionButtons(
                           context,
                           landing,
                         ),
 
-                        const SizedBox(
-                          height: 20,
+                        const SizedBox(height: 22),
+
+                        _buildSocialSection(
+                          context,
+                          landing,
                         ),
+
+                        const SizedBox(height: 20),
 
                         _buildBusinessTypeInfo(
                           context,
                           landing,
                         ),
 
-                        const SizedBox(
-                          height: 28,
-                        ),
+                        const SizedBox(height: 30),
 
-                        _buildFooter(
-                          context,
-                        ),
+                        _buildFooter(context),
                       ],
                     ),
                   ),
@@ -472,71 +456,114 @@ class _PublicLandingScreenState
       BuildContext context,
       LandingResponse landing,
       ) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        _buildLogo(
-          context,
-          landing.logoUrl,
-        ),
-
-        const SizedBox(
-          height: 18,
-        ),
-
-        Text(
-          landing.businessName,
-          textAlign:
-          TextAlign.center,
-          maxLines: 3,
-          overflow:
-          TextOverflow.ellipsis,
-          style: theme
-              .textTheme
-              .headlineMedium
-              ?.copyWith(
-            fontWeight:
-            FontWeight.w800,
-            letterSpacing: -0.4,
-            height: 1.15,
-          ),
-        ),
-
-        const SizedBox(
-          height: 10,
-        ),
-
-        Wrap(
-          alignment:
-          WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _InfoChip(
-              icon:
-              Icons.storefront_outlined,
-              label:
-              _businessTypeLabel(
-                landing.businessType,
-              ),
-            ),
-
-            if (landing.city
-                ?.trim()
-                .isNotEmpty ==
-                true)
-              _InfoChip(
-                icon: Icons
-                    .location_on_outlined,
-                label:
-                landing.city!
-                    .trim(),
-              ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        24,
+        20,
+        22,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFEAF7F3),
+            Color(0xFFF8FBFA),
           ],
         ),
-      ],
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: const Color(0xFFD7EAE4),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 24,
+            offset: Offset(0, 10),
+            color: Color(0x1400674F),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildLogo(
+            context,
+            landing.logoUrl,
+          ),
+
+          const SizedBox(height: 18),
+
+          Text(
+            landing.businessName,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.7,
+              height: 1.12,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoChip(
+                icon: Icons.storefront_outlined,
+                label: _businessTypeLabel(
+                  landing.businessType,
+                ),
+              ),
+              if (landing.city?.trim().isNotEmpty == true)
+                _InfoChip(
+                  icon: Icons.location_on_outlined,
+                  label: landing.city!.trim(),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xB8FFFFFF),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 18,
+                  color: Color(0xFF00674F),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Digital business page',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF475569),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -653,12 +680,7 @@ class _PublicLandingScreenState
   }
 
   // ============================================================
-  // ACTION BUTTONS
-  //
-  // This section is intentionally structured around
-  // independent customer actions so future buttons such as
-  // Instagram, YouTube, WhatsApp or custom links can be added
-  // without changing the page structure.
+  // CUSTOMER ACTIONS
   // ============================================================
 
   Widget _buildActionButtons(
@@ -666,133 +688,414 @@ class _PublicLandingScreenState
       LandingResponse landing,
       ) {
     final isFood =
-        landing.businessType
-            .trim()
-            .toUpperCase() ==
-            'FOOD';
+        landing.businessType.trim().toUpperCase() == 'FOOD';
 
-    final primaryLabel =
-    isFood
-        ? 'Menu'
-        : 'View';
-
-    final primaryIcon =
-    isFood
-        ? Icons.restaurant_menu_outlined
-        : Icons.visibility_outlined;
-
-    final hasPayment =
-        landing.paymentEnabled;
+    final hasPayment = landing.paymentEnabled == true;
 
     final hasReview =
-        landing.googleReviewEnabled &&
-            landing.googleReviewUrl !=
-                null &&
-            landing.googleReviewUrl!
-                .trim()
-                .isNotEmpty;
+        landing.googleReviewEnabled == true &&
+            landing.googleReviewUrl != null &&
+            landing.googleReviewUrl!.trim().isNotEmpty;
 
     return Column(
-      crossAxisAlignment:
-      CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ========================================================
-        // PRIMARY ACTION
-        // ========================================================
-
-        SizedBox(
-          height: 54,
-          child:
-          FilledButton.icon(
-            onPressed:
-            landing.menuAvailable
-                ? widget
-                .onOpenMenu
-                : null,
-            icon: Icon(
-              primaryIcon,
-            ),
-            label: Text(
-              primaryLabel,
-              style:
-              const TextStyle(
-                fontSize: 16,
-                fontWeight:
-                FontWeight.w700,
-              ),
-            ),
+        Text(
+          'Explore & connect',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF0F172A),
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Everything you need, right here.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 14),
 
-        // ========================================================
-        // UPI PAYMENT
-        // ========================================================
+        // PRIMARY ACTION
+        _buildActionTile(
+          context,
+          icon: isFood
+              ? Icons.restaurant_menu_rounded
+              : Icons.visibility_rounded,
+          title: isFood ? 'View Menu' : 'View Offerings',
+          subtitle: isFood
+              ? 'Browse the latest menu and items'
+              : 'Explore products and services',
+          backgroundColor: const Color(0xFF00674F),
+          foregroundColor: Colors.white,
+          onPressed: landing.menuAvailable == true
+              ? widget.onOpenMenu
+              : null,
+          filled: true,
+        ),
 
         if (hasPayment) ...[
-          const SizedBox(
-            height: 12,
-          ),
-
-          SizedBox(
-            height: 54,
-            child:
-            OutlinedButton.icon(
-              onPressed:
-              widget
-                  .onOpenPayment,
-              icon: const Icon(
-                Icons
-                    .account_balance_wallet_outlined,
-              ),
-              label: const Text(
-                'Pay via UPI',
-                style:
-                TextStyle(
-                  fontSize: 16,
-                  fontWeight:
-                  FontWeight.w700,
-                ),
-              ),
-            ),
+          const SizedBox(height: 10),
+          _buildActionTile(
+            context,
+            icon: Icons.account_balance_wallet_rounded,
+            title: 'Pay via UPI',
+            subtitle: 'Quick and convenient digital payment',
+            backgroundColor: const Color(0xFFEAF7F3),
+            foregroundColor: const Color(0xFF00674F),
+            borderColor: const Color(0xFFB9DDD1),
+            onPressed: widget.onOpenPayment,
           ),
         ],
 
-        // ========================================================
-        // GOOGLE REVIEW
-        // ========================================================
-
         if (hasReview) ...[
-          const SizedBox(
-            height: 12,
-          ),
-
-          SizedBox(
-            height: 54,
-            child:
-            OutlinedButton.icon(
-              onPressed: () {
-                _openExternalLink(
-                  landing
-                      .googleReviewUrl!,
-                );
-              },
-              icon: const Icon(
-                Icons
-                    .star_outline_rounded,
-              ),
-              label: const Text(
-                'Review Us',
-                style:
-                TextStyle(
-                  fontSize: 16,
-                  fontWeight:
-                  FontWeight.w700,
-                ),
-              ),
+          const SizedBox(height: 10),
+          _buildActionTile(
+            context,
+            icon: Icons.star_rounded,
+            title: 'Review Us',
+            subtitle: 'Share your experience on Google',
+            backgroundColor: const Color(0xFFF6F8FF),
+            foregroundColor: const Color(0xFF4285F4),
+            borderColor: const Color(0xFFD8E3FF),
+            onPressed: () => _openExternalLink(
+              landing.googleReviewUrl!,
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildActionTile(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required Color backgroundColor,
+        required Color foregroundColor,
+        required VoidCallback? onPressed,
+        Color? borderColor,
+        bool filled = false,
+      }) {
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          height: 68,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(18),
+            border: borderColor != null
+                ? Border.all(color: borderColor)
+                : null,
+            boxShadow: filled
+                ? const [
+              BoxShadow(
+                blurRadius: 18,
+                offset: Offset(0, 7),
+                color: Color(0x1800674F),
+              ),
+            ]
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: filled
+                        ? const Color(0x1AFFFFFF)
+                        : const Color(0xFFFFFFFF),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: foregroundColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: filled
+                              ? const Color(0xE6FFFFFF)
+                              : const Color(0xFF64748B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 15,
+                  color: filled
+                      ? const Color(0xCCFFFFFF)
+                      : foregroundColor,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // SOCIAL LINKS
+  // ============================================================
+
+  Widget _buildSocialSection(
+      BuildContext context,
+      LandingResponse landing,
+      ) {
+    final socials = <_SocialLinkItem>[];
+
+    final hasInstagram =
+        landing.instagramEnabled == true &&
+            landing.instagramUrl != null &&
+            landing.instagramUrl!.trim().isNotEmpty;
+
+    final hasFacebook =
+        landing.facebookEnabled == true &&
+            landing.facebookUrl != null &&
+            landing.facebookUrl!.trim().isNotEmpty;
+
+    final hasYoutube =
+        landing.youtubeEnabled == true &&
+            landing.youtubeUrl != null &&
+            landing.youtubeUrl!.trim().isNotEmpty;
+
+    if (hasInstagram) {
+      socials.add(
+        _SocialLinkItem(
+          label: 'Instagram',
+          icon: Icons.camera_alt_rounded,
+          color: const Color(0xFFE1306C),
+          backgroundColor: const Color(0xFFFFF1F5),
+          borderColor: const Color(0xFFF7CBDC),
+          url: landing.instagramUrl!,
+        ),
+      );
+    }
+
+    if (hasFacebook) {
+      socials.add(
+        _SocialLinkItem(
+          label: 'Facebook',
+          icon: Icons.facebook,
+          color: const Color(0xFF1877F2),
+          backgroundColor: const Color(0xFFEEF5FF),
+          borderColor: const Color(0xFFCFE0FF),
+          url: landing.facebookUrl!,
+        ),
+      );
+    }
+
+    if (hasYoutube) {
+      socials.add(
+        _SocialLinkItem(
+          label: 'YouTube',
+          icon: Icons.play_circle_fill_rounded,
+          color: const Color(0xFFFF0000),
+          backgroundColor: const Color(0xFFFFF1F1),
+          borderColor: const Color(0xFFFFD0D0),
+          url: landing.youtubeUrl!,
+        ),
+      );
+    }
+
+    if (socials.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        17,
+        16,
+        16,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 20,
+            offset: Offset(0, 8),
+            color: Color(0x0D0F172A),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF7F3),
+                  borderRadius:
+                  BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.public_rounded,
+                  color: Color(0xFF00674F),
+                  size: 19,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Connect with us',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Follow, discover and stay connected.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth =
+              constraints.maxWidth >= 560
+                  ? (constraints.maxWidth - 20) / 3
+                  : constraints.maxWidth >= 360
+                  ? (constraints.maxWidth - 10) / 2
+                  : constraints.maxWidth;
+
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: socials
+                    .map(
+                      (social) => SizedBox(
+                    width: itemWidth,
+                    child: _buildSocialButton(
+                      context,
+                      social,
+                    ),
+                  ),
+                )
+                    .toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialButton(
+      BuildContext context,
+      _SocialLinkItem social,
+      ) {
+    return Material(
+      color: social.backgroundColor,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _openExternalLink(social.url),
+        child: Ink(
+          height: 56,
+          decoration: BoxDecoration(
+            color: social.backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: social.borderColor,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 13,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  social.icon,
+                  color: social.color,
+                  size: 23,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    social.label,
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: social.color,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.open_in_new_rounded,
+                  color: social.color,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1129,6 +1432,28 @@ _BusinessTerminology _terminologyFor(
         'Explore products, services and offerings.',
       );
   }
+}
+
+// ============================================================
+// SOCIAL LINK ITEM
+// ============================================================
+
+class _SocialLinkItem {
+  const _SocialLinkItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.url,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color backgroundColor;
+  final Color borderColor;
+  final String url;
 }
 
 // ============================================================

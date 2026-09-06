@@ -8,6 +8,16 @@ class LandingResponse {
     required this.paymentEnabled,
     this.googleReviewUrl,
     required this.googleReviewEnabled,
+
+    this.instagramUrl,
+    this.instagramEnabled = false,
+
+    this.facebookUrl,
+    this.facebookEnabled = false,
+
+    this.youtubeUrl,
+    this.youtubeEnabled = false,
+
   });
 
   final String businessName;
@@ -21,6 +31,15 @@ class LandingResponse {
 
   final String? googleReviewUrl;
   final bool googleReviewEnabled;
+
+  final String? instagramUrl;
+  final bool instagramEnabled;
+
+  final String? facebookUrl;
+  final bool facebookEnabled;
+
+  final String? youtubeUrl;
+  final bool youtubeEnabled;
 
   factory LandingResponse.fromJson(
       Map<String, dynamic> json,
@@ -42,6 +61,18 @@ class LandingResponse {
       json['googleReviewUrl'] as String?,
       googleReviewEnabled:
       json['googleReviewEnabled'] as bool? ?? false,
+
+      instagramUrl: json['instagramUrl'] as String?,
+      instagramEnabled:
+      json['instagramEnabled'] as bool? ?? false,
+
+      facebookUrl: json['facebookUrl'] as String?,
+      facebookEnabled:
+      json['facebookEnabled'] as bool? ?? false,
+
+      youtubeUrl: json['youtubeUrl'] as String?,
+      youtubeEnabled:
+      json['youtubeEnabled'] as bool? ?? false,
     );
   }
 
@@ -55,6 +86,15 @@ class LandingResponse {
       'paymentEnabled': paymentEnabled,
       'googleReviewUrl': googleReviewUrl,
       'googleReviewEnabled': googleReviewEnabled,
+
+      'instagramUrl': instagramUrl,
+      'instagramEnabled': instagramEnabled,
+
+      'facebookUrl': facebookUrl,
+      'facebookEnabled': facebookEnabled,
+
+      'youtubeUrl': youtubeUrl,
+      'youtubeEnabled': youtubeEnabled,
     };
   }
 }

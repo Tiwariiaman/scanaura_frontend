@@ -10,6 +10,7 @@ class CatalogRequest {
     this.bestSeller = false,
     this.recommended = false,
     this.displayOrder = 0,
+    this.imagePublicId,
   });
 
   final String? categoryId;
@@ -22,6 +23,8 @@ class CatalogRequest {
   final bool bestSeller;
   final bool recommended;
   final int displayOrder;
+  final String? imagePublicId;
+
 
   Map<String, dynamic> toJson() {
     return {
@@ -39,6 +42,7 @@ class CatalogRequest {
       'bestSeller': bestSeller,
       'recommended': recommended,
       'displayOrder': displayOrder,
+      'imagePublicId': imagePublicId,
     };
   }
 }
