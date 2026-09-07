@@ -1,3 +1,4 @@
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:scanaura_frontend/features/public_menu/presentation/providers/pu
 
 import '../data/models/menu_category_response.dart';
 import '../data/models/menu_item_response.dart';
+import '../data/customer_selection_controller.dart';
 
 class PublicMenuScreen extends ConsumerStatefulWidget {
   const PublicMenuScreen({
@@ -32,6 +34,9 @@ class _PublicMenuScreenState
   bool _showNonVegOnly = false;
   bool _showBestSellerOnly = false;
   bool _showRecommendedOnly = false;
+
+  final CustomerSelectionController _selection =
+  CustomerSelectionController();
 
   @override
   void initState() {
@@ -67,12 +72,21 @@ class _PublicMenuScreenState
   List<_PublicMenuItem> get _filteredItems {
     final allItems = <_PublicMenuItem>[];
 
-    for (final category in _categories) {
-      for (final item in category.items) {
+    for (var categoryIndex = 0;
+    categoryIndex < _categories.length;
+    categoryIndex++) {
+      final category = _categories[categoryIndex];
+
+      for (var itemIndex = 0;
+      itemIndex < category.items.length;
+      itemIndex++) {
+        final item = category.items[itemIndex];
+
         allItems.add(
           _PublicMenuItem(
             item: item,
             categoryName: category.categoryName,
+            selectionId: '$categoryIndex:$itemIndex',
           ),
         );
       }
@@ -134,6 +148,342 @@ class _PublicMenuScreenState
   }
 
   int _boolRank(bool value) => value ? 1 : 0;
+
+  bool _isSelected(_PublicMenuItem entry) {
+    return _selection.contains(entry.selectionId);
+  }
+
+  void _toggleSelection(_PublicMenuItem entry) {
+    setState(() {
+      _selection.toggleItem(
+        selectionId: entry.selectionId,
+        itemName: entry.item.name,
+        unitPrice: entry.item.price,
+      );
+    });
+  }
+
+  void _increaseSelection(String selectionId, void Function(void Function())? modalSetState) {
+    setState(() {
+      _selection.increaseQuantity(selectionId);
+    });
+    modalSetState?.call(() {});
+  }
+
+  void _decreaseSelection(String selectionId, void Function(void Function())? modalSetState) {
+    setState(() {
+      _selection.decreaseQuantity(selectionId);
+    });
+    modalSetState?.call(() {});
+  }
+
+  void _removeSelection(String selectionId, void Function(void Function())? modalSetState) {
+    setState(() {
+      _selection.removeItem(selectionId);
+    });
+    modalSetState?.call(() {});
+  }
+
+  void _clearSelection() {
+    if (_selection.isEmpty) return;
+
+    setState(() {
+      _selection.clear();
+    });
+  }
+
+  String _selectionTotalLabel() {
+    if (!_selection.hasPricedItems) {
+      return 'Price unavailable';
+    }
+
+    return 'Estimated ₹${_selection.estimatedTotal.toStringAsFixed(2)}';
+  }
+
+  Future<void> _openSelectionSheet() async {
+    if (_selection.isEmpty) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.50,
+          minChildSize: 0.50,
+          maxChildSize: 0.90,
+          snap: true,
+          snapSizes: const [0.50, 0.90],
+          expand: false,
+          builder: (context, scrollController) {
+            final selectedItems = _selection.selectedItems;
+
+            return Material(
+              clipBehavior: Clip.antiAlias,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              color: Theme.of(context).colorScheme.surface,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        20,
+                        12,
+                        20,
+                        8,
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'My Selection',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${_selection.selectedItemCount} ${_selection.selectedItemCount == 1 ? 'item' : 'items'}',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(
+                          20,
+                          4,
+                          20,
+                          12,
+                        ),
+                        itemCount: selectedItems.length,
+                        separatorBuilder: (_, _) =>
+                        const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = selectedItems[index];
+                          final priceText = item.hasPrice
+                              ? '₹${item.unitPrice.toStringAsFixed(2)} each'
+                              : 'Price unavailable';
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.itemName,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(priceText),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        tooltip: 'Decrease quantity',
+                                        onPressed: () {
+                                          _decreaseSelection(
+                                            item.selectionId,
+                                            null,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.remove_rounded,
+                                          size: 18,
+                                        ),
+                                        visualDensity:
+                                        VisualDensity.compact,
+                                      ),
+                                      SizedBox(
+                                        width: 28,
+                                        child: Text(
+                                          '${item.quantity}',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: 'Increase quantity',
+                                        onPressed: () {
+                                          _increaseSelection(
+                                            item.selectionId,
+                                            null,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.add_rounded,
+                                          size: 18,
+                                        ),
+                                        visualDensity:
+                                        VisualDensity.compact,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Remove',
+                                  onPressed: () {
+                                    _removeSelection(
+                                      item.selectionId,
+                                      null,
+                                    );
+
+                                    if (_selection.isEmpty &&
+                                        sheetContext.mounted) {
+                                      Navigator.of(sheetContext).pop();
+                                    }
+                                  },
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(
+                        20,
+                        12,
+                        20,
+                        16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 12,
+                            offset: const Offset(0, -4),
+                            color: Colors.black.withValues(alpha: 0.08),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Estimated Total',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                _selection.hasPricedItems
+                                    ? '₹${_selection.estimatedTotal.toStringAsFixed(2)}'
+                                    : 'Price unavailable',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${_selection.totalUnitCount} ${_selection.totalUnitCount == 1 ? 'unit' : 'units'}',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  _clearSelection();
+                                  Navigator.of(sheetContext).pop();
+                                },
+                                icon: const Icon(
+                                  Icons.delete_sweep_outlined,
+                                ),
+                                label: const Text('Clear Selection'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Prices shown are for reference and may not include taxes, service charges or other applicable charges.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void _clearAllFilters() {
     setState(() {
@@ -206,81 +556,171 @@ class _PublicMenuScreenState
           width < 360 ? 12.0 : width < 600 ? 16.0 : 20.0;
           final maxContentWidth = width >= 1000 ? 1000.0 : 700.0;
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              await ref
-                  .read(publicNotifierProvider.notifier)
-                  .refreshMenu();
-            },
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // ======================================================
-                // SCROLLABLE SEARCH + FILTER AREA
-                // These controls are part of the same scroll view as
-                // the menu, so they naturally move off-screen.
-                // ======================================================
-                SliverToBoxAdapter(
-                  child: Material(
-                    elevation: 2,
-                    color: Theme.of(context).colorScheme.surface,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        12,
-                        horizontalPadding,
-                        10,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: maxContentWidth,
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: () async {
+                  await ref
+                      .read(publicNotifierProvider.notifier)
+                      .refreshMenu();
+                },
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // ======================================================
+                    // SCROLLABLE SEARCH + FILTER AREA
+                    // These controls are part of the same scroll view as
+                    // the menu, so they naturally move off-screen.
+                    // ======================================================
+                    SliverToBoxAdapter(
+                      child: Material(
+                        elevation: 2,
+                        color: Theme.of(context).colorScheme.surface,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            horizontalPadding,
+                            12,
+                            horizontalPadding,
+                            10,
                           ),
-                          child: Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.stretch,
-                            children: [
-                              _buildSearchField(
-                                context,
-                                terminology,
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: maxContentWidth,
                               ),
-                              const SizedBox(height: 10),
-                              _buildCategoryFilters(menu.menu),
-                              const SizedBox(height: 8),
-                              _buildAttributeFilters(),
-                            ],
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildSearchField(
+                                    context,
+                                    terminology,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildCategoryFilters(menu.menu),
+                                  const SizedBox(height: 8),
+                                  _buildAttributeFilters(),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
 
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 16),
-                ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 16),
+                    ),
 
-                _buildMenuList(
-                  context,
-                  horizontalPadding,
-                  maxContentWidth,
-                ),
+                    _buildMenuList(
+                      context,
+                      horizontalPadding,
+                      maxContentWidth,
+                    ),
 
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 28),
-                ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 28),
+                    ),
 
-                SliverToBoxAdapter(
-                  child: _buildFooter(),
-                ),
+                    SliverToBoxAdapter(
+                      child: _buildFooter(),
+                    ),
 
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 32),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: _selection.isNotEmpty ? 120 : 32,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              if (_selection.isNotEmpty)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildSelectionBar(context),
+                ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSelectionBar(BuildContext context) {
+    final itemCount = _selection.selectedItemCount;
+    final unitCount = _selection.totalUnitCount;
+
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Material(
+            elevation: 10,
+            borderRadius: BorderRadius.circular(18),
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _openSelectionSheet,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$itemCount',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$itemCount ${itemCount == 1 ? 'Item' : 'Items'} • $unitCount ${unitCount == 1 ? 'Unit' : 'Units'}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _selectionTotalLabel(),
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -454,7 +894,7 @@ class _PublicMenuScreenState
                 final entry = items[index];
                 return _buildItemCard(
                   context,
-                  entry.item,
+                  entry,
                 );
               },
             ),
@@ -522,8 +962,9 @@ class _PublicMenuScreenState
 
   Widget _buildItemCard(
       BuildContext context,
-      MenuItemResponse item,
+      _PublicMenuItem entry,
       ) {
+    final item = entry.item;
     final hasImage = item.imageUrl?.trim().isNotEmpty == true;
 
     return LayoutBuilder(
@@ -549,7 +990,7 @@ class _PublicMenuScreenState
                 Expanded(
                   child: _buildItemContent(
                     context,
-                    item,
+                    entry,
                   ),
                 ),
               ],
@@ -562,8 +1003,11 @@ class _PublicMenuScreenState
 
   Widget _buildItemContent(
       BuildContext context,
-      MenuItemResponse item,
+      _PublicMenuItem entry,
       ) {
+    final item = entry.item;
+    final isSelected = _isSelected(entry);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -586,6 +1030,13 @@ class _PublicMenuScreenState
               const SizedBox(width: 6),
               _VegIndicator(veg: item.veg),
             ],
+            const SizedBox(width: 4),
+            Checkbox(
+              value: isSelected,
+              onChanged: (_) => _toggleSelection(entry),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
           ],
         ),
 
@@ -855,10 +1306,12 @@ class _PublicMenuItem {
   const _PublicMenuItem({
     required this.item,
     required this.categoryName,
+    required this.selectionId,
   });
 
   final MenuItemResponse item;
   final String? categoryName;
+  final String selectionId;
 }
 
 class _PublicTerminology {
@@ -998,3 +1451,4 @@ class _PublicMenuScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.stylus,
   };
 }
+
