@@ -166,24 +166,35 @@ jobs:
       # ============================================================
 
       - name: Deploy Flutter Web to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-            server: ${{ secrets.FTP_SERVER }}
-            username: ${{ secrets.FTP_USERNAME }}
-            password: ${{ secrets.FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -e
 
-            protocol: ftp
-            port: 21
+          sudo apt-get update -y
+          sudo apt-get install -y lftp
 
-            local-dir: ./build/web/
-            server-dir: ./
+          echo "Starting Hostinger deployment..."
 
-            state-name: .ftp-deploy-sync-state.json
+          lftp -c "
+            set ftp:ssl-force false;
+            set ftp:passive-mode true;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
 
-            exclude: |
-              **/.git*
-              **/.git*/**
-              **/node_modules/**
+            open -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' '${{ secrets.FTP_SERVER }}';
+
+            lcd build/web;
+
+            mirror \
+              --reverse \
+              --verbose \
+              --parallel=4 \
+              --delete \
+              ./ ./
+          "
+
+          echo "Hostinger deployment completed successfully."
 
       # ============================================================
       # COMPLETE
