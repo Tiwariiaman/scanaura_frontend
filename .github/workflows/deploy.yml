@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+
   workflow_dispatch:
 
 jobs:
@@ -11,8 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================================
+      # CHECKOUT
+      # ============================================================
+
       - name: Checkout repository
         uses: actions/checkout@v5
+
+
+      # ============================================================
+      # FLUTTER
+      # ============================================================
 
       - name: Install Flutter
         uses: subosito/flutter-action@v2
@@ -21,25 +32,50 @@ jobs:
           channel: stable
           cache: true
 
+
+      # ============================================================
+      # DEPENDENCIES
+      # ============================================================
+
       - name: Get Flutter dependencies
+        working-directory: .
         run: flutter pub get
 
+
+      # ============================================================
+      # BUILD
+      # ============================================================
+
       - name: Build Flutter Web
+        working-directory: .
         run: |
           flutter clean
+
           flutter build web \
             --release \
             --pwa-strategy=none \
             --dart-define=API_BASE_URL=https://api.scanaura.in \
             --no-wasm-dry-run
 
+
+      # ============================================================
+      # REMOVE LEGACY PWA FILES
+      # ============================================================
+
       - name: Remove legacy PWA files
         shell: bash
         run: |
+          set -e
+
           rm -f build/web/flutter_service_worker.js
           rm -f build/web/manifest.json
           rm -f build/web/service-worker.js
           rm -f build/web/sw.js
+
+
+      # ============================================================
+      # ADD BUILD VERSION
+      # ============================================================
 
       - name: Add deployment version
         shell: bash
@@ -54,10 +90,14 @@ jobs:
 
           echo "Deployment build ID: ${GITHUB_SHA}"
 
-          grep -a -q "flutter_bootstrap.js?v=${GITHUB_SHA}" build/web/index.html || {
-            echo "ERROR: Failed to add deployment version."
-            exit 1
-          }
+          grep -a -q \
+            "flutter_bootstrap.js?v=${GITHUB_SHA}" \
+            build/web/index.html
+
+
+      # ============================================================
+      # VERIFY BUILD
+      # ============================================================
 
       - name: Verify production build
         shell: bash
@@ -71,9 +111,13 @@ jobs:
           test -f build/web/main.dart.js
 
           echo "Checking production API URL..."
-          grep -a -q "api.scanaura.in" build/web/main.dart.js
+
+          grep -a -q \
+            "api.scanaura.in" \
+            build/web/main.dart.js
 
           echo "Checking for localhost..."
+
           if grep -a -q "localhost:8080" build/web/main.dart.js; then
             echo "ERROR: localhost:8080 found in production build."
             exit 1
@@ -103,12 +147,52 @@ jobs:
 
           echo "Production build verification passed."
 
+
+      # ============================================================
+      # SHOW BUILD CONTENT
+      # ============================================================
+
+      - name: Show deployment files
+        shell: bash
+        run: |
+          echo "===== BUILD DIRECTORY ====="
+          find build/web -maxdepth 2 -type f | sort
+          echo "===== FILE COUNT ====="
+          find build/web -type f | wc -l
+
+
+      # ============================================================
+      # DEPLOY TO HOSTINGER
+      # ============================================================
+
       - name: Deploy to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+
           local-dir: ./build/web/
-          server-dir: ./public_html/
+
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+
+          protocol: ftps
+
+          port: 21
+
           state-name: .ftp-deploy-sync-state.json
+
+          log-level: standard
+
+
+      # ============================================================
+      # COMPLETE
+      # ============================================================
+
+      - name: Deployment complete
+        shell: bash
+        run: |
+          echo "=============================================="
+          echo "ScanAura Flutter Web deployment completed."
+          echo "Build: ${GITHUB_SHA}"
+          echo "=============================================="
