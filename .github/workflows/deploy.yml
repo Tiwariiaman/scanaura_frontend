@@ -176,11 +176,11 @@ jobs:
           port: 21
 
           local-dir: ./build/web/
-          server-dir: public_html/
+          server-dir: ./
 
-          dangerous-clean-slate: true
+          state-name: .ftp-deploy-sync-state.json
 
-          log-level: verbose
+          log-level: standard
 
 
       # ============================================================
