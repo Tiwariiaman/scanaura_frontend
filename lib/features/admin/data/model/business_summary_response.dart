@@ -19,6 +19,10 @@ class BusinessSummaryResponse {
     required this.active,
     required this.subscriptionStatus,
     required this.currentPlan,
+    required this.todayScans,
+    required this.yesterdayScans,
+    required this.last7DaysScans,
+    required this.totalScans,
   });
 
   final String businessId;
@@ -30,6 +34,11 @@ class BusinessSummaryResponse {
   final bool active;
   final AdminSubscriptionStatus subscriptionStatus;
   final String? currentPlan;
+
+  final int todayScans;
+  final int yesterdayScans;
+  final int last7DaysScans;
+  final int totalScans;
 
   factory BusinessSummaryResponse.fromJson(
       Map<String, dynamic> json,
@@ -55,7 +64,33 @@ class BusinessSummaryResponse {
       ),
       currentPlan:
       json['currentPlan'] as String?,
+
+      todayScans:
+      _parseInt(json['todayScans']),
+      yesterdayScans:
+      _parseInt(json['yesterdayScans']),
+      last7DaysScans:
+      _parseInt(json['last7DaysScans']),
+      totalScans:
+      _parseInt(json['totalScans']),
     );
+  }
+
+  static int _parseInt(
+      dynamic value,
+      ) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+      value?.toString() ?? '',
+    ) ??
+        0;
   }
 
   static AdminSubscriptionStatus

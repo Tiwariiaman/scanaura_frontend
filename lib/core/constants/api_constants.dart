@@ -136,4 +136,17 @@ class ApiConstants {
     return '$adminSubscriptionRequests/$requestId/reject';
   }
 
+  // Admin Subscription Management
+  static const String adminSubscriptionBase =
+      '$adminBase/subscriptions';
+
+  static const String adminSubscriptionPlans =
+      '$adminSubscriptionBase/plans';
+
+  static String adminGrantSubscription(
+      String businessId,
+      ) {
+    return '$adminBusinesses/$businessId/subscription';
+  }
+
 }

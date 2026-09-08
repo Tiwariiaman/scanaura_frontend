@@ -13,8 +13,7 @@ NotifierProvider<
 
 class AdminSubscriptionNotifier
     extends Notifier<AdminSubscriptionState> {
-  late final AdminSubscriptionRepository
-  _repository;
+  late final AdminSubscriptionRepository _repository;
 
   @override
   AdminSubscriptionState build() {
@@ -27,9 +26,10 @@ class AdminSubscriptionNotifier
 
   Future<void> loadPendingRequests() async {
     state = state.copyWith(
-      status:
-      AdminSubscriptionStatus.loading,
+      status: AdminSubscriptionStatus.loading,
       clearError: true,
+      clearProcessingRequestId: true,
+      clearProcessingBusinessId: true,
     );
 
     try {
@@ -37,35 +37,90 @@ class AdminSubscriptionNotifier
       await _repository.getPendingRequests();
 
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.success,
+        status: AdminSubscriptionStatus.success,
         pendingRequests: requests,
         clearError: true,
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
     } catch (e) {
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.error,
-        errorMessage:
-        _messageFromException(e),
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
+      );
+    }
+  }
+
+  Future<void> loadActivePlans() async {
+    state = state.copyWith(
+      status: AdminSubscriptionStatus.loading,
+      clearError: true,
+    );
+
+    try {
+      final plans =
+      await _repository.getActivePlans();
+
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.success,
+        activePlans: plans,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
+      );
+    }
+  }
+
+  Future<void> loadSubscriptionData() async {
+    state = state.copyWith(
+      status: AdminSubscriptionStatus.loading,
+      clearError: true,
+      clearProcessingRequestId: true,
+      clearProcessingBusinessId: true,
+    );
+
+    try {
+      final pendingRequests =
+      await _repository.getPendingRequests();
+
+      final activePlans =
+      await _repository.getActivePlans();
+
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.success,
+        pendingRequests: pendingRequests,
+        activePlans: activePlans,
+        clearError: true,
+        clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
+        clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
     }
   }
 
   Future<void> refresh() async {
-    await loadPendingRequests();
+    await loadSubscriptionData();
   }
 
   Future<bool> approveRequest(
       String requestId,
       ) async {
     state = state.copyWith(
-      status:
-      AdminSubscriptionStatus.actionInProgress,
+      status: AdminSubscriptionStatus.actionInProgress,
       processingRequestId: requestId,
       clearError: true,
+      clearProcessingBusinessId: true,
     );
 
     try {
@@ -77,22 +132,20 @@ class AdminSubscriptionNotifier
       await _repository.getPendingRequests();
 
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.success,
-        pendingRequests:
-        updatedRequests,
+        status: AdminSubscriptionStatus.success,
+        pendingRequests: updatedRequests,
         clearError: true,
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
 
       return true;
     } catch (e) {
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.error,
-        errorMessage:
-        _messageFromException(e),
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
 
       return false;
@@ -108,8 +161,7 @@ class AdminSubscriptionNotifier
 
     if (trimmedRemark.isEmpty) {
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.error,
+        status: AdminSubscriptionStatus.error,
         errorMessage:
         'Rejection remark is required.',
       );
@@ -118,10 +170,10 @@ class AdminSubscriptionNotifier
     }
 
     state = state.copyWith(
-      status:
-      AdminSubscriptionStatus.actionInProgress,
+      status: AdminSubscriptionStatus.actionInProgress,
       processingRequestId: requestId,
       clearError: true,
+      clearProcessingBusinessId: true,
     );
 
     try {
@@ -134,22 +186,59 @@ class AdminSubscriptionNotifier
       await _repository.getPendingRequests();
 
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.success,
-        pendingRequests:
-        updatedRequests,
+        status: AdminSubscriptionStatus.success,
+        pendingRequests: updatedRequests,
         clearError: true,
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
 
       return true;
     } catch (e) {
       state = state.copyWith(
-        status:
-        AdminSubscriptionStatus.error,
-        errorMessage:
-        _messageFromException(e),
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
         clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
+      );
+
+      return false;
+    }
+  }
+
+  Future<bool> grantSubscription({
+    required String businessId,
+    required String planName,
+    required String billingCycle,
+  }) async {
+    state = state.copyWith(
+      status: AdminSubscriptionStatus.actionInProgress,
+      processingBusinessId: businessId,
+      clearError: true,
+      clearProcessingRequestId: true,
+    );
+
+    try {
+      await _repository.grantSubscription(
+        businessId: businessId,
+        planName: planName,
+        billingCycle: billingCycle,
+      );
+
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.success,
+        clearError: true,
+        clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AdminSubscriptionStatus.error,
+        errorMessage: _messageFromException(e),
+        clearProcessingRequestId: true,
+        clearProcessingBusinessId: true,
       );
 
       return false;

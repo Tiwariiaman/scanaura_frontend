@@ -59,6 +59,72 @@ class AdminSubscriptionRepository {
   }
 
   // ============================================================
+  // ACTIVE PLANS
+  // ============================================================
+
+  Future<List<Map<String, dynamic>>> getActivePlans() async {
+    try {
+      final response =
+      await apiClient.get<Map<String, dynamic>>(
+        ApiConstants.adminSubscriptionPlans,
+      );
+
+      final body = response.data;
+
+      if (body == null) {
+        throw Exception(
+          'Empty response from server.',
+        );
+      }
+
+      final data = body['data'];
+
+      if (data is! List) {
+        throw Exception(
+          body['message'] ??
+              'Unable to load subscription plans.',
+        );
+      }
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    } on DioException catch (e) {
+      throw _handleError(
+        e,
+        fallback: 'Unable to load subscription plans.',
+      );
+    }
+  }
+
+  // ============================================================
+  // GRANT SUBSCRIPTION
+  // ============================================================
+
+  Future<void> grantSubscription({
+    required String businessId,
+    required String planName,
+    required String billingCycle,
+  }) async {
+    try {
+      await apiClient.patch<Map<String, dynamic>>(
+        ApiConstants.adminGrantSubscription(
+          businessId,
+        ),
+        data: {
+          'planName': planName,
+          'billingCycle': billingCycle,
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(
+        e,
+        fallback: 'Unable to grant subscription.',
+      );
+    }
+  }
+
+  // ============================================================
   // APPROVE
   // ============================================================
 

@@ -4,36 +4,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/business_summary_response.dart';
 import '../providers/admin_notifier.dart';
 import '../providers/admin_state.dart';
+import '../providers/admin_subscription_notifier.dart';
 
-class AdminBusinessesScreen
-    extends ConsumerStatefulWidget {
+class AdminBusinessesScreen extends ConsumerStatefulWidget {
   const AdminBusinessesScreen({
     super.key,
   });
 
   @override
-  ConsumerState<AdminBusinessesScreen>
-  createState() =>
+  ConsumerState<AdminBusinessesScreen> createState() =>
       _AdminBusinessesScreenState();
 }
 
 class _AdminBusinessesScreenState
     extends ConsumerState<AdminBusinessesScreen> {
-  final TextEditingController
-  _searchController =
+  final TextEditingController _searchController =
   TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      ref
-          .read(
-        adminNotifierProvider
-            .notifier,
-      )
-          .loadBusinesses();
+    Future.microtask(() async {
+      await Future.wait([
+        ref
+            .read(adminNotifierProvider.notifier)
+            .loadBusinesses(),
+        ref
+            .read(adminSubscriptionNotifierProvider.notifier)
+            .loadActivePlans(),
+      ]);
     });
   }
 
@@ -49,10 +49,7 @@ class _AdminBusinessesScreenState
 
   Future<void> _search() async {
     await ref
-        .read(
-      adminNotifierProvider
-          .notifier,
-    )
+        .read(adminNotifierProvider.notifier)
         .searchBusinesses(
       _searchController.text,
     );
@@ -65,11 +62,9 @@ class _AdminBusinessesScreenState
   Future<void> _changeBusinessStatus(
       BusinessSummaryResponse business,
       ) async {
-    final activate =
-    !business.active;
+    final activate = !business.active;
 
-    final confirmed =
-    await _showConfirmation(
+    final confirmed = await _showConfirmation(
       context,
       business,
       activate,
@@ -79,18 +74,15 @@ class _AdminBusinessesScreenState
       return;
     }
 
-    final notifier =
-    ref.read(
-      adminNotifierProvider
-          .notifier,
+    final notifier = ref.read(
+      adminNotifierProvider.notifier,
     );
 
     final success = activate
         ? await notifier.activateBusiness(
       business.businessId,
     )
-        : await notifier
-        .deactivateBusiness(
+        : await notifier.deactivateBusiness(
       business.businessId,
     );
 
@@ -98,8 +90,7 @@ class _AdminBusinessesScreenState
       return;
     }
 
-    final state =
-    ref.read(
+    final state = ref.read(
       adminNotifierProvider,
     );
 
@@ -107,8 +98,7 @@ class _AdminBusinessesScreenState
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
           content: Text(
             success
                 ? activate
@@ -126,17 +116,11 @@ class _AdminBusinessesScreenState
       BusinessSummaryResponse business,
       bool activate,
       ) async {
-    final action =
-    activate
-        ? 'Activate'
-        : 'Deactivate';
+    final action = activate ? 'Activate' : 'Deactivate';
 
-    final result =
-    await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (
-          dialogContext,
-          ) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text(
             '$action Business?',
@@ -149,9 +133,7 @@ class _AdminBusinessesScreenState
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(false);
+                Navigator.of(dialogContext).pop(false);
               },
               child: const Text(
                 'Cancel',
@@ -159,9 +141,7 @@ class _AdminBusinessesScreenState
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(true);
+                Navigator.of(dialogContext).pop(true);
               },
               child: Text(
                 action,
@@ -176,6 +156,329 @@ class _AdminBusinessesScreenState
   }
 
   // ============================================================
+  // GRANT SUBSCRIPTION
+  // ============================================================
+
+  Future<void> _grantSubscription(
+      BusinessSummaryResponse business,
+      ) async {
+    var subscriptionState = ref.read(
+      adminSubscriptionNotifierProvider,
+    );
+
+    if (subscriptionState.activePlans.isEmpty) {
+      await ref
+          .read(
+        adminSubscriptionNotifierProvider.notifier,
+      )
+          .loadActivePlans();
+
+      if (!mounted) {
+        return;
+      }
+
+      subscriptionState = ref.read(
+        adminSubscriptionNotifierProvider,
+      );
+    }
+
+    if (subscriptionState.activePlans.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              subscriptionState.errorMessage ??
+                  'No active subscription plans are available.',
+            ),
+          ),
+        );
+
+      return;
+    }
+
+    final result = await _showGrantSubscriptionDialog(
+      context,
+      business,
+      subscriptionState.activePlans,
+    );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    final success = await ref
+        .read(
+      adminSubscriptionNotifierProvider.notifier,
+    )
+        .grantSubscription(
+      businessId: business.businessId,
+      planName: result.planName,
+      billingCycle: result.billingCycle,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final updatedSubscriptionState = ref.read(
+      adminSubscriptionNotifierProvider,
+    );
+
+    if (success) {
+      await ref
+          .read(adminNotifierProvider.notifier)
+          .loadBusinesses();
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            success
+                ? '${business.businessName} subscription granted successfully.'
+                : updatedSubscriptionState.errorMessage ??
+                'Unable to grant subscription.',
+          ),
+        ),
+      );
+  }
+
+  Future<_GrantSubscriptionResult?>
+  _showGrantSubscriptionDialog(
+      BuildContext context,
+      BusinessSummaryResponse business,
+      List<Map<String, dynamic>> plans,
+      ) async {
+    final validPlans = plans
+        .where(
+          (plan) =>
+      plan['name'] is String &&
+          (plan['name'] as String).trim().isNotEmpty &&
+          !(plan['name'] as String)
+              .trim()
+              .toLowerCase()
+              .contains('trial'),
+    )
+        .toList();
+
+    if (validPlans.isEmpty) {
+      return null;
+    }
+
+    String selectedPlanName =
+    validPlans.first['name'] as String;
+
+    String selectedBillingCycle = 'MONTHLY';
+
+    return showDialog<_GrantSubscriptionResult>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (
+              dialogBuildContext,
+              setDialogState,
+              ) {
+            Map<String, dynamic>? selectedPlan;
+
+            for (final plan in validPlans) {
+              if (plan['name'] == selectedPlanName) {
+                selectedPlan = plan;
+                break;
+              }
+            }
+
+            final monthlyPrice =
+            _formatPlanPrice(
+              selectedPlan?['monthlyPrice'],
+            );
+
+            final yearlyPrice =
+            _formatPlanPrice(
+              selectedPlan?['yearlyPrice'],
+            );
+
+            return AlertDialog(
+              title: const Text(
+                'Grant Subscription',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              content: SizedBox(
+                width: 420,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      business.businessName,
+                      style: Theme.of(
+                        dialogBuildContext,
+                      ).textTheme.titleMedium?.copyWith(
+                        fontWeight:
+                        FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 4,
+                    ),
+                    Text(
+                      'Select the plan and billing duration.',
+                      style: Theme.of(
+                        dialogBuildContext,
+                      ).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          dialogBuildContext,
+                        )
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                      selectedPlanName,
+                      decoration:
+                      const InputDecoration(
+                        labelText: 'Plan Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: validPlans.map(
+                            (plan) {
+                          final name =
+                          plan['name'] as String;
+
+                          return DropdownMenuItem<
+                              String>(
+                            value: name,
+                            child: Text(name),
+                          );
+                        },
+                      ).toList(),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        setDialogState(() {
+                          selectedPlanName =
+                              value;
+                        });
+                      },
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                      selectedBillingCycle,
+                      decoration:
+                      const InputDecoration(
+                        labelText:
+                        'Billing Duration',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'MONTHLY',
+                          child: Text(
+                            monthlyPrice == '—'
+                                ? 'Monthly'
+                                : 'Monthly • $monthlyPrice',
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'YEARLY',
+                          child: Text(
+                            yearlyPrice == '—'
+                                ? 'Yearly'
+                                : 'Yearly • $yearlyPrice',
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        setDialogState(() {
+                          selectedBillingCycle =
+                              value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(
+                      dialogContext,
+                    ).pop();
+                  },
+                  child: const Text(
+                    'Cancel',
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(
+                      dialogContext,
+                    ).pop(
+                      _GrantSubscriptionResult(
+                        planName:
+                        selectedPlanName,
+                        billingCycle:
+                        selectedBillingCycle,
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Grant Subscription',
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatPlanPrice(
+      dynamic value,
+      ) {
+    if (value == null) {
+      return '—';
+    }
+
+    if (value is num) {
+      return '₹${value.toStringAsFixed(0)}';
+    }
+
+    final parsed =
+    double.tryParse(value.toString());
+
+    if (parsed == null) {
+      return '—';
+    }
+
+    return '₹${parsed.toStringAsFixed(0)}';
+  }
+
+  // ============================================================
   // BUILD
   // ============================================================
 
@@ -183,8 +486,7 @@ class _AdminBusinessesScreenState
   Widget build(
       BuildContext context,
       ) {
-    final state =
-    ref.watch(
+    final state = ref.watch(
       adminNotifierProvider,
     );
 
@@ -193,8 +495,7 @@ class _AdminBusinessesScreenState
         title: const Text(
           'Businesses',
           style: TextStyle(
-            fontWeight:
-            FontWeight.w700,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -215,20 +516,24 @@ class _AdminBusinessesScreenState
       ) {
     return RefreshIndicator(
       onRefresh: () async {
-        await ref
-            .read(
-          adminNotifierProvider
-              .notifier,
-        )
-            .loadBusinesses();
+        await Future.wait([
+          ref
+              .read(adminNotifierProvider.notifier)
+              .loadBusinesses(),
+          ref
+              .read(
+            adminSubscriptionNotifierProvider
+                .notifier,
+          )
+              .loadActivePlans(),
+        ]);
       },
       child: LayoutBuilder(
         builder: (
             context,
             constraints,
             ) {
-          final width =
-              constraints.maxWidth;
+          final width = constraints.maxWidth;
 
           final horizontalPadding =
           width < 360
@@ -238,15 +543,12 @@ class _AdminBusinessesScreenState
               : 20.0;
 
           final maxWidth =
-          width >= 1400
-              ? 1250.0
-              : 1200.0;
+          width >= 1400 ? 1250.0 : 1200.0;
 
           return SingleChildScrollView(
             physics:
             const AlwaysScrollableScrollPhysics(),
-            padding:
-            EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               horizontalPadding,
               16,
               horizontalPadding,
@@ -254,34 +556,27 @@ class _AdminBusinessesScreenState
             ),
             child: Center(
               child: ConstrainedBox(
-                constraints:
-                BoxConstraints(
-                  maxWidth:
-                  maxWidth,
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth,
                 ),
                 child: Column(
                   crossAxisAlignment:
-                  CrossAxisAlignment
-                      .stretch,
+                  CrossAxisAlignment.stretch,
                   children: [
                     _buildSearchBar(
                       context,
                       state,
                     ),
-
                     const SizedBox(
                       height: 14,
                     ),
-
                     _buildBusinessCount(
                       context,
                       state,
                     ),
-
                     const SizedBox(
                       height: 16,
                     ),
-
                     if (state.status ==
                         AdminStatus.error)
                       _buildError(
@@ -323,55 +618,37 @@ class _AdminBusinessesScreenState
           constraints,
           ) {
         final compact =
-            constraints.maxWidth <
-                520;
+            constraints.maxWidth < 520;
 
-        final searchField =
-        TextField(
-          controller:
-          _searchController,
+        final searchField = TextField(
+          controller: _searchController,
           textInputAction:
           TextInputAction.search,
           onSubmitted: (_) {
             _search();
           },
-          decoration:
-          InputDecoration(
-            hintText:
-            'Search business...',
-            prefixIcon:
-            const Icon(
+          decoration: InputDecoration(
+            hintText: 'Search business...',
+            prefixIcon: const Icon(
               Icons.search,
             ),
             suffixIcon:
-            _searchController
-                .text
-                .isEmpty
+            _searchController.text.isEmpty
                 ? null
                 : IconButton(
-              tooltip:
-              'Clear',
-              onPressed:
-                  () {
-                _searchController
-                    .clear();
+              tooltip: 'Clear',
+              onPressed: () {
+                _searchController.clear();
                 _search();
-                setState(
-                      () {},
-                );
+                setState(() {});
               },
-              icon:
-              const Icon(
-                Icons
-                    .clear,
+              icon: const Icon(
+                Icons.clear,
               ),
             ),
-            border:
-            OutlineInputBorder(
+            border: OutlineInputBorder(
               borderRadius:
-              BorderRadius.circular(
-                14,
-              ),
+              BorderRadius.circular(14),
             ),
           ),
           onChanged: (_) {
@@ -379,8 +656,7 @@ class _AdminBusinessesScreenState
           },
         );
 
-        final searchButton =
-        SizedBox(
+        final searchButton = SizedBox(
           height: 52,
           child: FilledButton.icon(
             onPressed:
@@ -399,8 +675,7 @@ class _AdminBusinessesScreenState
         if (compact) {
           return Column(
             crossAxisAlignment:
-            CrossAxisAlignment
-                .stretch,
+            CrossAxisAlignment.stretch,
             children: [
               searchField,
               const SizedBox(
@@ -414,8 +689,7 @@ class _AdminBusinessesScreenState
         return Row(
           children: [
             Expanded(
-              child:
-              searchField,
+              child: searchField,
             ),
             const SizedBox(
               width: 10,
@@ -435,20 +709,15 @@ class _AdminBusinessesScreenState
       BuildContext context,
       AdminState state,
       ) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
     return Text(
       '${state.businesses.length} businesses',
-      style: theme
-          .textTheme
-          .bodyMedium
-          ?.copyWith(
+      style: theme.textTheme.bodyMedium?.copyWith(
         color: theme
             .colorScheme
             .onSurfaceVariant,
-        fontWeight:
-        FontWeight.w600,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -466,21 +735,16 @@ class _AdminBusinessesScreenState
           context,
           constraints,
           ) {
-        if (constraints.maxWidth <
-            800) {
+        if (constraints.maxWidth < 800) {
           return Column(
-            children: state
-                .businesses
-                .map(
+            children: state.businesses.map(
                   (business) {
                 return Padding(
                   padding:
-                  const EdgeInsets
-                      .only(
+                  const EdgeInsets.only(
                     bottom: 12,
                   ),
-                  child:
-                  _buildBusinessCard(
+                  child: _buildBusinessCard(
                     context,
                     business,
                     state,
@@ -494,8 +758,7 @@ class _AdminBusinessesScreenState
         return Card(
           clipBehavior:
           Clip.antiAlias,
-          child:
-          SingleChildScrollView(
+          child: SingleChildScrollView(
             scrollDirection:
             Axis.horizontal,
             child: DataTable(
@@ -503,28 +766,34 @@ class _AdminBusinessesScreenState
               horizontalMargin: 18,
               columns: const [
                 DataColumn(
-                  label:
-                  Text('Business'),
+                  label: Text('Business'),
                 ),
                 DataColumn(
-                  label:
-                  Text('Owner'),
+                  label: Text('Owner'),
                 ),
                 DataColumn(
-                  label:
-                  Text('City'),
+                  label: Text('City'),
                 ),
                 DataColumn(
-                  label:
-                  Text('Plan'),
+                  label: Text('Plan'),
                 ),
                 DataColumn(
-                  label:
-                  Text('Status'),
+                  label: Text('Status'),
                 ),
                 DataColumn(
-                  label:
-                  Text('Action'),
+                  label: Text('Today'),
+                ),
+                DataColumn(
+                  label: Text('Yesterday'),
+                ),
+                DataColumn(
+                  label: Text('7 Days'),
+                ),
+                DataColumn(
+                  label: Text('Total'),
+                ),
+                DataColumn(
+                  label: Text('Action'),
                 ),
               ],
               rows: state.businesses
@@ -571,7 +840,6 @@ class _AdminBusinessesScreenState
             ),
           ),
         ),
-
         DataCell(
           SizedBox(
             width: 140,
@@ -583,7 +851,6 @@ class _AdminBusinessesScreenState
             ),
           ),
         ),
-
         DataCell(
           Text(
             business.city.isEmpty
@@ -591,35 +858,76 @@ class _AdminBusinessesScreenState
                 : business.city,
           ),
         ),
-
         DataCell(
           Text(
-            business.currentPlan ??
-                '—',
+            business.currentPlan ?? '—',
           ),
         ),
-
         DataCell(
           _StatusChip(
-            active:
-            business.active,
+            active: business.active,
           ),
         ),
-
         DataCell(
-          OutlinedButton(
-            onPressed:
-            state.businessActionInProgress
-                ? null
-                : () =>
-                _changeBusinessStatus(
-                  business,
+          _ScanCountText(
+            value: business.todayScans,
+          ),
+        ),
+        DataCell(
+          _ScanCountText(
+            value:
+            business.yesterdayScans,
+          ),
+        ),
+        DataCell(
+          _ScanCountText(
+            value:
+            business.last7DaysScans,
+          ),
+        ),
+        DataCell(
+          _ScanCountText(
+            value: business.totalScans,
+            emphasized: true,
+          ),
+        ),
+        DataCell(
+          Row(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              OutlinedButton(
+                onPressed:
+                state.businessActionInProgress
+                    ? null
+                    : () =>
+                    _changeBusinessStatus(
+                      business,
+                    ),
+                child: Text(
+                  business.active
+                      ? 'Deactivate'
+                      : 'Activate',
                 ),
-            child: Text(
-              business.active
-                  ? 'Deactivate'
-                  : 'Activate',
-            ),
+              ),
+              const SizedBox(
+                width: 8,
+              ),
+              FilledButton.icon(
+                onPressed: () =>
+                    _grantSubscription(
+                      business,
+                    ),
+                icon: const Icon(
+                  Icons
+                      .card_membership_outlined,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Grant',
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -636,12 +944,9 @@ class _AdminBusinessesScreenState
       AdminState state,
       ) {
     final width =
-        MediaQuery.sizeOf(
-          context,
-        ).width;
+        MediaQuery.sizeOf(context).width;
 
-    final compact =
-        width < 400;
+    final compact = width < 400;
 
     return Card(
       elevation: 0,
@@ -652,13 +957,11 @@ class _AdminBusinessesScreenState
         ),
         child: Column(
           crossAxisAlignment:
-          CrossAxisAlignment
-              .start,
+          CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
               children: [
                 Container(
                   width:
@@ -683,16 +986,12 @@ class _AdminBusinessesScreenState
                     Icons
                         .storefront_outlined,
                     size:
-                    compact
-                        ? 21
-                        : 24,
+                    compact ? 21 : 24,
                   ),
                 ),
-
                 const SizedBox(
                   width: 10,
                 ),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -700,8 +999,7 @@ class _AdminBusinessesScreenState
                         .start,
                     children: [
                       Text(
-                        business
-                            .businessName,
+                        business.businessName,
                         maxLines: 2,
                         overflow:
                         TextOverflow
@@ -710,18 +1008,14 @@ class _AdminBusinessesScreenState
                         const TextStyle(
                           fontSize: 17,
                           fontWeight:
-                          FontWeight
-                              .w700,
+                          FontWeight.w700,
                         ),
                       ),
-
                       const SizedBox(
                         height: 4,
                       ),
-
                       Text(
-                        business
-                            .ownerName,
+                        business.ownerName,
                         maxLines: 1,
                         overflow:
                         TextOverflow
@@ -738,83 +1032,119 @@ class _AdminBusinessesScreenState
                     ],
                   ),
                 ),
-
                 const SizedBox(
                   width: 8,
                 ),
-
                 _StatusChip(
                   active:
                   business.active,
                 ),
               ],
             ),
-
             const SizedBox(
               height: 14,
             ),
-
             _DetailRow(
               label: 'Email',
-              value:
-              business.email,
+              value: business.email,
             ),
-
             _DetailRow(
               label: 'Phone',
-              value:
-              business.phone,
+              value: business.phone,
             ),
-
             _DetailRow(
               label: 'City',
-              value:
-              business.city.isEmpty
+              value: business.city.isEmpty
                   ? '—'
                   : business.city,
             ),
-
             _DetailRow(
               label: 'Plan',
               value:
               business.currentPlan ??
                   '—',
             ),
-
-            if (business.subscriptionStatus != null)
+            if (business
+                .subscriptionStatus !=
+                AdminSubscriptionStatus
+                    .unknown)
               _DetailRow(
                 label:
                 'Subscription',
-                value:
-                business
+                value: business
                     .subscriptionStatus
                     .name,
               ),
 
             const SizedBox(
-              height: 10,
+              height: 8,
             ),
 
-            SizedBox(
-              width:
-              double.infinity,
-              height:
-              compact ? 46 : 48,
-              child:
-              OutlinedButton(
-                onPressed:
-                state.businessActionInProgress
-                    ? null
-                    : () =>
-                    _changeBusinessStatus(
-                      business,
+            // ==================================================
+            // QR SCAN STATISTICS
+            // ==================================================
+
+            _ScanStatsCard(
+              todayScans:
+              business.todayScans,
+              yesterdayScans:
+              business.yesterdayScans,
+              last7DaysScans:
+              business.last7DaysScans,
+              totalScans:
+              business.totalScans,
+            ),
+
+            const SizedBox(
+              height: 12,
+            ),
+
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height:
+                  compact ? 46 : 48,
+                  child:
+                  OutlinedButton(
+                    onPressed:
+                    state
+                        .businessActionInProgress
+                        ? null
+                        : () =>
+                        _changeBusinessStatus(
+                          business,
+                        ),
+                    child: Text(
+                      business.active
+                          ? 'Deactivate Business'
+                          : 'Activate Business',
                     ),
-                child: Text(
-                  business.active
-                      ? 'Deactivate Business'
-                      : 'Activate Business',
+                  ),
                 ),
-              ),
+                const SizedBox(
+                  height: 8,
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  height:
+                  compact ? 46 : 48,
+                  child:
+                  FilledButton.icon(
+                    onPressed: () =>
+                        _grantSubscription(
+                          business,
+                        ),
+                    icon: const Icon(
+                      Icons
+                          .card_membership_outlined,
+                    ),
+                    label: const Text(
+                      'Grant Subscription',
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -847,11 +1177,9 @@ class _AdminBusinessesScreenState
                 .colorScheme
                 .onSurfaceVariant,
           ),
-
           const SizedBox(
             height: 12,
           ),
-
           const Text(
             'No businesses found.',
             textAlign:
@@ -862,11 +1190,9 @@ class _AdminBusinessesScreenState
               FontWeight.w600,
             ),
           ),
-
           const SizedBox(
             height: 6,
           ),
-
           Text(
             'Try changing your search.',
             textAlign:
@@ -894,9 +1220,7 @@ class _AdminBusinessesScreenState
       ) {
     return Padding(
       padding:
-      const EdgeInsets.all(
-        24,
-      ),
+      const EdgeInsets.all(24),
       child: Center(
         child: ConstrainedBox(
           constraints:
@@ -917,25 +1241,20 @@ class _AdminBusinessesScreenState
                     .colorScheme
                     .error,
               ),
-
               const SizedBox(
                 height: 12,
               ),
-
               Text(
                 state.errorMessage ??
                     'Unable to load businesses.',
                 textAlign:
                 TextAlign.center,
               ),
-
               const SizedBox(
                 height: 16,
               ),
-
               SizedBox(
-                width:
-                double.infinity,
+                width: double.infinity,
                 child:
                 FilledButton.icon(
                   onPressed: () {
@@ -966,11 +1285,221 @@ class _AdminBusinessesScreenState
 }
 
 // ================================================================
+// GRANT SUBSCRIPTION RESULT
+// ================================================================
+
+class _GrantSubscriptionResult {
+  const _GrantSubscriptionResult({
+    required this.planName,
+    required this.billingCycle,
+  });
+
+  final String planName;
+  final String billingCycle;
+}
+
+// ================================================================
+// QR SCAN COUNT TEXT
+// ================================================================
+
+class _ScanCountText extends StatelessWidget {
+  const _ScanCountText({
+    required this.value,
+    this.emphasized = false,
+  });
+
+  final int value;
+  final bool emphasized;
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    return Text(
+      value.toString(),
+      style: TextStyle(
+        fontWeight: emphasized
+            ? FontWeight.w700
+            : FontWeight.w500,
+      ),
+    );
+  }
+}
+
+// ================================================================
+// QR SCAN STATS CARD
+// ================================================================
+
+class _ScanStatsCard extends StatelessWidget {
+  const _ScanStatsCard({
+    required this.todayScans,
+    required this.yesterdayScans,
+    required this.last7DaysScans,
+    required this.totalScans,
+  });
+
+  final int todayScans;
+  final int yesterdayScans;
+  final int last7DaysScans;
+  final int totalScans;
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding:
+      const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.45),
+        borderRadius:
+        BorderRadius.circular(12),
+        border: Border.all(
+          color: theme
+              .colorScheme
+              .outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons
+                    .qr_code_scanner_rounded,
+                size: 19,
+                color: theme
+                    .colorScheme
+                    .primary,
+              ),
+              const SizedBox(
+                width: 7,
+              ),
+              Text(
+                'QR Scan Statistics',
+                style: theme
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 12,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child:
+                _ScanStatItem(
+                  label: 'Today',
+                  value:
+                  todayScans,
+                ),
+              ),
+              Expanded(
+                child:
+                _ScanStatItem(
+                  label:
+                  'Yesterday',
+                  value:
+                  yesterdayScans,
+                ),
+              ),
+              Expanded(
+                child:
+                _ScanStatItem(
+                  label: '7 Days',
+                  value:
+                  last7DaysScans,
+                ),
+              ),
+              Expanded(
+                child:
+                _ScanStatItem(
+                  label: 'Total',
+                  value:
+                  totalScans,
+                  emphasized: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ================================================================
+// QR SCAN STAT ITEM
+// ================================================================
+
+class _ScanStatItem extends StatelessWidget {
+  const _ScanStatItem({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final int value;
+  final bool emphasized;
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    return Column(
+      children: [
+        Text(
+          value.toString(),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight:
+            emphasized
+                ? FontWeight.w800
+                : FontWeight.w700,
+          ),
+        ),
+        const SizedBox(
+          height: 3,
+        ),
+        Text(
+          label,
+          textAlign:
+          TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(
+              context,
+            )
+                .colorScheme
+                .onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ================================================================
 // STATUS CHIP
 // ================================================================
 
-class _StatusChip
-    extends StatelessWidget {
+class _StatusChip extends StatelessWidget {
   const _StatusChip({
     required this.active,
   });
@@ -1029,8 +1558,7 @@ class _StatusChip
 // DETAIL ROW
 // ================================================================
 
-class _DetailRow
-    extends StatelessWidget {
+class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
@@ -1060,8 +1588,7 @@ class _DetailRow
               330) {
             return Column(
               crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
@@ -1073,8 +1600,7 @@ class _DetailRow
                         .colorScheme
                         .onSurfaceVariant,
                     fontWeight:
-                    FontWeight
-                        .w600,
+                    FontWeight.w600,
                   ),
                 ),
                 const SizedBox(
@@ -1097,8 +1623,7 @@ class _DetailRow
 
           return Row(
             crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
+            CrossAxisAlignment.start,
             children: [
               SizedBox(
                 width: 78,
@@ -1114,11 +1639,9 @@ class _DetailRow
                   ),
                 ),
               ),
-
               const SizedBox(
                 width: 8,
               ),
-
               Expanded(
                 child: Text(
                   value.isEmpty
@@ -1127,8 +1650,7 @@ class _DetailRow
                   softWrap: true,
                   maxLines: 3,
                   overflow:
-                  TextOverflow
-                      .ellipsis,
+                  TextOverflow.ellipsis,
                   style:
                   const TextStyle(
                     fontWeight:
