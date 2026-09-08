@@ -1,6 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../../../app/theme/app_colors.dart';
 
 class ScanAuraQrCard extends StatelessWidget {
   const ScanAuraQrCard({
@@ -15,15 +17,6 @@ class ScanAuraQrCard extends StatelessWidget {
   final String? businessName;
   final String? businessLogoUrl;
   final bool showBusinessName;
-
-  static const Color scanAuraGreen =
-  Color(0xFF00674F);
-
-  static const Color scanAuraLightGreen =
-  Color(0xFFBFE8DB);
-
-  static const Color darkText =
-  Color(0xFF3F4542);
 
   // ============================================================
   // SCANAURA ASSETS
@@ -154,7 +147,7 @@ class ScanAuraQrCard extends StatelessWidget {
             ),
             border: Border.all(
               color:
-              scanAuraGreen.withValues(
+              AppColors.primary.withValues(
                 alpha: 0.10,
               ),
             ),
@@ -196,7 +189,7 @@ class ScanAuraQrCard extends StatelessWidget {
                       headerBottomPadding,
                     ),
                     color:
-                    scanAuraGreen,
+                    AppColors.primary,
                     child: Column(
                       children: [
                         // ==============================================
@@ -292,7 +285,7 @@ class ScanAuraQrCard extends StatelessWidget {
                           textAlign: TextAlign.center,
                           text: TextSpan(
                             style: TextStyle(
-                              color: scanAuraLightGreen,
+                              color: AppColors.primaryLight,
                               fontSize: descriptionFontSize,
                               fontWeight: FontWeight.w500,
                               height: 1.35,
@@ -385,7 +378,7 @@ class ScanAuraQrCard extends StatelessWidget {
                         border:
                         Border.all(
                           color:
-                          scanAuraGreen
+                          AppColors.primary
                               .withValues(
                             alpha: 0.20,
                           ),
@@ -522,6 +515,62 @@ class ScanAuraQrCard extends StatelessWidget {
                     ),
 
                     // ==============================================
+                    // SCANAURA SERVICE ICONS
+                    // ==============================================
+
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: compact ? 0 : 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _QrFeatureItem(
+                            icon: Icons.restaurant_menu_outlined,
+                            label: 'Menu',
+                            compact: compact,
+                          ),
+                          _QrFeatureItem(
+                            svgData: _QrBrandIcons.google,
+                            label: 'Reviews',
+                            compact: compact,
+                            semanticsLabel: 'Google Reviews',
+                          ),
+                          _QrFeatureItem(
+                            svgData: _QrBrandIcons.instagram,
+                            label: 'Instagram',
+                            compact: compact,
+                            semanticsLabel: 'Instagram',
+                          ),
+                          _QrFeatureItem(
+                            svgData: _QrBrandIcons.facebook,
+                            label: 'Facebook',
+                            compact: compact,
+                            semanticsLabel: 'Facebook',
+                          ),
+                          _QrFeatureItem(
+                            svgData: _QrBrandIcons.youtube,
+                            label: 'YouTube',
+                            compact: compact,
+                            semanticsLabel: 'YouTube',
+                          ),
+                          _QrFeatureItem(
+                            icon: Icons.apps_outlined,
+                            label: 'And More',
+                            compact: compact,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(
+                      height:
+                      compact
+                          ? 18
+                          : 22,
+                    ),
+
+                    // ==============================================
                     // BUSINESS NAME
                     // ==============================================
 
@@ -544,49 +593,33 @@ class ScanAuraQrCard extends StatelessWidget {
                           border: Border(
                             top: BorderSide(
                               color:
-                              scanAuraGreen,
+                              AppColors.primary,
                               width: 1.4,
                             ),
                             bottom:
                             BorderSide(
                               color:
-                              scanAuraGreen,
+                              AppColors.primary,
                               width: 1.4,
                             ),
                           ),
                         ),
                         alignment:
                         Alignment.center,
-                        child:
-                        hasBusinessName
-                            ? Text(
-                          businessName!
-                              .trim(),
-                          textAlign:
-                          TextAlign
-                              .center,
-                          maxLines:
-                          compact
-                              ? 2
-                              : 1,
-                          overflow:
-                          TextOverflow
-                              .ellipsis,
-                          style:
-                          TextStyle(
-                            color:
-                            darkText,
-                            fontSize:
-                            businessNameFontSize,
-                            fontWeight:
-                            FontWeight
-                                .w700,
-                            height:
-                            1.2,
+                        child: Text(
+                          hasBusinessName
+                              ? businessName!.trim()
+                              : '',
+                          textAlign: TextAlign.center,
+                          maxLines: compact ? 2 : 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: businessNameFontSize,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
                           ),
-                        )
-                            : const SizedBox
-                            .shrink(),
+                        ),
                       ),
 
                     SizedBox(
@@ -625,7 +658,7 @@ class ScanAuraQrCard extends StatelessWidget {
                               size:
                               footerLogoSize,
                               color:
-                              scanAuraGreen,
+                              AppColors.primary,
                             );
                           },
                         ),
@@ -648,7 +681,7 @@ class ScanAuraQrCard extends StatelessWidget {
                             style:
                             TextStyle(
                               color:
-                              darkText,
+                              AppColors.textPrimary,
                               fontSize:
                               compact
                                   ? 13
@@ -675,6 +708,119 @@ class ScanAuraQrCard extends StatelessWidget {
 // ================================================================
 // CURVED WHITE TRANSITION
 // ================================================================
+
+class _QrBrandIcons {
+  const _QrBrandIcons._();
+
+  static const String google =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+      '<path fill="#4285F4" d="M44.5 24.5c0-1.57-.14-3.09-.4-4.5H24v8.51h11.49a9.82 9.82 0 0 1-4.26 6.44v5.36h6.9c4.04-3.72 6.37-9.2 6.37-15.81z"/>'
+      '<path fill="#34A853" d="M24 45c5.79 0 10.64-1.92 14.17-5.19l-6.9-5.36c-1.91 1.28-4.35 2.05-7.27 2.05-5.6 0-10.35-3.78-12.05-8.86H4.82v5.54A21.4 21.4 0 0 0 24 45z"/>'
+      '<path fill="#FBBC05" d="M11.95 27.64A12.86 12.86 0 0 1 11.3 24c0-1.26.22-2.48.65-3.64v-5.54H4.82A21.38 21.38 0 0 0 2.5 24c0 3.46.83 6.73 2.32 9.18l7.13-5.54z"/>'
+      '<path fill="#EA4335" d="M24 9.5c3.15 0 5.98 1.08 8.2 3.2l6.15-6.15C34.63 2.87 29.79 1 24 1 15.63 1 8.4 5.8 4.82 14.82l7.13 5.54C13.65 13.28 18.4 9.5 24 9.5z"/>'
+      '</svg>';
+
+  static const String instagram =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+      '<defs><linearGradient id="ig" x1="4" y1="44" x2="44" y2="4" gradientUnits="userSpaceOnUse">'
+      '<stop stop-color="#FEDA75"/><stop offset=".25" stop-color="#FA7E1E"/><stop offset=".52" stop-color="#D62976"/><stop offset=".78" stop-color="#962FBF"/><stop offset="1" stop-color="#4F5BD5"/>'
+      '</linearGradient></defs>'
+      '<rect x="2" y="2" width="44" height="44" rx="12" fill="url(#ig)"/>'
+      '<rect x="12" y="12" width="24" height="24" rx="7" fill="none" stroke="#fff" stroke-width="3"/>'
+      '<circle cx="24" cy="24" r="6" fill="none" stroke="#fff" stroke-width="3"/>'
+      '<circle cx="32.5" cy="15.5" r="2.2" fill="#fff"/>'
+      '</svg>';
+
+  static const String facebook =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+      '<circle cx="24" cy="24" r="22" fill="#0866FF"/>'
+      '<path fill="#fff" d="M27.3 38V25.4h4.24l.64-4.9H27.3v-3.13c0-1.42.4-2.39 2.45-2.39h2.62V10.6c-.45-.06-1.99-.2-3.79-.2-3.75 0-6.32 2.29-6.32 6.5v3.6H18v4.9h4.26V38z"/>'
+      '</svg>';
+
+  static const String youtube =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+      '<rect x="2" y="8" width="44" height="32" rx="9" fill="#FF0000"/>'
+      '<path fill="#fff" d="M20 16.5 34 24l-14 7.5z"/>'
+      '</svg>';
+}
+
+class _QrFeatureItem extends StatelessWidget {
+  const _QrFeatureItem({
+    required this.label,
+    required this.compact,
+    this.icon,
+    this.svgData,
+    this.semanticsLabel,
+  }) : assert(
+  icon != null || svgData != null,
+  'Either icon or svgData must be provided.',
+  );
+
+  final IconData? icon;
+  final String? svgData;
+  final String label;
+  final bool compact;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final tileSize = compact ? 44.0 : 48.0;
+    final iconSize = compact ? 23.0 : 26.0;
+    final labelSize = compact ? 8.5 : 9.5;
+
+    final Widget iconWidget = svgData != null
+        ? SvgPicture.string(
+      svgData!,
+      width: iconSize,
+      height: iconSize,
+      fit: BoxFit.contain,
+      semanticsLabel: semanticsLabel,
+    )
+        : Icon(
+      icon,
+      size: iconSize,
+      color: colorScheme.onSurfaceVariant,
+    );
+
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: tileSize,
+            height: tileSize,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(
+                compact ? 12 : 14,
+              ),
+              border: Border.all(
+                color: colorScheme.outlineVariant,
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: iconWidget,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: labelSize,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _QrCurveClipper
     extends CustomClipper<Path> {
