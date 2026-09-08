@@ -178,8 +178,7 @@ jobs:
             local-dir: ./build/web/
             server-dir: ./
 
-            state-name: ""
-            dangerous-clean-slate: false
+            state-name: .ftp-deploy-sync-state.json
 
             exclude: |
               **/.git*
