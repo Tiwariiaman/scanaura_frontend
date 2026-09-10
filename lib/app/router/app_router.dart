@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/api_constants.dart';
+import '../../features/activity/loyalty/presentation/pages/business_loyalty_management_page.dart';
+import '../../features/activity/loyalty/presentation/pages/business_loyalty_scanner_page.dart';
+import '../../features/activity/loyalty/presentation/pages/business_loyalty_verify_page.dart';
+
+import '../../features/activity/loyalty/presentation/pages/customer_visit_verification_result_page.dart';
+import '../../features/activity/presentation/page/activity_page.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/presentation/screens/admin_businesses_screen.dart';
 import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
@@ -8,35 +16,41 @@ import '../../features/admin/presentation/screens/admin_qr_details_screen.dart';
 import '../../features/admin/presentation/screens/admin_qr_inventory_screen.dart';
 import '../../features/admin/presentation/screens/admin_qr_scanner_screen.dart';
 import '../../features/admin/presentation/screens/admin_subscriptions_screen.dart';
+
 import '../../features/ai/presentation/ai_import_screen.dart';
+
+import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/auth/presentation/providers/auth_state.dart';
 import '../../features/auth/presentation/screens/email_verification_page.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_screen.dart';
+
 import '../../features/business/presentation/business_onboarding_screen.dart';
+import '../../features/business/presentation/business_screen.dart';
+
 import '../../features/common/presentation/screens/contact_us_screen.dart';
+
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+
 import '../../features/landing/presentation/ScanAuraNotFoundScreen.dart';
 import '../../features/landing/presentation/landing_gate.dart';
+
 import '../../features/menu/presentation/add_menu_item_screen.dart';
 import '../../features/menu/presentation/category_management_screen.dart';
 import '../../features/menu/presentation/menu_edit_loader_screen.dart';
-
 import '../../features/menu/presentation/menu_screen.dart';
-import '../../features/business/presentation/business_screen.dart';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../features/auth/presentation/providers/auth_notifier.dart';
-import '../../features/auth/presentation/providers/auth_state.dart';
 
 import '../../features/public_menu/presentation/public_landing_screen.dart';
 import '../../features/public_menu/presentation/public_menu_screen.dart';
 import '../../features/public_menu/presentation/public_payment_screen.dart';
+
 import '../../features/qr/presentation/qr_screen.dart';
+
 import '../../features/subscription/presentation/subscription_screen.dart';
+
 import '../shell/app_shell.dart';
 import 'auth_router_refresh.dart';
 
@@ -47,14 +61,15 @@ class AppRouter {
       ProviderContainer container, {
         required String initialLocation,
       }) {
-    final authRefresh =
-    AuthRouterRefresh(container);
+    final authRefresh = AuthRouterRefresh(container);
 
     return GoRouter(
       initialLocation: initialLocation,
-
-
       refreshListenable: authRefresh,
+
+      // ============================================================
+      // REDIRECT / AUTH GUARD
+      // ============================================================
 
       redirect: (context, state) {
         final authState =
@@ -64,8 +79,7 @@ class AppRouter {
             authState.status ==
                 AuthStatus.authenticated;
 
-        final path =
-            state.matchedLocation;
+        final path = state.matchedLocation;
 
         final isPublicRoute =
             path == '/q' ||
@@ -81,14 +95,18 @@ class AppRouter {
         final isLandingRoute =
             path == '/landing';
 
+        // ------------------------------------------------------------
+        // PUBLIC CUSTOMER ROUTES
+        // ------------------------------------------------------------
 
-
-        // Public customer pages never require login.
         if (isPublicRoute) {
           return null;
         }
 
-        // Landing / onboarding route.
+        // ------------------------------------------------------------
+        // LANDING
+        // ------------------------------------------------------------
+
         if (isLandingRoute) {
           if (isAuthenticated) {
             return authState.isAdmin
@@ -99,7 +117,10 @@ class AppRouter {
           return null;
         }
 
-        // Not logged in.
+        // ------------------------------------------------------------
+        // NOT AUTHENTICATED
+        // ------------------------------------------------------------
+
         if (!isAuthenticated) {
           if (isAuthRoute) {
             return null;
@@ -108,7 +129,10 @@ class AppRouter {
           return '/login';
         }
 
+        // ------------------------------------------------------------
         // ADMIN
+        // ------------------------------------------------------------
+
         if (authState.isAdmin) {
           if (isAuthRoute ||
               path == '/dashboard' ||
@@ -119,7 +143,10 @@ class AppRouter {
           return null;
         }
 
+        // ------------------------------------------------------------
         // BUSINESS OWNER
+        // ------------------------------------------------------------
+
         if (authState.isBusinessOwner) {
           if (isAuthRoute ||
               path == '/admin' ||
@@ -130,11 +157,23 @@ class AppRouter {
           return null;
         }
 
-        // Authenticated but role is unknown.
+        // ------------------------------------------------------------
+        // UNKNOWN ROLE
+        // ------------------------------------------------------------
+
         return '/login';
       },
 
+      // ============================================================
+      // ROUTES
+      // ============================================================
+
       routes: [
+
+        // ==========================================================
+        // AUTH
+        // ==========================================================
+
         GoRoute(
           path: '/login',
           builder: (context, state) {
@@ -221,6 +260,10 @@ class AppRouter {
           },
         ),
 
+        // ==========================================================
+        // LANDING
+        // ==========================================================
+
         GoRoute(
           path: '/landing',
           builder: (
@@ -230,12 +273,22 @@ class AppRouter {
             return LandingGate();
           },
         ),
+
+        // ==========================================================
+        // PUBLIC QR
+        // ==========================================================
+
         GoRoute(
           path: '/q/:qrCode',
-          builder: (context, state) {
-            final qrCode = state.pathParameters['qrCode'];
+          builder: (
+              context,
+              state,
+              ) {
+            final qrCode =
+            state.pathParameters['qrCode'];
 
-            if (qrCode == null || qrCode.isEmpty) {
+            if (qrCode == null ||
+                qrCode.isEmpty) {
               return const Scaffold(
                 body: Center(
                   child: Text(
@@ -256,17 +309,22 @@ class AppRouter {
                 context.push(
                   '/q/$qrCode/payment',
                 );
-              },
+            },
             );
           },
         ),
 
         GoRoute(
           path: '/q/:qrCode/menu',
-          builder: (context, state) {
-            final qrCode = state.pathParameters['qrCode'];
+          builder: (
+              context,
+              state,
+              ) {
+            final qrCode =
+            state.pathParameters['qrCode'];
 
-            if (qrCode == null || qrCode.isEmpty) {
+            if (qrCode == null ||
+                qrCode.isEmpty) {
               return const Scaffold(
                 body: Center(
                   child: Text(
@@ -284,10 +342,15 @@ class AppRouter {
 
         GoRoute(
           path: '/q/:qrCode/payment',
-          builder: (context, state) {
-            final qrCode = state.pathParameters['qrCode'];
+          builder: (
+              context,
+              state,
+              ) {
+            final qrCode =
+            state.pathParameters['qrCode'];
 
-            if (qrCode == null || qrCode.isEmpty) {
+            if (qrCode == null ||
+                qrCode.isEmpty) {
               return const Scaffold(
                 body: Center(
                   child: Text(
@@ -303,51 +366,79 @@ class AppRouter {
           },
         ),
 
-        //Admin Shell
+        // ==========================================================
+        // ADMIN SHELL
+        // ==========================================================
+
         ShellRoute(
-          builder: (context, state, child) {
+          builder: (
+              context,
+              state,
+              child,
+              ) {
             return AdminShell(
               child: child,
             );
           },
+
           routes: [
+
             GoRoute(
               path: '/admin',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AdminDashboardScreen();
               },
             ),
 
             GoRoute(
               path: '/admin/businesses',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AdminBusinessesScreen();
               },
             ),
 
             GoRoute(
               path: '/admin/qr',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AdminQrInventoryScreen();
               },
             ),
 
             GoRoute(
               path: '/admin/subscriptions',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AdminSubscriptionsScreen();
               },
             ),
+
             GoRoute(
               path: '/admin/qr/scan',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AdminQrScannerScreen();
               },
             ),
 
             GoRoute(
               path: '/admin/qr/details',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 final qrCode =
                 state.extra as String?;
 
@@ -367,34 +458,138 @@ class AppRouter {
                 );
               },
             ),
-
           ],
         ),
 
-        //Business Shell
+        // ==========================================================
+        // BUSINESS OWNER SHELL
+        // ==========================================================
+
         ShellRoute(
-          builder: (context, state, child) {
+          builder: (
+              context,
+              state,
+              child,
+              ) {
             return AppShell(
               child: child,
             );
           },
+
           routes: [
+
+            // ------------------------------------------------------
+            // DASHBOARD
+            // ------------------------------------------------------
+
             GoRoute(
               path: '/dashboard',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const DashboardScreen();
               },
             ),
 
+            // ------------------------------------------------------
+            // ACTIVITY
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/activity',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                return const ActivityScreen();
+              },
+            ),
+
+            // ------------------------------------------------------
+            // BUSINESS LOYALTY MANAGEMENT / VERIFY
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/activity/loyalty',
+              builder: (context, state) {
+                return const BusinessLoyaltyManagementPage();
+              },
+            ),
+
+            GoRoute(
+              path: '/activity/loyalty/verify',
+              builder: (context, state) {
+                debugPrint(
+                  'LOYALTY ROUTER: VERIFY BUILDER CALLED',
+                );
+
+                return const BusinessLoyaltyVerifyPage();
+              },
+            ),
+
+            GoRoute(
+              path: '/activity/loyalty/scan',
+              builder: (context, state) =>
+              const BusinessLoyaltyScannerPage(),
+            ),
+
+
+            GoRoute(
+              path: '/activity/loyalty/verification-result',
+              builder: (context, state) {
+                final extra = state.extra;
+
+                if (extra is! Map<String, dynamic>) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text('Invalid verification result.'),
+                    ),
+                  );
+                }
+
+                final customerName = extra['customerName'];
+                final pointsAwarded = extra['pointsAwarded'];
+                final pointsBalance = extra['pointsBalance'];
+
+                if (customerName is! String ||
+                    pointsAwarded is! int ||
+                    pointsBalance is! int) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text('Invalid verification result data.'),
+                    ),
+                  );
+                }
+
+                return CustomerVisitVerificationResultPage(
+                  customerName: customerName,
+                  pointsAwarded: pointsAwarded,
+                  pointsBalance: pointsBalance,
+                );
+              },
+            ),
+
+            // ------------------------------------------------------
+            // BUSINESS
+            // ------------------------------------------------------
+
             GoRoute(
               path: '/business',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const BusinessScreen();
               },
             ),
+
             GoRoute(
               path: '/business-onboarding',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 final isEditMode =
                     state.uri.queryParameters['edit'] ==
                         'true';
@@ -405,77 +600,133 @@ class AppRouter {
               },
             ),
 
+            // ------------------------------------------------------
+            // MENU / CATALOG
+            // ------------------------------------------------------
+
             GoRoute(
               path: '/menu',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const MenuScreen();
               },
             ),
 
             GoRoute(
-              path: '/ai-import',
-              builder: (context, state) {
-                return const AiImportScreen();
-              },
-            ),
-
-            GoRoute(
-              path: '/qr',
-              builder: (context, state) {
-                return const QrScreen();
-              },
-            ),
-
-            GoRoute(
-              path: '/subscription',
-              builder: (context, state) {
-                return const SubscriptionScreen();
-              },
-            ),
-
-            GoRoute(
-              path: '/contact-us',
-              builder: (context, state) {
-                return const ContactUsScreen();
-              },
-            ),
-
-            GoRoute(
-              path: '/qr',
-              builder: (context, state) {
-                return const QrScreen();
-              },
-            ),
-
-            GoRoute(
               path: '/menu/add',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const AddMenuItemScreen();
               },
             ),
 
             GoRoute(
               path: '/menu/edit/:id',
-              builder: (context, state) {
-                final id = state.pathParameters['id'];
+              builder: (
+                  context,
+                  state,
+                  ) {
+                final id =
+                state.pathParameters['id'];
+
+                if (id == null ||
+                    id.isEmpty) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text(
+                        'Invalid menu item.',
+                      ),
+                    ),
+                  );
+                }
 
                 return MenuEditLoaderScreen(
-                  catalogId: id!,
+                  catalogId: id,
                 );
               },
             ),
 
             GoRoute(
               path: '/menu/categories',
-              builder: (context, state) {
+              builder: (
+                  context,
+                  state,
+                  ) {
                 return const CategoryManagementScreen();
               },
             ),
 
+            // ------------------------------------------------------
+            // AI IMPORT
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/ai-import',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                return const AiImportScreen();
+              },
+            ),
+
+            // ------------------------------------------------------
+            // QR
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/qr',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                return const QrScreen();
+              },
+            ),
+
+            // ------------------------------------------------------
+            // SUBSCRIPTION
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/subscription',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                return const SubscriptionScreen();
+              },
+            ),
+
+            // ------------------------------------------------------
+            // CONTACT
+            // ------------------------------------------------------
+
+            GoRoute(
+              path: '/contact-us',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                return const ContactUsScreen();
+              },
+            ),
           ],
         ),
       ],
-      errorBuilder: (context, state) {
+
+      // ============================================================
+      // ERROR
+      // ============================================================
+
+      errorBuilder: (
+          context,
+          state,
+          ) {
         return const ScanAuraNotFoundScreen();
       },
     );

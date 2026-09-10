@@ -37,6 +37,7 @@ class _AdminBusinessesScreenState
     });
   }
 
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -300,6 +301,11 @@ class _AdminBusinessesScreenState
               selectedPlan?['monthlyPrice'],
             );
 
+            final halfYearlyPrice =
+            _formatPlanPrice(
+              selectedPlan?['halfYearlyPrice'],
+            );
+
             final yearlyPrice =
             _formatPlanPrice(
               selectedPlan?['yearlyPrice'],
@@ -396,6 +402,14 @@ class _AdminBusinessesScreenState
                             monthlyPrice == '—'
                                 ? 'Monthly'
                                 : 'Monthly • $monthlyPrice',
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'HALF_YEARLY',
+                          child: Text(
+                            halfYearlyPrice == '—'
+                                ? '6 Months'
+                                : '6 Months • $halfYearlyPrice',
                           ),
                         ),
                         DropdownMenuItem(

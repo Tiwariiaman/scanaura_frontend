@@ -21,8 +21,11 @@ class AppShell extends ConsumerStatefulWidget {
       _AppShellState();
 }
 
-class _AppShellState
-    extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> {
+  // ============================================================
+  // DESKTOP / TABLET NAVIGATION
+  // ============================================================
+
   static const List<_NavigationItem> _items = [
     _NavigationItem(
       label: 'Dashboard',
@@ -41,6 +44,12 @@ class _AppShellState
       icon: Icons.inventory_2_outlined,
       selectedIcon: Icons.inventory_2_rounded,
       route: '/menu',
+    ),
+    _NavigationItem(
+      label: 'Activity',
+      icon: Icons.auto_awesome_outlined,
+      selectedIcon: Icons.auto_awesome_rounded,
+      route: '/activity',
     ),
     _NavigationItem(
       label: 'QR',
@@ -75,6 +84,10 @@ class _AppShellState
     });
   }
 
+  // ============================================================
+  // SELECTED NAVIGATION
+  // ============================================================
+
   int _selectedIndex(String location) {
     final index = _items.indexWhere(
           (item) => location.startsWith(item.route),
@@ -92,6 +105,18 @@ class _AppShellState
     );
   }
 
+  // ============================================================
+  // LOYALTY SCANNER
+  // ============================================================
+
+  void _openLoyaltyScanner() {
+    context.go('/activity/loyalty/scan');
+  }
+
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
   Future<void> _logout() async {
     await ref
         .read(
@@ -104,8 +129,13 @@ class _AppShellState
     }
   }
 
+  // ============================================================
+  // SUPPORT
+  // ============================================================
+
   Future<void> _openScanAuraSupport() async {
     const phone = '917056222557';
+
     const message =
         'Hi ScanAura Support, I need help with my business account.';
 
@@ -124,8 +154,11 @@ class _AppShellState
           ..hideCurrentSnackBar()
           ..showSnackBar(
             const SnackBar(
-              content: Text('Unable to open WhatsApp.'),
-              behavior: SnackBarBehavior.floating,
+              content: Text(
+                'Unable to open WhatsApp.',
+              ),
+              behavior:
+              SnackBarBehavior.floating,
             ),
           );
       }
@@ -135,20 +168,28 @@ class _AppShellState
           ..hideCurrentSnackBar()
           ..showSnackBar(
             const SnackBar(
-              content: Text('Unable to open WhatsApp.'),
-              behavior: SnackBarBehavior.floating,
+              content: Text(
+                'Unable to open WhatsApp.',
+              ),
+              behavior:
+              SnackBarBehavior.floating,
             ),
           );
       }
     }
   }
 
+  // ============================================================
+  // CONTACT US
+  // ============================================================
+
   void _openContactUs() {
     context.go('/contact-us');
   }
 
-
-
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -174,55 +215,45 @@ class _AppShellState
         final width =
             constraints.maxWidth;
 
-        // ============================================================
+        // ========================================================
         // MOBILE
         // < 600
-        // ============================================================
+        // ========================================================
 
         if (width < 600) {
           return Scaffold(
             appBar: _MobileHeader(
-              logoUrl: business?.logoUrl,
-              onContactUs: _openContactUs,
-              onLogout: _logout,
+              logoUrl:
+              business?.logoUrl,
+              onContactUs:
+              _openContactUs,
+              onScanLoyalty:
+              _openLoyaltyScanner,
+              onLogout:
+              _logout,
             ),
+
             body: SafeArea(
               top: false,
               child: widget.child,
             ),
+
             bottomNavigationBar:
             _MobileNavigation(
-              items: _items,
               selectedIndex:
               selectedIndex,
-              onSelected: (index) {
-                _navigate(
-                  context,
-                  index,
-                );
+              onSelected:
+                  (route) {
+                context.go(route);
               },
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _openScanAuraSupport,
-              backgroundColor: const Color(0xFF00674F),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.message_rounded),
-              label: const Text(
-                'Support',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            floatingActionButtonLocation:
-            FloatingActionButtonLocation.endFloat,
           );
         }
 
-        // ============================================================
+        // ========================================================
         // TABLET
         // 600 - 999
-        // ============================================================
+        // ========================================================
 
         if (width < 1000) {
           return Scaffold(
@@ -234,7 +265,8 @@ class _AppShellState
                   selectedIndex,
                   logoUrl:
                   business?.logoUrl,
-                  onSelected: (index) {
+                  onSelected:
+                      (index) {
                     _navigate(
                       context,
                       index,
@@ -248,38 +280,54 @@ class _AppShellState
                       _DesktopHeader(
                         logoUrl:
                         business?.logoUrl,
-                        onContactUs: _openContactUs,
-                        onLogout: _logout,
+                        onContactUs:
+                        _openContactUs,
+                        onScanLoyalty:
+                        _openLoyaltyScanner,
+                        onLogout:
+                        _logout,
                       ),
+
                       Expanded(
-                        child: widget.child,
+                        child:
+                        widget.child,
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _openScanAuraSupport,
-              backgroundColor: const Color(0xFF00674F),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.message_rounded),
+
+            floatingActionButton:
+            FloatingActionButton.extended(
+              onPressed:
+              _openScanAuraSupport,
+              backgroundColor:
+              const Color(0xFF00674F),
+              foregroundColor:
+              Colors.white,
+              icon: const Icon(
+                Icons.message_rounded,
+              ),
               label: const Text(
                 'Support',
                 style: TextStyle(
-                  fontWeight: FontWeight.w700,
+                  fontWeight:
+                  FontWeight.w700,
                 ),
               ),
             ),
+
             floatingActionButtonLocation:
-            FloatingActionButtonLocation.endFloat,
+            FloatingActionButtonLocation
+                .endFloat,
           );
         }
 
-        // ============================================================
+        // ========================================================
         // DESKTOP
         // >= 1000
-        // ============================================================
+        // ========================================================
 
         return Scaffold(
           body: Row(
@@ -290,13 +338,15 @@ class _AppShellState
                 selectedIndex,
                 logoUrl:
                 business?.logoUrl,
-                onSelected: (index) {
+                onSelected:
+                    (index) {
                   _navigate(
                     context,
                     index,
                   );
                 },
-                onLogout: _logout,
+                onLogout:
+                _logout,
               ),
 
               Expanded(
@@ -305,31 +355,47 @@ class _AppShellState
                     _DesktopHeader(
                       logoUrl:
                       business?.logoUrl,
-                      onLogout: _logout,
-                      onContactUs: _openContactUs,
+                      onLogout:
+                      _logout,
+                      onContactUs:
+                      _openContactUs,
+                      onScanLoyalty:
+                      _openLoyaltyScanner,
                     ),
+
                     Expanded(
-                      child: widget.child,
+                      child:
+                      widget.child,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: _openScanAuraSupport,
-            backgroundColor: const Color(0xFF00674F),
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.message_rounded),
+
+          floatingActionButton:
+          FloatingActionButton.extended(
+            onPressed:
+            _openScanAuraSupport,
+            backgroundColor:
+            const Color(0xFF00674F),
+            foregroundColor:
+            Colors.white,
+            icon: const Icon(
+              Icons.message_rounded,
+            ),
             label: const Text(
               'Support',
               style: TextStyle(
-                fontWeight: FontWeight.w700,
+                fontWeight:
+                FontWeight.w700,
               ),
             ),
           ),
+
           floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
+          FloatingActionButtonLocation
+              .endFloat,
         );
       },
     );
@@ -360,7 +426,8 @@ class _DesktopNavigation
   Widget build(BuildContext context) {
     return Container(
       width: 250,
-      decoration: const BoxDecoration(
+      decoration:
+      const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           right: BorderSide(
@@ -372,7 +439,7 @@ class _DesktopNavigation
         child: Column(
           children: [
             // ========================================================
-            // SCANAURA BRAND
+            // BRAND
             // ========================================================
 
             Padding(
@@ -391,9 +458,11 @@ class _DesktopNavigation
                     height: 36,
                     fit: BoxFit.contain,
                   ),
+
                   const SizedBox(
                     width: 12,
                   ),
+
                   const Text(
                     'ScanAura',
                     style: TextStyle(
@@ -418,7 +487,8 @@ class _DesktopNavigation
                 const EdgeInsets.symmetric(
                   horizontal: 12,
                 ),
-                itemCount: items.length,
+                itemCount:
+                items.length,
                 itemBuilder:
                     (context, index) {
                   final item =
@@ -435,15 +505,19 @@ class _DesktopNavigation
                     ),
                     child: ListTile(
                       onTap: () =>
-                          onSelected(index),
-                      selected: selected,
+                          onSelected(
+                            index,
+                          ),
+                      selected:
+                      selected,
                       selectedTileColor:
                       AppColors
                           .primaryLight,
                       shape:
                       RoundedRectangleBorder(
                         borderRadius:
-                        BorderRadius.circular(
+                        BorderRadius
+                            .circular(
                           12,
                         ),
                       ),
@@ -459,10 +533,14 @@ class _DesktopNavigation
                       ),
                       title: Text(
                         item.label,
-                        style: TextStyle(
-                          fontWeight: selected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                        style:
+                        TextStyle(
+                          fontWeight:
+                          selected
+                              ? FontWeight
+                              .w600
+                              : FontWeight
+                              .w400,
                           color: selected
                               ? AppColors
                               .primary
@@ -482,20 +560,28 @@ class _DesktopNavigation
 
             Padding(
               padding:
-              const EdgeInsets.all(16),
+              const EdgeInsets.all(
+                16,
+              ),
               child: Container(
                 width: double.infinity,
                 padding:
-                const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:
-                  AppColors.primaryLight,
+                const EdgeInsets.all(
+                  12,
+                ),
+                decoration:
+                BoxDecoration(
+                  color: AppColors
+                      .primaryLight,
                   borderRadius:
-                  BorderRadius.circular(14),
+                  BorderRadius.circular(
+                    14,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  CrossAxisAlignment
+                      .start,
                   children: [
                     Row(
                       children: [
@@ -511,10 +597,13 @@ class _DesktopNavigation
                             'Business',
                             maxLines: 1,
                             overflow:
-                            TextOverflow.ellipsis,
-                            style: TextStyle(
+                            TextOverflow
+                                .ellipsis,
+                            style:
+                            TextStyle(
                               fontWeight:
-                              FontWeight.w700,
+                              FontWeight
+                                  .w700,
                               color: AppColors
                                   .textPrimary,
                             ),
@@ -547,13 +636,16 @@ class _DesktopNavigation
                       double.infinity,
                       child:
                       OutlinedButton.icon(
-                        onPressed: onLogout,
-                        icon: const Icon(
+                        onPressed:
+                        onLogout,
+                        icon:
+                        const Icon(
                           Icons
                               .logout_rounded,
                           size: 18,
                         ),
-                        label: const Text(
+                        label:
+                        const Text(
                           'Logout',
                         ),
                       ),
@@ -591,7 +683,8 @@ class _TabletNavigation
   Widget build(BuildContext context) {
     return Container(
       width: 76,
-      decoration: const BoxDecoration(
+      decoration:
+      const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           right: BorderSide(
@@ -602,10 +695,6 @@ class _TabletNavigation
       child: SafeArea(
         child: Column(
           children: [
-            // ========================================================
-            // LOGO
-            // ========================================================
-
             Padding(
               padding:
               const EdgeInsets.symmetric(
@@ -619,17 +708,14 @@ class _TabletNavigation
               ),
             ),
 
-            // ========================================================
-            // ICON NAVIGATION
-            // ========================================================
-
             Expanded(
               child: ListView.builder(
                 padding:
                 const EdgeInsets.symmetric(
                   horizontal: 8,
                 ),
-                itemCount: items.length,
+                itemCount:
+                items.length,
                 itemBuilder:
                     (context, index) {
                   final item =
@@ -648,8 +734,8 @@ class _TabletNavigation
                       message:
                       item.label,
                       child: Material(
-                        color: Colors
-                            .transparent,
+                        color:
+                        Colors.transparent,
                         child: InkWell(
                           borderRadius:
                           BorderRadius
@@ -660,7 +746,8 @@ class _TabletNavigation
                               onSelected(
                                 index,
                               ),
-                          child: Container(
+                          child:
+                          Container(
                             height: 52,
                             decoration:
                             BoxDecoration(
@@ -695,16 +782,13 @@ class _TabletNavigation
               ),
             ),
 
-            // ========================================================
-            // BUSINESS AVATAR
-            // ========================================================
-
             Padding(
               padding:
               const EdgeInsets.only(
                 bottom: 16,
               ),
-              child: _BusinessAvatar(
+              child:
+              _BusinessAvatar(
                 logoUrl: logoUrl,
                 size: 42,
               ),
@@ -725,11 +809,13 @@ class _DesktopHeader
   const _DesktopHeader({
     required this.logoUrl,
     required this.onContactUs,
+    required this.onScanLoyalty,
     required this.onLogout,
   });
 
   final String? logoUrl;
   final VoidCallback onContactUs;
+  final VoidCallback onScanLoyalty;
   final VoidCallback onLogout;
 
   @override
@@ -759,19 +845,39 @@ class _DesktopHeader
           ),
 
           const SizedBox(
-            width: 12,
+            width: 10,
           ),
 
+          // ======================================================
+          // LOYALTY SCANNER
+          // ======================================================
+
           IconButton(
-            tooltip: 'Contact Us',
-            onPressed: onContactUs,
+            tooltip: 'Scan loyalty QR',
+            onPressed:
+            onScanLoyalty,
             icon: const Icon(
-              Icons.support_agent_rounded,
+              Icons
+                  .qr_code_scanner_rounded,
             ),
           ),
 
           const SizedBox(
-            width: 4,
+            width: 2,
+          ),
+
+          IconButton(
+            tooltip: 'Contact Us',
+            onPressed:
+            onContactUs,
+            icon: const Icon(
+              Icons
+                  .support_agent_rounded,
+            ),
+          ),
+
+          const SizedBox(
+            width: 2,
           ),
 
           IconButton(
@@ -780,6 +886,10 @@ class _DesktopHeader
             icon: const Icon(
               Icons.logout_rounded,
             ),
+          ),
+
+          const SizedBox(
+            width: 4,
           ),
         ],
       ),
@@ -797,11 +907,13 @@ class _MobileHeader
   const _MobileHeader({
     required this.logoUrl,
     required this.onContactUs,
+    required this.onScanLoyalty,
     required this.onLogout,
   });
 
   final String? logoUrl;
   final VoidCallback onContactUs;
+  final VoidCallback onScanLoyalty;
   final VoidCallback onLogout;
 
   @override
@@ -811,7 +923,8 @@ class _MobileHeader
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      automaticallyImplyLeading: false,
+      automaticallyImplyLeading:
+      false,
       titleSpacing: 16,
 
       title: Row(
@@ -843,26 +956,45 @@ class _MobileHeader
       ),
 
       actions: [
-        _BusinessAvatar(
-          logoUrl: logoUrl,
-          size: 36,
-        ),
-
-        const SizedBox(
-          width: 2,
-        ),
+        // ======================================================
+        // QUICK LOYALTY SCANNER
+        // ======================================================
 
         IconButton(
-          tooltip: 'Contact Us',
-          onPressed: onContactUs,
+          tooltip: 'Scan loyalty QR',
+          onPressed:
+          onScanLoyalty,
           icon: const Icon(
-            Icons.support_agent_rounded,
+            Icons
+                .qr_code_scanner_rounded,
           ),
         ),
 
         const SizedBox(
           width: 2,
         ),
+
+        // ======================================================
+        // SUPPORT / CONTACT
+        // ======================================================
+
+        IconButton(
+          tooltip: 'Contact Us',
+          onPressed:
+          onContactUs,
+          icon: const Icon(
+            Icons
+                .support_agent_rounded,
+          ),
+        ),
+
+        const SizedBox(
+          width: 2,
+        ),
+
+        // ======================================================
+        // LOGOUT
+        // ======================================================
 
         IconButton(
           tooltip: 'Logout',
@@ -882,46 +1014,361 @@ class _MobileHeader
 
 // ============================================================
 // MOBILE NAVIGATION
+//
+// Dashboard | Business | CATALOG | Activity | Subscription
+//
+// Catalog is intentionally the prominent center action.
+// QR is intentionally hidden from this five-slot mobile layout.
 // ============================================================
 
 class _MobileNavigation
     extends StatelessWidget {
   const _MobileNavigation({
-    required this.items,
     required this.selectedIndex,
     required this.onSelected,
   });
 
-  final List<_NavigationItem> items;
   final int selectedIndex;
-  final ValueChanged<int> onSelected;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex:
-      selectedIndex >= items.length
-          ? 0
-          : selectedIndex,
-      onDestinationSelected:
-      onSelected,
-      labelBehavior:
-      NavigationDestinationLabelBehavior
-          .alwaysShow,
-      destinations: items
-          .map(
-            (item) =>
-            NavigationDestination(
-              icon: Icon(
-                item.icon,
+    final colors =
+        Theme.of(context).colorScheme;
+
+    final isCatalogSelected =
+        selectedIndex == 2;
+
+    final isDashboardSelected =
+        selectedIndex == 0;
+
+    final isBusinessSelected =
+        selectedIndex == 1;
+
+    final isActivitySelected =
+        selectedIndex == 3;
+
+    final isSubscriptionSelected =
+        selectedIndex == 5;
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: 82,
+        child: Stack(
+          clipBehavior:
+          Clip.none,
+          alignment:
+          Alignment.topCenter,
+          children: [
+            // ======================================================
+            // BAR
+            // ======================================================
+
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: 68,
+                decoration:
+                BoxDecoration(
+                  color:
+                  colors.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: colors
+                          .outlineVariant,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black
+                          .withValues(
+                        alpha: 0.06,
+                      ),
+                      blurRadius: 18,
+                      offset:
+                      const Offset(
+                        0,
+                        -5,
+                      ),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // ==================================================
+                    // LEFT SIDE
+                    // ==================================================
+
+                    Expanded(
+                      child:
+                      _MobileNavItem(
+                        icon: Icons
+                            .dashboard_outlined,
+                        selectedIcon:
+                        Icons
+                            .dashboard_rounded,
+                        label:
+                        'Dashboard',
+                        selected:
+                        isDashboardSelected,
+                        onTap: () =>
+                            onSelected(
+                              '/dashboard',
+                            ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child:
+                      _MobileNavItem(
+                        icon: Icons
+                            .storefront_outlined,
+                        selectedIcon:
+                        Icons
+                            .storefront_rounded,
+                        label: 'Business',
+                        selected:
+                        isBusinessSelected,
+                        onTap: () =>
+                            onSelected(
+                              '/business',
+                            ),
+                      ),
+                    ),
+
+                    // ==================================================
+                    // CENTER SPACE
+                    // ==================================================
+
+                    const SizedBox(
+                      width: 76,
+                    ),
+
+                    // ==================================================
+                    // RIGHT SIDE
+                    // ==================================================
+
+                    Expanded(
+                      child:
+                      _MobileNavItem(
+                        icon: Icons
+                            .auto_awesome_outlined,
+                        selectedIcon:
+                        Icons
+                            .auto_awesome_rounded,
+                        label: 'Activity',
+                        selected:
+                        isActivitySelected,
+                        onTap: () =>
+                            onSelected(
+                              '/activity',
+                            ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child:
+                      _MobileNavItem(
+                        icon: Icons
+                            .credit_card_outlined,
+                        selectedIcon:
+                        Icons
+                            .credit_card_rounded,
+                        label:
+                        'Subscription',
+                        selected:
+                        isSubscriptionSelected,
+                        onTap: () =>
+                            onSelected(
+                              '/subscription',
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              selectedIcon: Icon(
-                item.selectedIcon,
-              ),
-              label: item.label,
             ),
-      )
-          .toList(),
+
+            // ======================================================
+            // FLOATING CATALOG BUTTON
+            // ======================================================
+
+            Positioned(
+              top: -8,
+              child: GestureDetector(
+                onTap: () =>
+                    onSelected(
+                      '/menu',
+                    ),
+                child: AnimatedContainer(
+                  duration:
+                  const Duration(
+                    milliseconds: 180,
+                  ),
+                  width: 62,
+                  height: 62,
+                  decoration:
+                  BoxDecoration(
+                    color: isCatalogSelected
+                        ? colors.primary
+                        : colors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colors.surface,
+                      width: 5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black
+                            .withValues(
+                          alpha: 0.14,
+                        ),
+                        blurRadius: 18,
+                        offset:
+                        const Offset(
+                          0,
+                          7,
+                        ),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isCatalogSelected
+                        ? Icons
+                        .inventory_2_rounded
+                        : Icons
+                        .inventory_2_outlined,
+                    size: 29,
+                    color: isCatalogSelected
+                        ? colors
+                        .onPrimary
+                        : colors.primary,
+                  ),
+                ),
+              ),
+            ),
+
+            // ======================================================
+            // CATALOG LABEL
+            // ======================================================
+
+            Positioned(
+              top: 57,
+              child: Text(
+                'Catalog',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight:
+                  isCatalogSelected
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color:
+                  isCatalogSelected
+                      ? colors.primary
+                      : colors
+                      .onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// MOBILE NAV ITEM
+// ============================================================
+
+class _MobileNavItem
+    extends StatelessWidget {
+  const _MobileNavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors =
+        Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 68,
+          child: Column(
+            mainAxisAlignment:
+            MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration:
+                const Duration(
+                  milliseconds: 160,
+                ),
+                width: 42,
+                height: 30,
+                decoration:
+                BoxDecoration(
+                  color: selected
+                      ? colors
+                      .primaryContainer
+                      : Colors.transparent,
+                  borderRadius:
+                  BorderRadius.circular(
+                    15,
+                  ),
+                ),
+                child: Icon(
+                  selected
+                      ? selectedIcon
+                      : icon,
+                  size: 21,
+                  color: selected
+                      ? colors.primary
+                      : colors
+                      .onSurfaceVariant,
+                ),
+              ),
+
+              const SizedBox(
+                height: 2,
+              ),
+
+              Text(
+                label,
+                maxLines: 1,
+                overflow:
+                TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: selected
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color: selected
+                      ? colors.primary
+                      : colors
+                      .onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -973,7 +1420,8 @@ class _BusinessAvatar
                 child: Icon(
                   Icons
                       .storefront_rounded,
-                  size: size * 0.55,
+                  size:
+                  size * 0.55,
                   color:
                   AppColors.primary,
                 ),

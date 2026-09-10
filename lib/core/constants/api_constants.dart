@@ -1,22 +1,45 @@
 class ApiConstants {
   ApiConstants._();
 
+  // ============================================================
+  // BASE URL
+  // ============================================================
+
   // Android emulator
-  static const String androidBaseUrl = 'http://10.0.2.2:8080';
+  static const String androidBaseUrl =
+      'http://10.0.2.2:8080';
 
   // Chrome / Web
-  static const String webBaseUrl = 'http://localhost:8080';
+  static const String webBaseUrl =
+      'http://localhost:8080';
 
   // Production
-  static const String productionBaseUrl = 'https://api.scanaura.in';
+  static const String productionBaseUrl =
+      'https://api.scanaura.in';
 
-  // Authentication
-  static const String authRegister = '/api/v1/auth/register';
-  static const String authLogin = '/api/v1/auth/login';
+  // ============================================================
+  // AUTHENTICATION
+  // ============================================================
 
-  static const String businessBase = '/api/v1/business';
+  static const String authRegister =
+      '/api/v1/auth/register';
 
-  static const String businessMine = '/api/v1/business/me';
+  static const String authLogin =
+      '/api/v1/auth/login';
+
+  // ============================================================
+  // BUSINESS
+  // ============================================================
+
+  static const String businessBase =
+      '/api/v1/business';
+
+  static const String businessMine =
+      '/api/v1/business/me';
+
+  // ============================================================
+  // SUBSCRIPTION
+  // ============================================================
 
   static const String subscriptionMy =
       '/api/v1/subscription/my';
@@ -27,34 +50,61 @@ class ApiConstants {
   static const String subscriptionRequestHistory =
       '/api/v1/subscription/request/history';
 
+  // ============================================================
+  // IMAGE
+  // ============================================================
+
   static const String imageUpload =
       '/api/v1/images/upload';
 
-  static const String qrBase = '/api/v1/qr';
+  // ============================================================
+  // QR
+  // ============================================================
 
-  static const String qrDigital = '$qrBase/digital';
+  static const String qrBase =
+      '/api/v1/qr';
 
-  static const String qrMy = '$qrBase/my';
+  static const String qrDigital =
+      '$qrBase/digital';
 
-  // Categories
-  static const String categoryBase = '/api/v1/categories';
+  static const String qrMy =
+      '$qrBase/my';
 
-  // Catalog / Menu
-  static const String catalogBase = '/api/v1/catalog';
+  // ============================================================
+  // CATEGORIES
+  // ============================================================
 
-  static String catalogById(String id) {
-    return '$catalogBase/$id';
-  }
+  static const String categoryBase =
+      '/api/v1/categories';
 
-  static String categoryById(String id) {
+  static String categoryById(
+      String id,
+      ) {
     return '$categoryBase/$id';
   }
 
-   static const String catalog =
-      catalogBase;
-
   static const String categories =
       '/api/v1/categories';
+
+  // ============================================================
+  // CATALOG / MENU
+  // ============================================================
+
+  static const String catalogBase =
+      '/api/v1/catalog';
+
+  static const String catalog =
+      catalogBase;
+
+  static String catalogById(
+      String id,
+      ) {
+    return '$catalogBase/$id';
+  }
+
+  // ============================================================
+  // AI MENU
+  // ============================================================
 
   static const String aiMenuBase =
       '/api/v1/ai/menu';
@@ -65,8 +115,12 @@ class ApiConstants {
   static const String aiMenuImport =
       '$aiMenuBase/import';
 
-  // Public Business
-  static const String publicBase = '/api/public';
+  // ============================================================
+  // PUBLIC BUSINESS
+  // ============================================================
+
+  static const String publicBase =
+      '/api/public';
 
   static const String publicLanding =
       '$publicBase/q';
@@ -77,7 +131,45 @@ class ApiConstants {
   static const String publicPayment =
       '$publicBase/q';
 
-  // Admin
+  // ============================================================
+  // ACTIVITY / LOYALTY
+  // ============================================================
+
+  static const String activityBase =
+      '/api/activity';
+
+  static const String loyaltyBase = '$activityBase/loyalty';
+
+  static const String loyaltySettings =
+      '$loyaltyBase/settings';
+
+  static const String loyaltyRewards =
+      '$loyaltyBase/rewards';
+
+  static String loyaltyRewardById(String rewardId) =>
+      '$loyaltyRewards/$rewardId';
+
+  static const String loyaltyCustomer =
+      '$loyaltyBase/customer';
+
+  static const String loyaltyVisitQr =
+      '$loyaltyBase/visit/qr';
+
+  static const String loyaltyVisitVerify =
+      '$loyaltyBase/visit/verify';
+
+  static const String loyaltyClaim =
+      '$loyaltyBase/claim';
+
+  static String loyaltyClaimQr(String claimId) =>
+      '$loyaltyClaim/$claimId/qr';
+
+  static const String loyaltyClaimVerify =
+      '$loyaltyClaim/verify';
+  // ============================================================
+  // ADMIN
+  // ============================================================
+
   static const String adminBase =
       '/api/v1/admin';
 
@@ -117,7 +209,10 @@ class ApiConstants {
     return '$adminBase/qr/deactivate/$qrCode';
   }
 
-  // Admin Subscription Requests
+  // ============================================================
+  // ADMIN SUBSCRIPTION REQUESTS
+  // ============================================================
+
   static const String adminSubscriptionRequests =
       '/api/v1/admin/subscription-requests';
 
@@ -136,7 +231,10 @@ class ApiConstants {
     return '$adminSubscriptionRequests/$requestId/reject';
   }
 
-  // Admin Subscription Management
+  // ============================================================
+  // ADMIN SUBSCRIPTION MANAGEMENT
+  // ============================================================
+
   static const String adminSubscriptionBase =
       '$adminBase/subscriptions';
 
@@ -148,5 +246,4 @@ class ApiConstants {
       ) {
     return '$adminBusinesses/$businessId/subscription';
   }
-
 }

@@ -9,6 +9,7 @@ enum SubscriptionStatus {
 
 enum BillingCycle {
   monthly,
+  halfYearly,
   yearly,
 }
 
@@ -80,10 +81,18 @@ class SubscriptionResponse {
   static BillingCycle _parseBillingCycle(
       String value,
       ) {
-    return BillingCycle.values.firstWhere(
-          (cycle) =>
-      cycle.name.toUpperCase() == value.toUpperCase(),
-      orElse: () => BillingCycle.monthly,
-    );
+    switch (value.toUpperCase()) {
+      case 'MONTHLY':
+        return BillingCycle.monthly;
+
+      case 'HALF_YEARLY':
+        return BillingCycle.halfYearly;
+
+      case 'YEARLY':
+        return BillingCycle.yearly;
+
+      default:
+        return BillingCycle.monthly;
+    }
   }
 }
