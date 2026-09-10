@@ -4,6 +4,7 @@ class SecureStorageService {
   SecureStorageService();
 
   static const String _accessTokenKey = 'access_token';
+  static const String _businessBrandColorPrefix = 'business_brand_color_';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -23,6 +24,22 @@ class SecureStorageService {
   Future<void> deleteAccessToken() async {
     await _storage.delete(
       key: _accessTokenKey,
+    );
+  }
+
+  Future<void> saveBusinessBrandColor({
+    required String businessId,
+    required String colorValue,
+  }) async {
+    await _storage.write(
+      key: '$_businessBrandColorPrefix$businessId',
+      value: colorValue,
+    );
+  }
+
+  Future<String?> getBusinessBrandColor(String businessId) {
+    return _storage.read(
+      key: '$_businessBrandColorPrefix$businessId',
     );
   }
 

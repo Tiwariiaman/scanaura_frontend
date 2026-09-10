@@ -79,6 +79,7 @@ class BusinessRequest {
     this.facebookEnabled,
     this.youtubeUrl,
     this.youtubeEnabled,
+    this.brandColor,
   });
 
   final String businessName;
@@ -110,6 +111,7 @@ class BusinessRequest {
 
   final String? youtubeUrl;
   final bool? youtubeEnabled;
+  final String? brandColor;
 
   final String? logoUrl;
   final String? logoPublicId;
@@ -140,6 +142,7 @@ class BusinessRequest {
       'facebookEnabled': facebookEnabled,
       'youtubeUrl': youtubeUrl,
       'youtubeEnabled': youtubeEnabled,
+      'brandColor': brandColor,
     };
   }
 }

@@ -9,15 +9,20 @@ import '../../services/loyalty_api_service.dart';
 
 import 'customer_loyalty_qr_page.dart';
 import 'customer_loyalty_visit_qr_page.dart';
+import '../../../../public_menu/presentation/theme/public_theme_resolver.dart';
 
 class CustomerLoyaltyPage extends ConsumerStatefulWidget {
   final String businessId;
   final String businessName;
+  final String businessType;
+  final String? brandColor;
 
   const CustomerLoyaltyPage({
     super.key,
     required this.businessId,
     required this.businessName,
+    this.businessType = '',
+    this.brandColor,
   });
 
   @override
@@ -151,6 +156,8 @@ class _CustomerLoyaltyPageState
         MaterialPageRoute(
           builder: (_) => CustomerLoyaltyVisitQrPage(
             businessName: widget.businessName,
+            businessType: widget.businessType,
+            brandColor: widget.brandColor,
             qrResponse: qr,
           ),
         ),
@@ -307,6 +314,8 @@ class _CustomerLoyaltyPageState
         builder: (_) => CustomerLoyaltyQrPage(
           qrToken: claim.qrToken,
           businessName: widget.businessName,
+          businessType: widget.businessType,
+          brandColor: widget.brandColor,
           rewardTitle: claim.rewardTitle,
           rewardAmount: claim.rewardAmount,
           pointsUsed: claim.pointsUsed,
@@ -353,21 +362,22 @@ class _CustomerLoyaltyPageState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (!_submitted) {
-      return _buildRegistration(
-        context,
-        theme,
-        colorScheme,
-      );
-    }
-
-    return _buildDashboard(
-      context,
-      theme,
-      colorScheme,
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: widget.businessName,
+      businessType: widget.businessType,
+      brandColor: widget.brandColor,
+    );
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Builder(
+        builder: (themedContext) {
+          final theme = Theme.of(themedContext);
+          final colorScheme = theme.colorScheme;
+          return _submitted
+              ? _buildDashboard(themedContext, theme, colorScheme)
+              : _buildRegistration(themedContext, theme, colorScheme);
+        },
+      ),
     );
   }
 

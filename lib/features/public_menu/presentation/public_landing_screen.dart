@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../activity/loyalty/presentation/pages/customer_loyalty_page.dart';
 import '../data/models/landing_response.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
-import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
-
-import 'package:scanaura_frontend/features/activity/loyalty/presentation/pages/customer_loyalty_page.dart';
+import 'providers/public_notifier.dart';
+import 'providers/public_state.dart';
+import 'theme/public_theme.dart';
+import 'theme/public_theme_resolver.dart';
 
 class PublicLandingScreen extends ConsumerStatefulWidget {
   const PublicLandingScreen({
@@ -21,6 +22,9 @@ class PublicLandingScreen extends ConsumerStatefulWidget {
 
   final String qrCode;
   final VoidCallback onOpenMenu;
+
+  // Kept for compatibility with existing routing/integration.
+  // Payment is intentionally hidden from the customer-facing UI.
   final VoidCallback onOpenPayment;
 
   @override
@@ -30,27 +34,19 @@ class PublicLandingScreen extends ConsumerStatefulWidget {
 
 class _PublicLandingScreenState
     extends ConsumerState<PublicLandingScreen> {
-
   @override
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      ref
-          .read(publicNotifierProvider.notifier)
-          .loadLanding(widget.qrCode);
-    });
+    Future.microtask(
+      () => ref.read(publicNotifierProvider.notifier).loadLanding(widget.qrCode),
+    );
   }
-
-  // ============================================================
-  // SHARE
-  // ============================================================
 
   Future<void> _sharePage() async {
     final currentUrl = Uri.base.toString();
 
-    final landing =
-        ref.read(publicNotifierProvider).landing;
+    final landing = ref.read(publicNotifierProvider).landing;
 
     final businessName =
     landing?.businessName.trim().isNotEmpty == true
@@ -77,9 +73,7 @@ class _PublicLandingScreenState
       );
     } catch (_) {
       await Clipboard.setData(
-        ClipboardData(
-          text: shareText,
-        ),
+        ClipboardData(text: shareText),
       );
 
       if (!mounted) {
@@ -96,10 +90,6 @@ class _PublicLandingScreenState
       );
     }
   }
-
-  // ============================================================
-  // EXTERNAL LINKS
-  // ============================================================
 
   Future<void> _openExternalLink(String url) async {
     final normalized = url.trim();
@@ -147,41 +137,30 @@ class _PublicLandingScreenState
     }
   }
 
-  // ============================================================
-  // BUSINESS TYPE
-  // ============================================================
-
   String _businessTypeLabel(String value) {
     switch (value.trim().toUpperCase()) {
       case 'FOOD':
         return 'Food';
-
       case 'RESTAURANT':
         return 'Restaurant';
-
       case 'CAFE':
         return 'Cafe';
-
-      case 'SALON':
-        return 'Salon';
-
+      case 'BAKERY':
+        return 'Bakery';
       case 'RETAIL':
       case 'RETAIL_SHOP':
         return 'Retail';
-
       case 'ECOMMERCE':
       case 'E_COMMERCE':
         return 'E-commerce';
-
       case 'SERVICES':
         return 'Services';
-
+      case 'SALON':
+        return 'Salon';
       case 'PERSONAL_BRAND':
         return 'Personal Brand';
-
       case 'OTHER':
         return 'Other';
-
       default:
         return value.trim().isEmpty
             ? 'Business'
@@ -189,797 +168,305 @@ class _PublicLandingScreenState
     }
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+  _BusinessTerminology _terminologyFor(String value) {
+    switch (value.trim().toUpperCase()) {
+      case 'FOOD':
+      case 'RESTAURANT':
+      case 'CAFE':
+      case 'BAKERY':
+        return const _BusinessTerminology(
+          collectionTitle: 'Menu',
+          itemTitle: 'Item',
+          description:
+          'Explore the menu and discover what is available.',
+        );
+
+      case 'SERVICES':
+      case 'SALON':
+        return const _BusinessTerminology(
+          collectionTitle: 'Services',
+          itemTitle: 'Service',
+          description:
+          'Explore available services and offerings.',
+        );
+
+      case 'RETAIL':
+      case 'RETAIL_SHOP':
+      case 'ECOMMERCE':
+      case 'E_COMMERCE':
+        return const _BusinessTerminology(
+          collectionTitle: 'Catalogue',
+          itemTitle: 'Product',
+          description:
+          'Browse available products and offerings.',
+        );
+
+      case 'PERSONAL_BRAND':
+        return const _BusinessTerminology(
+          collectionTitle: 'Offerings',
+          itemTitle: 'Item',
+          description:
+          'Explore products, services and offerings.',
+        );
+
+      case 'OTHER':
+      default:
+        return const _BusinessTerminology(
+          collectionTitle: 'Offerings',
+          itemTitle: 'Item',
+          description:
+          'Explore products, services and offerings.',
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(
-      publicNotifierProvider,
-    );
+    final state = ref.watch(publicNotifierProvider);
 
-    if (state.status == PublicStatus.loading) {
-      return _buildLoading();
+    if (state.status == PublicStatus.loading &&
+        state.landing == null) {
+      return const _PublicLoadingPage();
     }
 
     if (state.status == PublicStatus.error &&
         state.landing == null) {
-      return _buildError(
-        context,
-        state,
+      return _PublicErrorPage(
+        message: state.isBusinessUnavailable
+            ? 'This business page is unavailable right now.'
+            : 'We could not open this business page.',
+        onRetry: () {
+          ref
+              .read(publicNotifierProvider.notifier)
+              .loadLanding(widget.qrCode);
+        },
       );
     }
 
     final landing = state.landing;
 
     if (landing == null) {
-      return _buildUnavailable();
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: const Color(0xFF00674F),
-          onRefresh: () async {
-            await ref
-                .read(
-              publicNotifierProvider.notifier,
-            )
-                .refreshLanding();
-          },
-          child: LayoutBuilder(
-            builder: (
-                context,
-                constraints,
-                ) {
-              final width = constraints.maxWidth;
-
-              final horizontalPadding =
-              width < 360
-                  ? 16.0
-                  : width < 600
-                  ? 20.0
-                  : 24.0;
-
-              final contentMaxWidth =
-              width >= 1000
-                  ? 760.0
-                  : width >= 700
-                  ? 660.0
-                  : 560.0;
-
-              return SingleChildScrollView(
-                physics:
-                const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  18,
-                  horizontalPadding,
-                  32,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: contentMaxWidth,
-                    ),
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
-                      children: [
-                        _buildBusinessIdentity(
-                          context,
-                          landing,
-                        ),
-                        const SizedBox(height: 22),
-                        _buildActionButtons(
-                          context,
-                          landing,
-                        ),
-                        const SizedBox(height: 22),
-                        _buildSocialSection(
-                          context,
-                          landing,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildBusinessTypeInfo(
-                          context,
-                          landing,
-                        ),
-                        const SizedBox(height: 30),
-                        _buildFooter(context),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // BUSINESS IDENTITY CARD
-  // ============================================================
-
-  Widget _buildBusinessIdentity(
-      BuildContext context,
-      LandingResponse landing,
-      ) {
-    final theme = Theme.of(context);
-
-    final businessName =
-    landing.businessName.trim().isNotEmpty
-        ? landing.businessName.trim()
-        : 'Business';
-
-    final businessType = _businessTypeLabel(
-      landing.businessType,
-    );
-
-    final city = landing.city?.trim() ?? '';
-
-    final hasLogo =
-        landing.logoUrl != null &&
-            landing.logoUrl!.trim().isNotEmpty;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        24,
-        20,
-        22,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
-        boxShadow: const [
-          BoxShadow(
-            blurRadius: 30,
-            offset: Offset(0, 12),
-            color: Color(0x0C0F172A),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(
-                top: 4,
-                left: 8,
-                right: 8,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment:
-                CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 104,
-                    height: 104,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF7F3),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFD3EDE4),
-                        width: 1.5,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: hasLogo
-                        ? Image.network(
-                      landing.logoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (_, _, _) =>
-                      const _DefaultBusinessIcon(),
-                    )
-                        : const _DefaultBusinessIcon(),
-                  ),
-
-                  const SizedBox(height: 17),
-
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 520,
-                    ),
-                    child: Text(
-                      businessName,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                      theme.textTheme.headlineMedium
-                          ?.copyWith(
-                        color: const Color(0xFF0F172A),
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.7,
-                        height: 1.12,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 11),
-
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    runAlignment: WrapAlignment.center,
-                    crossAxisAlignment:
-                    WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _InfoChip(
-                        icon: Icons.storefront_rounded,
-                        label: businessType,
-                      ),
-                      if (city.isNotEmpty)
-                        _InfoChip(
-                          icon:
-                          Icons.location_on_outlined,
-                          label: city,
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4FAF8),
-                      borderRadius:
-                      BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0xFFE1F0EB),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.qr_code_2_rounded,
-                          size: 18,
-                          color: Color(0xFF00674F),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Digital business page',
-                          textAlign: TextAlign.center,
-                          style:
-                          theme.textTheme.bodySmall
-                              ?.copyWith(
-                            color:
-                            const Color(0xFF475569),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _sharePage,
-                borderRadius:
-                BorderRadius.circular(15),
-                child: Ink(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius:
-                    BorderRadius.circular(15),
-                    border: Border.all(
-                      color: const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.share_rounded,
-                    size: 20,
-                    color: Color(0xFF334155),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // LOGO FALLBACK
-  // ============================================================
-
-  Widget _buildLogo(
-      BuildContext context,
-      String? logoUrl,
-      ) {
-    final width =
-        MediaQuery.sizeOf(context).width;
-
-    final size =
-    width < 360
-        ? 92.0
-        : width < 600
-        ? 104.0
-        : 112.0;
-
-    if (logoUrl == null ||
-        logoUrl.trim().isEmpty) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.storefront_outlined,
-          size: size * 0.42,
-          color: Theme.of(context)
-              .colorScheme
-              .onSurfaceVariant,
-        ),
+      return _PublicErrorPage(
+        message: 'This business page is unavailable.',
+        onRetry: () {
+          ref
+              .read(publicNotifierProvider.notifier)
+              .loadLanding(widget.qrCode);
+        },
       );
     }
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context)
-              .colorScheme
-              .outlineVariant,
-          width: 1.5,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Image.network(
-        logoUrl,
-        fit: BoxFit.cover,
-        errorBuilder:
-            (_, _, _) =>
-        const _DefaultBusinessIcon(),
-      ),
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: landing.businessName,
+      businessType: landing.businessType,
+      brandColor: landing.brandColor,
     );
-  }
 
-  // ============================================================
-  // ACTION BUTTONS
-  // ============================================================
-
-  Widget _buildActionButtons(
-      BuildContext context,
-      LandingResponse landing,
-      ) {
-    final isFood =
-        landing.businessType
-            .trim()
-            .toUpperCase() ==
-            'FOOD' ||
-            landing.businessType
-                .trim()
-                .toUpperCase() ==
-                'RESTAURANT' ||
-            landing.businessType
-                .trim()
-                .toUpperCase() ==
-                'CAFE';
-
-    final hasPayment =
-        landing.paymentEnabled == true;
-
-    final hasReview =
-        landing.googleReviewEnabled == true &&
-            landing.googleReviewUrl != null &&
-            landing.googleReviewUrl!
-                .trim()
-                .isNotEmpty;
-
-    final hasLoyalty =
-        landing.loyaltyEnabled == true;
-
-    return Column(
-      crossAxisAlignment:
-      CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Explore & connect',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(
-            color: const Color(0xFF0F172A),
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          'Everything you need, right here.',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(
-            color: const Color(0xFF64748B),
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        // ========================================================
-        // MENU
-        // ========================================================
-
-        _buildActionTile(
-          context,
-          icon: isFood
-              ? Icons.restaurant_menu_rounded
-              : Icons.visibility_rounded,
-          title: isFood
-              ? 'View Menu'
-              : 'View Offerings',
-          subtitle: isFood
-              ? 'Browse the latest menu and items'
-              : 'Explore products and services',
-          backgroundColor:
-          const Color(0xFF00674F),
-          foregroundColor: Colors.white,
-          onPressed:
-          landing.menuAvailable == true
-              ? widget.onOpenMenu
-              : null,
-          filled: true,
-        ),
-
-        // ========================================================
-        // LOYALTY
-        // ========================================================
-
-        if (hasLoyalty) ...[
-          const SizedBox(height: 10),
-
-          _buildActionTile(
-            context,
-            icon: Icons.stars_rounded,
-            title: 'Loyalty',
-            subtitle:
-            'Earn points when you visit',
-            backgroundColor:
-            const Color(0xFFF2FBF8),
-            foregroundColor:
-            const Color(0xFF00674F),
-            borderColor:
-            const Color(0xFFCDE9DF),
-            onPressed: () {
-              _showLoyaltyComingSoon(
-                context,
-                landing,
-              );
-            },
-          ),
-        ],
-
-        // ========================================================
-        // PAYMENT
-        // ========================================================
-
-        if (hasPayment) ...[
-          const SizedBox(height: 10),
-
-          _buildActionTile(
-            context,
-            icon:
-            Icons.account_balance_wallet_rounded,
-            title: 'Pay via UPI',
-            subtitle:
-            'Quick and convenient digital payment',
-            backgroundColor:
-            const Color(0xFFEAF7F3),
-            foregroundColor:
-            const Color(0xFF00674F),
-            borderColor:
-            const Color(0xFFB9DDD1),
-            onPressed: widget.onOpenPayment,
-          ),
-        ],
-
-        // ========================================================
-        // GOOGLE REVIEW
-        // ========================================================
-
-        if (hasReview) ...[
-          const SizedBox(height: 10),
-
-          _buildActionTile(
-            context,
-            icon: Icons.star_rounded,
-            title: 'Review Us',
-            subtitle:
-            'Share your experience on Google',
-            backgroundColor:
-            const Color(0xFFF6F8FF),
-            foregroundColor:
-            const Color(0xFF4285F4),
-            borderColor:
-            const Color(0xFFD8E3FF),
-            onPressed: () =>
-                _openExternalLink(
-                  landing.googleReviewUrl!,
-                ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  // ============================================================
-  // ACTION TILE
-  // ============================================================
-
-  Widget _buildActionTile(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        required Color backgroundColor,
-        required Color foregroundColor,
-        required VoidCallback? onPressed,
-        Color? borderColor,
-        bool filled = false,
-      }) {
-    final enabled = onPressed != null;
-
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius:
-        BorderRadius.circular(18),
-        child: Ink(
-          height: 68,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius:
-            BorderRadius.circular(18),
-            border: borderColor != null
-                ? Border.all(
-              color: borderColor,
-            )
-                : null,
-            boxShadow: filled
-                ? const [
-              BoxShadow(
-                blurRadius: 18,
-                offset: Offset(0, 7),
-                color: Color(0x1800674F),
-              ),
-            ]
-                : null,
-          ),
-          child: Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 10,
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Scaffold(
+        backgroundColor: publicTheme.background,
+        body: SafeArea(
+          child: _LandingContent(
+            landing: landing,
+            theme: publicTheme,
+            terminology: _terminologyFor(
+              landing.businessType,
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: filled
-                        ? const Color(0x1AFFFFFF)
-                        : Colors.white,
-                    borderRadius:
-                    BorderRadius.circular(13),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: foregroundColor,
-                    size: 22,
-                  ),
+            businessTypeLabel: _businessTypeLabel(
+              landing.businessType,
+            ),
+            onShare: _sharePage,
+            onOpenMenu: widget.onOpenMenu,
+            onOpenPayment: widget.onOpenPayment,
+            onOpenExternalLink: _openExternalLink,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LandingContent extends StatelessWidget {
+  const _LandingContent({
+    required this.landing,
+    required this.theme,
+    required this.terminology,
+    required this.businessTypeLabel,
+    required this.onShare,
+    required this.onOpenMenu,
+    required this.onOpenPayment,
+    required this.onOpenExternalLink,
+  });
+
+  final LandingResponse landing;
+  final PublicTheme theme;
+  final _BusinessTerminology terminology;
+  final String businessTypeLabel;
+  final VoidCallback onShare;
+  final VoidCallback onOpenMenu;
+  final VoidCallback onOpenPayment;
+  final Future<void> Function(String url) onOpenExternalLink;
+
+  String get businessName {
+    final value = landing.businessName.trim();
+    return value.isEmpty ? 'Business' : value;
+  }
+
+  String get city => landing.city?.trim() ?? '';
+
+  bool get hasLogo =>
+      landing.logoUrl != null &&
+          landing.logoUrl!.trim().isNotEmpty;
+
+  // Payment remains part of the surrounding architecture but is
+  // intentionally disabled/hidden on the customer-facing landing page.
+  bool get hasPayment => false;
+
+  bool get hasLoyalty => landing.loyaltyEnabled == true;
+
+  bool get hasReview =>
+      landing.googleReviewEnabled == true &&
+          landing.googleReviewUrl != null &&
+          landing.googleReviewUrl!.trim().isNotEmpty;
+
+  bool get hasInstagram =>
+      landing.instagramEnabled == true &&
+          landing.instagramUrl != null &&
+          landing.instagramUrl!.trim().isNotEmpty;
+
+  bool get hasFacebook =>
+      landing.facebookEnabled == true &&
+          landing.facebookUrl != null &&
+          landing.facebookUrl!.trim().isNotEmpty;
+
+  bool get hasYoutube =>
+      landing.youtubeEnabled == true &&
+          landing.youtubeUrl != null &&
+          landing.youtubeUrl!.trim().isNotEmpty;
+
+  bool get hasSocials =>
+      hasInstagram || hasFacebook || hasYoutube;
+
+  bool get isFood {
+    const foodTypes = {
+      'FOOD',
+      'RESTAURANT',
+      'CAFE',
+      'BAKERY',
+    };
+
+    return foodTypes.contains(
+      landing.businessType.trim().toUpperCase(),
+    );
+  }
+
+  String get primaryActionLabel {
+    if (isFood) {
+      return 'Open Menu';
+    }
+
+    switch (landing.businessType.trim().toUpperCase()) {
+      case 'SERVICES':
+      case 'SALON':
+        return 'Explore Services';
+
+      case 'ECOMMERCE':
+      case 'E_COMMERCE':
+        return 'Explore Products';
+
+      case 'RETAIL':
+      case 'RETAIL_SHOP':
+        return 'Explore Catalogue';
+
+      case 'PERSONAL_BRAND':
+        return 'Explore Offerings';
+
+      default:
+        return 'Explore';
+    }
+  }
+
+  String get primaryDescription {
+    if (isFood) {
+      return 'Take a look at the menu and discover something you will love.';
+    }
+
+    return terminology.description;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        final horizontalPadding = width < 360
+            ? 16.0
+            : width < 600
+            ? 20.0
+            : width < 1000
+            ? 28.0
+            : 36.0;
+
+        final maxWidth = width >= 1200
+            ? 860.0
+            : width >= 900
+            ? 780.0
+            : 620.0;
+
+        return RefreshIndicator(
+          color: theme.primary,
+          onRefresh: () async {
+            // Refresh is intentionally kept compatible with the
+            // existing public provider architecture.
+            await Future<void>.delayed(
+              const Duration(milliseconds: 100),
+            );
+          },
+          child: SingleChildScrollView(
+            physics:
+            const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              14,
+              horizontalPadding,
+              30,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth,
                 ),
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHero(context),
+                    const SizedBox(height: 18),
+                    _buildExploreCard(context),
 
-                const SizedBox(width: 13),
-
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow:
-                        TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: foregroundColor,
-                          fontSize: 15.5,
-                          fontWeight:
-                          FontWeight.w800,
-                        ),
-                      ),
-
-                      const SizedBox(height: 2),
-
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow:
-                        TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: filled
-                              ? const Color(
-                            0xE6FFFFFF,
-                          )
-                              : const Color(
-                            0xFF64748B,
-                          ),
-                          fontSize: 12,
-                          fontWeight:
-                          FontWeight.w500,
-                        ),
-                      ),
+                    // Payment is intentionally not rendered.
+                    if (hasLoyalty) ...[
+                      const SizedBox(height: 16),
+                      _buildExperienceCard(context),
                     ],
-                  ),
+
+                    if (hasReview) ...[
+                      const SizedBox(height: 16),
+                      _buildReviewCard(context),
+                    ],
+
+                    if (hasSocials) ...[
+                      const SizedBox(height: 24),
+                      _buildSocialSection(context),
+                    ],
+
+                    const SizedBox(height: 28),
+                    _buildFooter(context),
+                  ],
                 ),
-
-                const SizedBox(width: 10),
-
-                Icon(
-                  Icons
-                      .arrow_forward_ios_rounded,
-                  size: 15,
-                  color: foregroundColor.withValues(
-                    alpha: filled
-                        ? 0.9
-                        : 0.65,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // LOYALTY MESSAGE
-  // ============================================================
-
-  void _showLoyaltyComingSoon(
-      BuildContext context,
-      LandingResponse landing,
-      ) {
-    final businessName =
-    landing.businessName.trim().isNotEmpty
-        ? landing.businessName.trim()
-        : 'this business';
-
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              24,
-              8,
-              24,
-              28,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF7F3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.stars_rounded,
-                    size: 32,
-                    color: Color(0xFF00674F),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                const Text(
-                  'Loyalty',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  '$businessName offers a loyalty program. '
-                      'Enter your name and mobile number to '
-                      'access your loyalty account, earn points '
-                      'and use available rewards.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              CustomerLoyaltyPage(
-                                businessId:
-                                landing.businessId,
-                                businessName:
-                                businessName,
-                              ),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Got it',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -987,48 +474,409 @@ class _PublicLandingScreenState
     );
   }
 
-  // ============================================================
-  // SOCIAL
-  // ============================================================
+  Widget _buildHero(BuildContext context) {
+    return _GlassCard(
+      theme: theme,
+      padding: const EdgeInsets.fromLTRB(
+        22,
+        18,
+        22,
+        24,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -70,
+            right: -65,
+            child: _GlowOrb(
+              color: theme.primary.withValues(
+                alpha: 0.12,
+              ),
+              size: 170,
+            ),
+          ),
+          Positioned(
+            bottom: -90,
+            left: -80,
+            child: _GlowOrb(
+              color: theme.accent.withValues(
+                alpha: 0.09,
+              ),
+              size: 180,
+            ),
+          ),
+          Column(
+            children: [
+              // Share is now INSIDE the hero card.
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: onShare,
+                  tooltip: 'Share',
+                  icon: Icon(
+                    Icons.share,
+                    color: theme.primary,
+                    size: 20,
+                  ),
+                ),
+              ),
 
-  Widget _buildSocialSection(
-      BuildContext context,
-      LandingResponse landing,
-      ) {
-    final socials =
-    <_SocialLinkItem>[];
+              const SizedBox(height: 2),
 
-    final hasInstagram =
-        landing.instagramEnabled == true &&
-            landing.instagramUrl != null &&
-            landing.instagramUrl!
-                .trim()
-                .isNotEmpty;
+              Text(
+                businessTypeLabel.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.7,
+                ),
+              ),
 
-    final hasFacebook =
-        landing.facebookEnabled == true &&
-            landing.facebookUrl != null &&
-            landing.facebookUrl!
-                .trim()
-                .isNotEmpty;
+              if (city.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  city,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: theme.textTertiary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
 
-    final hasYoutube =
-        landing.youtubeEnabled == true &&
-            landing.youtubeUrl != null &&
-            landing.youtubeUrl!
-                .trim()
-                .isNotEmpty;
+              const SizedBox(height: 20),
+
+              _BusinessLogo(
+                logoUrl: hasLogo
+                    ? landing.logoUrl
+                    : null,
+                businessName: businessName,
+                theme: theme,
+              ),
+
+              const SizedBox(height: 18),
+
+              Text(
+                businessName,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 30,
+                  height: 1.08,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.0,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              if (city.isNotEmpty)
+                Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: theme.textTertiary,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        city,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow:
+                        TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+              const SizedBox(height: 20),
+
+              Container(
+                padding:
+                const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.primary.withValues(
+                    alpha: 0.08,
+                  ),
+                  borderRadius:
+                  BorderRadius.circular(30),
+                  border: Border.all(
+                    color: theme.primary.withValues(
+                      alpha: 0.14,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 14,
+                      color: theme.primary,
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'Your digital experience',
+                      style: TextStyle(
+                        color: theme.primary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExploreCard(BuildContext context) {
+    return _GlassCard(
+      theme: theme,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Explore what we have for you',
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 21,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            primaryDescription,
+            style: TextStyle(
+              color: theme.textSecondary,
+              fontSize: 13.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: FilledButton(
+              onPressed: landing.menuAvailable
+                  ? onOpenMenu
+                  : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.primary,
+                foregroundColor: theme.onPrimary,
+                disabledBackgroundColor:
+                theme.primary.withValues(
+                  alpha: 0.35,
+                ),
+                disabledForegroundColor:
+                theme.onPrimary.withValues(
+                  alpha: 0.75,
+                ),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(17),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment:
+                MainAxisAlignment.center,
+                children: [
+                  Text(
+                    primaryActionLabel,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 19,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperienceCard(BuildContext context) {
+    return _GlassCard(
+      theme: theme,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Enjoy more with us',
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 21,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'Discover more ways to enjoy your experience with this business.',
+            style: TextStyle(
+              color: theme.textSecondary,
+              fontSize: 13.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Loyalty is the only currently visible action.
+          // Future options can be added beside it without
+          // changing the structure of this card.
+          if (hasLoyalty)
+            _ExperienceAction(
+              icon: Icons.loyalty_rounded,
+              label: 'Loyalty',
+              color: theme.primary,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        CustomerLoyaltyPage(
+                          businessId:
+                          landing.businessId,
+                          businessName:
+                          businessName,
+                          businessType: landing.businessType,
+                          brandColor: landing.brandColor,
+                        ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(BuildContext context) {
+    return _GlassCard(
+      theme: theme,
+      padding: const EdgeInsets.all(22),
+      child: Row(
+        crossAxisAlignment:
+        CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: theme.primary.withValues(
+                alpha: 0.10,
+              ),
+              borderRadius:
+              BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.rate_review_outlined,
+              color: theme.primary,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enjoyed your experience?',
+                  style: TextStyle(
+                    color: theme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We would love to hear from you.',
+                  style: TextStyle(
+                    color: theme.textSecondary,
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Please review us on Google.',
+                  style: TextStyle(
+                    color: theme.primary,
+                    fontSize: 12.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton(
+            tooltip: 'Leave a review',
+            onPressed: () {
+              onOpenExternalLink(
+                landing.googleReviewUrl!,
+              );
+            },
+            style: IconButton.styleFrom(
+              backgroundColor: theme.primary,
+              foregroundColor: theme.onPrimary,
+            ),
+            icon: const Icon(
+              Icons.arrow_forward_rounded,
+              size: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialSection(BuildContext context) {
+    final socials = <_SocialItem>[];
 
     if (hasInstagram) {
       socials.add(
-        _SocialLinkItem(
+        _SocialItem(
           label: 'Instagram',
           icon: Icons.camera_alt_rounded,
-          color: const Color(0xFFE1306C),
-          backgroundColor:
-          const Color(0xFFFFF1F5),
-          borderColor:
-          const Color(0xFFF7CBDC),
           url: landing.instagramUrl!,
         ),
       );
@@ -1036,14 +884,9 @@ class _PublicLandingScreenState
 
     if (hasFacebook) {
       socials.add(
-        _SocialLinkItem(
+        _SocialItem(
           label: 'Facebook',
           icon: Icons.facebook_rounded,
-          color: const Color(0xFF1877F2),
-          backgroundColor:
-          const Color(0xFFF6F9FF),
-          borderColor:
-          const Color(0xFFCFE0FF),
           url: landing.facebookUrl!,
         ),
       );
@@ -1051,15 +894,9 @@ class _PublicLandingScreenState
 
     if (hasYoutube) {
       socials.add(
-        _SocialLinkItem(
+        _SocialItem(
           label: 'YouTube',
-          icon:
-          Icons.play_circle_outline_rounded,
-          color: const Color(0xFFFF0000),
-          backgroundColor:
-          const Color(0xFFFFF8F8),
-          borderColor:
-          const Color(0xFFFFD0D0),
+          icon: Icons.play_arrow_rounded,
           url: landing.youtubeUrl!,
         ),
       );
@@ -1070,468 +907,513 @@ class _PublicLandingScreenState
     }
 
     return Column(
-      crossAxisAlignment:
-      CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Connect',
+        Text(
+          'Connect with us',
+          textAlign: TextAlign.center,
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
+            color: theme.textTertiary,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
           ),
         ),
-
-        const SizedBox(height: 4),
-
-        const Text(
-          'Follow and stay connected.',
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 13,
-          ),
-        ),
-
-        const SizedBox(height: 13),
-
-        LayoutBuilder(
-          builder: (
-              context,
-              constraints,
-              ) {
-            final compact =
-                constraints.maxWidth < 420;
-
-            return GridView.builder(
-              shrinkWrap: true,
-              physics:
-              const NeverScrollableScrollPhysics(),
-              itemCount: socials.length,
-              gridDelegate:
-              SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount:
-                compact ? 1 : 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                mainAxisExtent: 56,
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment:
+          MainAxisAlignment.center,
+          children: socials.map((social) {
+            return Padding(
+              padding:
+              const EdgeInsets.symmetric(
+                horizontal: 7,
               ),
-              itemBuilder:
-                  (context, index) {
-                return _buildSocialTile(
-                  context,
-                  socials[index],
-                );
-              },
+              child: _SocialDot(
+                item: social,
+                theme: theme,
+                onTap: () {
+                  onOpenExternalLink(
+                    social.url,
+                  );
+                },
+              ),
             );
-          },
+          }).toList(),
         ),
       ],
     );
   }
 
-  // ============================================================
-  // SOCIAL TILE
-  // ============================================================
-
-  Widget _buildSocialTile(
-      BuildContext context,
-      _SocialLinkItem social,
-      ) {
-    return Material(
-      color: social.backgroundColor,
-      borderRadius:
-      BorderRadius.circular(16),
-      child: InkWell(
-        onTap: () =>
-            _openExternalLink(
-              social.url,
-            ),
-        borderRadius:
-        BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: social.backgroundColor,
-            borderRadius:
-            BorderRadius.circular(16),
-            border: Border.all(
-              color: social.borderColor,
-            ),
-          ),
-          child: Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 13,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration:
-                  BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                    BorderRadius.circular(11),
-                  ),
-                  child: Icon(
-                    social.icon,
-                    size: 19,
-                    color: social.color,
-                  ),
-                ),
-
-                const SizedBox(width: 11),
-
-                Expanded(
-                  child: Text(
-                    social.label,
-                    maxLines: 1,
-                    overflow:
-                    TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: social.color,
-                      fontSize: 13.5,
-                      fontWeight:
-                      FontWeight.w800,
-                    ),
-                  ),
-                ),
-
-                Icon(
-                  Icons.arrow_outward_rounded,
-                  size: 16,
-                  color: social.color.withValues(
-                    alpha: 0.7,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // BUSINESS INFO
-  // ============================================================
-
-  Widget _buildBusinessTypeInfo(
-      BuildContext context,
-      LandingResponse landing,
-      ) {
-    final theme = Theme.of(context);
-
-    final terminology =
-    _terminologyFor(
-      landing.businessType,
-    );
-
-    return Container(
-      padding:
-      const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme
-            .colorScheme
-            .surfaceContainerHighest,
-        borderRadius:
-        BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: theme
-                  .colorScheme
-                  .primaryContainer,
-              borderRadius:
-              BorderRadius.circular(11),
-            ),
-            child: Icon(
-              Icons.info_outline_rounded,
-              size: 19,
-              color: theme
-                  .colorScheme
-                  .primary,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              terminology.description,
-              style: theme
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                height: 1.45,
-                color: theme
-                    .colorScheme
-                    .onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // FOOTER
-  // ============================================================
-
-  Widget _buildFooter(
-      BuildContext context,
-      ) {
+  Widget _buildFooter(BuildContext context) {
     return Column(
       children: [
         Text(
           'Powered by ScanAura',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurfaceVariant,
+            color: theme.textTertiary,
+            fontSize: 11.5,
             fontWeight: FontWeight.w600,
           ),
         ),
-
-        const SizedBox(height: 6),
-
+        const SizedBox(height: 7),
         TextButton(
           onPressed: () {
-            context.go('/register');
+            context.go('/login');
           },
+          style: TextButton.styleFrom(
+            foregroundColor: theme.primary,
+            padding:
+            const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4,
+            ),
+          ),
           child: const Text(
             'Register your business',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],
     );
   }
+}
 
-  // ============================================================
-  // UNAVAILABLE
-  // ============================================================
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({
+    required this.theme,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+  });
 
-  Widget _buildUnavailable() {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 420,
-              ),
-              child: Column(
-                mainAxisSize:
-                MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.storefront_outlined,
-                    size: 56,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
+  final PublicTheme theme;
+  final Widget child;
+  final EdgeInsetsGeometry padding;
 
-                  const SizedBox(height: 16),
-
-                  const Text(
-                    'Business information is unavailable.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                      FontWeight.w700,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.glassSurface,
+        borderRadius:
+        BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.glassBorder,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.primary.withValues(
+              alpha: 0.055,
+            ),
+            blurRadius: 30,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius:
+        BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.primary.withValues(
+                          alpha: 0.035,
+                        ),
+                        Colors.transparent,
+                        theme.accent.withValues(
+                          alpha: 0.025,
+                        ),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    'Please try again in a moment.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ),
+            Padding(
+              padding: padding,
+              child: child,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassIconButton extends StatelessWidget {
+  const _GlassIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(16),
+        child: Ink(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: color.withValues(
+              alpha: 0.08,
+            ),
+            borderRadius:
+            BorderRadius.circular(16),
+            border: Border.all(
+              color: color.withValues(
+                alpha: 0.13,
+              ),
+            ),
+          ),
+          child: Tooltip(
+            message: tooltip,
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
             ),
           ),
         ),
       ),
     );
   }
+}
 
-  // ============================================================
-  // LOADING
-  // ============================================================
+class _BusinessLogo extends StatelessWidget {
+  const _BusinessLogo({
+    required this.logoUrl,
+    required this.businessName,
+    required this.theme,
+  });
 
-  Widget _buildLoading() {
-    return const Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
-    );
-  }
+  final String? logoUrl;
+  final String businessName;
+  final PublicTheme theme;
 
-  // ============================================================
-  // ERROR
-  // ============================================================
+  String get initials {
+    final parts = businessName
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .toList();
 
-  Widget _buildError(
-      BuildContext context,
-      PublicState state,
-      ) {
-    if (state.isBusinessUnavailable) {
-      return _buildMaintenancePage(
-        context,
-      );
+    if (parts.isEmpty) {
+      return 'B';
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 420,
-              ),
-              child: Column(
-                mainAxisSize:
-                MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 52,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .error,
-                  ),
+    return parts
+        .map(
+          (part) => part.substring(0, 1),
+    )
+        .join()
+        .toUpperCase();
+  }
 
-                  const SizedBox(height: 16),
+  @override
+  Widget build(BuildContext context) {
+    final hasLogo =
+        logoUrl != null &&
+            logoUrl!.trim().isNotEmpty;
 
-                  const Text(
-                    'Unable to load business',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                      FontWeight.w700,
-                    ),
-                  ),
+    return Container(
+      width: 112,
+      height: 112,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.primary.withValues(
+              alpha: 0.14,
+            ),
+            theme.primary.withValues(
+              alpha: 0.05,
+            ),
+          ],
+        ),
+        border: Border.all(
+          color: theme.primary.withValues(
+            alpha: 0.16,
+          ),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.primary.withValues(
+              alpha: 0.10,
+            ),
+            blurRadius: 25,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: hasLogo
+          ? Image.network(
+        logoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (
+            context,
+            error,
+            stackTrace,
+            ) {
+          return _fallback();
+        },
+      )
+          : _fallback(),
+    );
+  }
 
-                  const SizedBox(height: 8),
+  Widget _fallback() {
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: theme.primary,
+          fontSize: 31,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
+  }
+}
 
-                  Text(
-                    state.errorMessage ??
-                        'Unable to load business.',
-                    textAlign: TextAlign.center,
-                  ),
+class _ExperienceAction extends StatelessWidget {
+  const _ExperienceAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
-                  const SizedBox(height: 16),
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
-                  SizedBox(
-                    width: double.infinity,
-                    child:
-                    FilledButton.icon(
-                      onPressed: () {
-                        ref
-                            .read(
-                          publicNotifierProvider
-                              .notifier,
-                        )
-                            .loadLanding(
-                          widget.qrCode,
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.refresh_rounded,
-                      ),
-                      label: const Text(
-                        'Retry',
-                      ),
-                    ),
-                  ),
-                ],
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(17),
+        child: Ink(
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 15,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(
+              alpha: 0.07,
+            ),
+            borderRadius:
+            BorderRadius.circular(17),
+            border: Border.all(
+              color: color.withValues(
+                alpha: 0.13,
               ),
             ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: color,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  // ============================================================
-  // MAINTENANCE
-  // ============================================================
+class _SocialDot extends StatelessWidget {
+  const _SocialDot({
+    required this.item,
+    required this.theme,
+    required this.onTap,
+  });
 
-  Widget _buildMaintenancePage(
-      BuildContext context,
-      ) {
-    final theme =
-    Theme.of(context);
+  final _SocialItem item;
+  final PublicTheme theme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(18),
+        child: Padding(
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 5,
+            vertical: 3,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Ink(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.primary.withValues(
+                    alpha: 0.07,
+                  ),
+                  border: Border.all(
+                    color: theme.primary.withValues(
+                      alpha: 0.12,
+                    ),
+                  ),
+                ),
+                child: Icon(
+                  item.icon,
+                  size: 19,
+                  color: theme.primary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                item.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.textSecondary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({
+    required this.color,
+    required this.size,
+  });
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _PublicLoadingPage extends StatelessWidget {
+  const _PublicLoadingPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
+class _PublicErrorPage extends StatelessWidget {
+  const _PublicErrorPage({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors =
+        Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor:
-      theme.colorScheme.surface,
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints:
               const BoxConstraints(
-                maxWidth: 460,
+                maxWidth: 440,
               ),
               child: Column(
-                mainAxisSize:
-                MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 76,
-                    height: 76,
-                    decoration:
-                    BoxDecoration(
-                      color: theme
-                          .colorScheme
-                          .surfaceContainerHighest,
+                    width: 78,
+                    height: 78,
+                    decoration: BoxDecoration(
+                      color:
+                      colors.primaryContainer,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons
-                          .storefront_outlined,
+                      Icons.storefront_outlined,
                       size: 38,
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
+                      color: colors
+                          .onPrimaryContainer,
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   Text(
-                    'Business page unavailable',
+                    'Unable to open this page',
                     textAlign: TextAlign.center,
-                    style: theme
+                    style: Theme.of(context)
                         .textTheme
                         .headlineSmall
                         ?.copyWith(
@@ -1539,36 +1421,32 @@ class _PublicLandingScreenState
                       FontWeight.w800,
                     ),
                   ),
-
-                  const SizedBox(height: 10),
-
+                  const SizedBox(height: 9),
                   Text(
-                    'This business\'s ScanAura page is '
-                        'currently under maintenance. '
-                        'Please check back later.',
-                    textAlign: TextAlign.center,
-                    style: theme
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(
-                      height: 1.5,
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  Text(
-                    'Powered by ScanAura',
+                    message,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
-                      fontWeight:
-                      FontWeight.w600,
+                      color:
+                      colors.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: FilledButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                      ),
+                      label: const Text(
+                        'Try again',
+                        style: TextStyle(
+                          fontWeight:
+                          FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1580,10 +1458,6 @@ class _PublicLandingScreenState
     );
   }
 }
-
-// ============================================================
-// BUSINESS TERMINOLOGY
-// ============================================================
 
 class _BusinessTerminology {
   const _BusinessTerminology({
@@ -1597,160 +1471,14 @@ class _BusinessTerminology {
   final String description;
 }
 
-_BusinessTerminology _terminologyFor(
-    String businessType,
-    ) {
-  switch (businessType.trim().toUpperCase()) {
-    case 'FOOD':
-    case 'RESTAURANT':
-    case 'CAFE':
-      return const _BusinessTerminology(
-        collectionTitle: 'Menu',
-        itemTitle: 'Item',
-        description:
-        'Explore the latest menu and available items.',
-      );
-
-    case 'SERVICES':
-    case 'SALON':
-      return const _BusinessTerminology(
-        collectionTitle: 'Services',
-        itemTitle: 'Service',
-        description:
-        'Explore available services and offerings.',
-      );
-
-    case 'RETAIL':
-    case 'RETAIL_SHOP':
-    case 'ECOMMERCE':
-    case 'E_COMMERCE':
-      return const _BusinessTerminology(
-        collectionTitle: 'Catalog',
-        itemTitle: 'Product',
-        description:
-        'Browse available products and offerings.',
-      );
-
-    case 'PERSONAL_BRAND':
-      return const _BusinessTerminology(
-        collectionTitle: 'Offerings',
-        itemTitle: 'Item',
-        description:
-        'Explore products, services and offerings.',
-      );
-
-    case 'OTHER':
-    default:
-      return const _BusinessTerminology(
-        collectionTitle: 'Offerings',
-        itemTitle: 'Item',
-        description:
-        'Explore products, services and offerings.',
-      );
-  }
-}
-
-// ============================================================
-// SOCIAL MODEL
-// ============================================================
-
-class _SocialLinkItem {
-  const _SocialLinkItem({
+class _SocialItem {
+  const _SocialItem({
     required this.label,
     required this.icon,
-    required this.color,
-    required this.backgroundColor,
-    required this.borderColor,
     required this.url,
   });
 
   final String label;
   final IconData icon;
-  final Color color;
-  final Color backgroundColor;
-  final Color borderColor;
   final String url;
-}
-
-// ============================================================
-// INFO CHIP
-// ============================================================
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme =
-    Theme.of(context);
-
-    return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      decoration:
-      BoxDecoration(
-        color: theme
-            .colorScheme
-            .surfaceContainerHighest,
-        borderRadius:
-        BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize:
-        MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: theme
-                .colorScheme
-                .onSurfaceVariant,
-          ),
-
-          const SizedBox(width: 6),
-
-          Text(
-            label,
-            style: TextStyle(
-              color: theme
-                  .colorScheme
-                  .onSurfaceVariant,
-              fontSize: 12.5,
-              fontWeight:
-              FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// DEFAULT BUSINESS ICON
-// ============================================================
-
-class _DefaultBusinessIcon
-    extends StatelessWidget {
-  const _DefaultBusinessIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Icon(
-        Icons.storefront_outlined,
-        size: 42,
-        color: Color(0xFF00674F),
-      ),
-    );
-  }
 }

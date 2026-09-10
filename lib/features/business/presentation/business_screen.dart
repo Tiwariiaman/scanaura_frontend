@@ -8,6 +8,7 @@ import '../../../core/utils/image_compression_helper.dart';
 import '../data/models/business_request.dart';
 import 'providers/business_notifier.dart';
 import 'providers/business_state.dart';
+import '../../public_menu/presentation/theme/public_theme_resolver.dart';
 
 class BusinessScreen extends ConsumerStatefulWidget {
   const BusinessScreen({super.key});
@@ -16,7 +17,146 @@ class BusinessScreen extends ConsumerStatefulWidget {
   ConsumerState<BusinessScreen> createState() => _BusinessScreenState();
 }
 
+class _BrandColorDialog extends StatefulWidget {
+  const _BrandColorDialog({
+    required this.initialColor,
+  });
+
+  final Color initialColor;
+
+  @override
+  State<_BrandColorDialog> createState() => _BrandColorDialogState();
+}
+
+class _BrandColorDialogState extends State<_BrandColorDialog> {
+  late HSLColor _color;
+
+  @override
+  void initState() {
+    super.initState();
+    _color = HSLColor.fromColor(widget.initialColor);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = _color.toColor();
+
+    return AlertDialog(
+      title: const Text('Choose brand color'),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 68,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: selected,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                _colorToHex(selected),
+                style: TextStyle(
+                  color: selected.computeLuminance() > .42
+                      ? const Color(0xFF172025)
+                      : Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            _ColorSlider(
+              label: 'Hue',
+              value: _color.hue,
+              max: 360,
+              onChanged: (value) {
+                setState(() {
+                  _color = _color.withHue(value);
+                });
+              },
+            ),
+            _ColorSlider(
+              label: 'Saturation',
+              value: _color.saturation * 100,
+              max: 100,
+              onChanged: (value) {
+                setState(() {
+                  _color = _color.withSaturation(value / 100);
+                });
+              },
+            ),
+            _ColorSlider(
+              label: 'Brightness',
+              value: _color.lightness * 100,
+              max: 100,
+              onChanged: (value) {
+                setState(() {
+                  _color = _color.withLightness(value / 100);
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(selected),
+          child: const Text('Use color'),
+        ),
+      ],
+    );
+  }
+
+  String _colorToHex(Color color) {
+    final value = color.value & 0xFFFFFF;
+    return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
+}
+
+class _ColorSlider extends StatelessWidget {
+  const _ColorSlider({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double max;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label),
+            Text(value.round().toString()),
+          ],
+        ),
+        Slider(
+          value: value.clamp(0, max).toDouble(),
+          max: max,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
 class _BusinessScreenState extends ConsumerState<BusinessScreen> {
+  static const Color _fallbackBrandColor = Color(0xFF00674F);
+
   bool _loadingStarted = false;
   bool _logoUploading = false;
   bool _googleReviewUpdating = false;
@@ -24,6 +164,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
   bool _instagramUpdating = false;
   bool _facebookUpdating = false;
   bool _youtubeUpdating = false;
+  bool _brandColorSaving = false;
+
+  Color _brandColor = _fallbackBrandColor;
+  bool _brandColorLoaded = false;
 
   final TextEditingController _instagramController =
   TextEditingController();
@@ -31,10 +175,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
   TextEditingController();
   final TextEditingController _youtubeController =
   TextEditingController();
+  final TextEditingController _brandColorController =
+  TextEditingController();
 
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkBusiness();
     });
@@ -45,6 +192,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     _instagramController.dispose();
     _facebookController.dispose();
     _youtubeController.dispose();
+    _brandColorController.dispose();
     super.dispose();
   }
 
@@ -53,14 +201,19 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
     _loadingStarted = true;
 
-    await ref.read(businessNotifierProvider.notifier).loadMyBusiness();
+    await ref
+        .read(businessNotifierProvider.notifier)
+        .loadMyBusiness();
 
     if (!mounted) return;
 
     final state = ref.read(businessNotifierProvider);
 
-    if (state.business != null) {
-      _syncSocialControllers(state.business);
+    final business = state.business;
+
+    if (business != null) {
+      _syncSocialControllers(business);
+      _loadBrandColorFromBusiness(business);
       return;
     }
 
@@ -77,72 +230,116 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     setState(() {
       _loadingStarted = false;
     });
+
     await _checkBusiness();
   }
 
   Future<void> _refreshBusiness() async {
-    await ref.read(businessNotifierProvider.notifier).loadMyBusiness();
+    await ref
+        .read(businessNotifierProvider.notifier)
+        .loadMyBusiness();
 
     if (!mounted) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
+
     if (business != null) {
       _syncSocialControllers(business);
+      _loadBrandColorFromBusiness(business);
     }
   }
 
-  Future<void> _pickAndUploadLogo() async {
-    if (_logoUploading) return;
+  void _loadBrandColorFromBusiness(dynamic business) {
+    final raw = business.brandColor?.toString().trim();
 
-    final business = ref.read(businessNotifierProvider).business;
+    final parsed = PublicThemeResolver.parseColor(raw);
 
-    if (business == null) {
-      _showMessage('Business details are not available.');
-      return;
-    }
+    final effectiveColor = parsed ?? _fallbackBrandColor;
 
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
+    if (!mounted) return;
+
+    setState(() {
+      _brandColor = effectiveColor;
+      _brandColorLoaded = true;
+
+      _brandColorController.text = parsed == null
+          ? _colorToHex(_fallbackBrandColor)
+          : _colorToHex(effectiveColor);
+    });
+  }
+
+  String _colorToHex(Color color) {
+    final value = color.value & 0xFFFFFF;
+
+    return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
+
+  void _previewBrandColor(String value) {
+    final parsed =
+    PublicThemeResolver.parseColor(value.trim());
+
+    if (parsed == null) return;
+
+    setState(() {
+      _brandColor = parsed;
+    });
+  }
+
+  Future<void> _chooseBrandColor() async {
+    if (!_brandColorLoaded || _brandColorSaving) return;
+
+    final selected = await showDialog<Color>(
+      context: context,
+      builder: (_) => _BrandColorDialog(
+        initialColor: _brandColor,
+      ),
     );
 
-    if (result == null || result.files.isEmpty) return;
+    if (selected == null || !mounted) return;
 
-    final file = result.files.single;
-    final bytes = file.bytes;
+    setState(() {
+      _brandColor = selected;
+      _brandColorController.text = _colorToHex(selected);
+    });
+  }
 
-    if (bytes == null || bytes.isEmpty) {
-      _showMessage('Unable to read the selected image.');
+  Future<void> _saveBrandColor(dynamic business) async {
+    if (_brandColorSaving) return;
+
+    final parsed = PublicThemeResolver.parseColor(
+      _brandColorController.text.trim(),
+    );
+
+    if (parsed == null) {
+      _showMessage(
+        'Enter a valid HEX color, for example #00674F.',
+      );
       return;
     }
 
+    final businessType =
+    _parseBusinessType(business.businessType);
+
+    if (businessType == null) {
+      _showMessage('Unable to determine business type.');
+      return;
+    }
+
+    final hex = _colorToHex(parsed);
+
+    setState(() {
+      _brandColorSaving = true;
+      _brandColor = parsed;
+    });
+
     try {
-      _showLogoLoading(true);
-
-      final compressed =
-      await ImageCompressionHelper.compressLogo(bytes);
-
-      final uploadService = ref.read(imageUploadServiceProvider);
-
-      final upload = await uploadService.uploadBusinessLogo(
-        compressed,
-        file.name,
-      );
-
-      final businessType = _parseBusinessType(business.businessType);
-
-      if (businessType == null) {
-        throw Exception('Unable to determine business type.');
-      }
-
-      // IMPORTANT:
-      // Preserve every existing customer-feature setting while changing
-      // only the logo. This prevents logo updates from resetting toggles.
-      final updatedRequest = BusinessRequest(
+      final request = BusinessRequest(
         businessName: business.businessName,
         businessType: businessType,
         phone: business.phone,
-        logoUrl: upload.imageUrl,
+        logoUrl: business.logoUrl,
+        logoPublicId: business.logoPublicId,
         whatsapp: business.whatsapp,
         email: business.email,
         address: business.address,
@@ -162,6 +359,160 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         facebookEnabled: business.facebookEnabled,
         youtubeUrl: business.youtubeUrl,
         youtubeEnabled: business.youtubeEnabled,
+        brandColor: hex,
+      );
+
+      await ref
+          .read(businessNotifierProvider.notifier)
+          .updateBusiness(request);
+
+      if (!mounted) return;
+
+      final state = ref.read(businessNotifierProvider);
+
+      if (state.status != BusinessStatus.success ||
+          state.business == null) {
+        _showMessage(
+          state.errorMessage ??
+              'Unable to save brand color.',
+        );
+        return;
+      }
+
+      await _refreshBusiness();
+
+      if (!mounted) return;
+
+      final refreshed =
+          ref.read(businessNotifierProvider).business;
+
+      final savedColor =
+      refreshed?.brandColor?.trim();
+
+      final savedParsed =
+      PublicThemeResolver.parseColor(savedColor);
+
+      if (savedParsed == null ||
+          _colorToHex(savedParsed).toUpperCase() !=
+              hex.toUpperCase()) {
+        _showMessage(
+          'Brand color could not be verified. Please try again.',
+        );
+        return;
+      }
+
+      setState(() {
+        _brandColor = savedParsed;
+        _brandColorController.text =
+            _colorToHex(savedParsed);
+      });
+
+      _showMessage(
+        'Brand color saved successfully.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+
+      await _refreshBusiness();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _brandColorSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadLogo() async {
+    if (_logoUploading) return;
+
+    final business =
+        ref.read(businessNotifierProvider).business;
+
+    if (business == null) {
+      _showMessage(
+        'Business details are not available.',
+      );
+      return;
+    }
+
+    final result =
+    await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    final bytes = file.bytes;
+
+    if (bytes == null || bytes.isEmpty) {
+      _showMessage(
+        'Unable to read the selected image.',
+      );
+      return;
+    }
+
+    try {
+      _showLogoLoading(true);
+
+      final compressed =
+      await ImageCompressionHelper.compressLogo(
+        bytes,
+      );
+
+      final uploadService =
+      ref.read(imageUploadServiceProvider);
+
+      final upload =
+      await uploadService.uploadBusinessLogo(
+        compressed,
+        file.name,
+      );
+
+      final businessType =
+      _parseBusinessType(business.businessType);
+
+      if (businessType == null) {
+        throw Exception(
+          'Unable to determine business type.',
+        );
+      }
+
+      final updatedRequest = BusinessRequest(
+        businessName: business.businessName,
+        businessType: businessType,
+        phone: business.phone,
+        logoUrl: upload.imageUrl,
+        logoPublicId: business.logoPublicId,
+        whatsapp: business.whatsapp,
+        email: business.email,
+        address: business.address,
+        city: business.city,
+        state: business.state,
+        country: business.country,
+        pincode: business.pincode,
+        website: business.website,
+        description: business.description,
+        upiId: business.upiId,
+        googleReviewUrl: business.googleReviewUrl,
+        googleReviewEnabled: business.googleReviewEnabled,
+        paymentEnabled: business.paymentEnabled,
+        instagramUrl: business.instagramUrl,
+        instagramEnabled: business.instagramEnabled,
+        facebookUrl: business.facebookUrl,
+        facebookEnabled: business.facebookEnabled,
+        youtubeUrl: business.youtubeUrl,
+        youtubeEnabled: business.youtubeEnabled,
+        brandColor: business.brandColor,
       );
 
       await ref
@@ -170,25 +521,33 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
       if (!mounted) return;
 
-      final state = ref.read(businessNotifierProvider);
+      final state =
+      ref.read(businessNotifierProvider);
 
-      if (state.status == BusinessStatus.success &&
+      if (state.status ==
+          BusinessStatus.success &&
           state.business != null) {
-        // Re-read from the backend so the UI reflects persisted state.
         await _refreshBusiness();
 
         if (!mounted) return;
-        _showMessage('Business logo updated successfully.');
+
+        _showMessage(
+          'Business logo updated successfully.',
+        );
       } else {
         _showMessage(
-          state.errorMessage ?? 'Unable to save business logo.',
+          state.errorMessage ??
+              'Unable to save business logo.',
         );
       }
     } catch (e) {
       if (!mounted) return;
 
       _showMessage(
-        e.toString().replaceFirst('Exception: ', ''),
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
       );
     } finally {
       if (mounted) {
@@ -197,18 +556,26 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     }
   }
 
-  Future<void> _setGoogleReviewEnabled(bool value) async {
+  Future<void> _setGoogleReviewEnabled(
+      bool value,
+      ) async {
     if (_googleReviewUpdating) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
 
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
-    if (value && !_hasValue(business.googleReviewUrl)) {
-      _showMessage('Add your Google Review link first.');
+    if (value &&
+        !_hasValue(business.googleReviewUrl)) {
+      _showMessage(
+        'Add your Google Review link first.',
+      );
       return;
     }
 
@@ -218,18 +585,25 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
-  Future<void> _setPaymentEnabled(bool value) async {
+  Future<void> _setPaymentEnabled(
+      bool value,
+      ) async {
     if (_paymentUpdating) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
 
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
     if (value && !_hasValue(business.upiId)) {
-      _showMessage('Add your UPI ID first.');
+      _showMessage(
+        'Add your UPI ID first.',
+      );
       return;
     }
 
@@ -239,17 +613,26 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
-  Future<void> _setInstagramEnabled(bool value) async {
+  Future<void> _setInstagramEnabled(
+      bool value,
+      ) async {
     if (_instagramUpdating) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
+
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
-    if (value && !_hasValue(business.instagramUrl)) {
-      _showMessage('Add your Instagram link first.');
+    if (value &&
+        !_hasValue(business.instagramUrl)) {
+      _showMessage(
+        'Add your Instagram link first.',
+      );
       return;
     }
 
@@ -260,17 +643,26 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
-  Future<void> _setFacebookEnabled(bool value) async {
+  Future<void> _setFacebookEnabled(
+      bool value,
+      ) async {
     if (_facebookUpdating) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
+
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
-    if (value && !_hasValue(business.facebookUrl)) {
-      _showMessage('Add your Facebook link first.');
+    if (value &&
+        !_hasValue(business.facebookUrl)) {
+      _showMessage(
+        'Add your Facebook link first.',
+      );
       return;
     }
 
@@ -281,17 +673,26 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
-  Future<void> _setYoutubeEnabled(bool value) async {
+  Future<void> _setYoutubeEnabled(
+      bool value,
+      ) async {
     if (_youtubeUpdating) return;
 
-    final business = ref.read(businessNotifierProvider).business;
+    final business =
+        ref.read(businessNotifierProvider).business;
+
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
-    if (value && !_hasValue(business.youtubeUrl)) {
-      _showMessage('Add your YouTube link first.');
+    if (value &&
+        !_hasValue(business.youtubeUrl)) {
+      _showMessage(
+        'Add your YouTube link first.',
+      );
       return;
     }
 
@@ -302,10 +703,16 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     );
   }
 
-  Future<void> _saveSocialLink(String feature) async {
-    final business = ref.read(businessNotifierProvider).business;
+  Future<void> _saveSocialLink(
+      String feature,
+      ) async {
+    final business =
+        ref.read(businessNotifierProvider).business;
+
     if (business == null) {
-      _showMessage('Business details are not available.');
+      _showMessage(
+        'Business details are not available.',
+      );
       return;
     }
 
@@ -319,15 +726,21 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     if (controller == null) return;
 
     final url = controller.text.trim();
+
     if (!_isHttpUrl(url)) {
-      _showMessage('Enter a valid http:// or https:// link.');
+      _showMessage(
+        'Enter a valid http:// or https:// link.',
+      );
       return;
     }
 
     final enabled = switch (feature) {
-      'instagram' => business.instagramEnabled == true,
-      'facebook' => business.facebookEnabled == true,
-      'youtube' => business.youtubeEnabled == true,
+      'instagram' =>
+      business.instagramEnabled == true,
+      'facebook' =>
+      business.facebookEnabled == true,
+      'youtube' =>
+      business.youtubeEnabled == true,
       _ => false,
     };
 
@@ -358,15 +771,23 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     });
 
     try {
-      final business = ref.read(businessNotifierProvider).business;
+      final business =
+          ref.read(businessNotifierProvider).business;
+
       if (business == null) {
-        _showMessage('Business details are not available.');
+        _showMessage(
+          'Business details are not available.',
+        );
         return;
       }
 
-      final businessType = _parseBusinessType(business.businessType);
+      final businessType =
+      _parseBusinessType(business.businessType);
+
       if (businessType == null) {
-        _showMessage('Unable to determine business type.');
+        _showMessage(
+          'Unable to determine business type.',
+        );
         return;
       }
 
@@ -375,6 +796,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         businessType: businessType,
         phone: business.phone,
         logoUrl: business.logoUrl,
+        logoPublicId: business.logoPublicId,
         whatsapp: business.whatsapp,
         email: business.email,
         address: business.address,
@@ -386,20 +808,28 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         description: business.description,
         upiId: business.upiId,
         googleReviewUrl: business.googleReviewUrl,
-        googleReviewEnabled: business.googleReviewEnabled,
+        googleReviewEnabled:
+        business.googleReviewEnabled,
         paymentEnabled: business.paymentEnabled,
-        instagramUrl:
-        feature == 'instagram' ? url : business.instagramUrl,
-        instagramEnabled:
-        feature == 'instagram' ? value : business.instagramEnabled,
-        facebookUrl:
-        feature == 'facebook' ? url : business.facebookUrl,
-        facebookEnabled:
-        feature == 'facebook' ? value : business.facebookEnabled,
-        youtubeUrl:
-        feature == 'youtube' ? url : business.youtubeUrl,
-        youtubeEnabled:
-        feature == 'youtube' ? value : business.youtubeEnabled,
+        instagramUrl: feature == 'instagram'
+            ? url
+            : business.instagramUrl,
+        instagramEnabled: feature == 'instagram'
+            ? value
+            : business.instagramEnabled,
+        facebookUrl: feature == 'facebook'
+            ? url
+            : business.facebookUrl,
+        facebookEnabled: feature == 'facebook'
+            ? value
+            : business.facebookEnabled,
+        youtubeUrl: feature == 'youtube'
+            ? url
+            : business.youtubeUrl,
+        youtubeEnabled: feature == 'youtube'
+            ? value
+            : business.youtubeEnabled,
+        brandColor: business.brandColor,
       );
 
       await ref
@@ -408,21 +838,29 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
       if (!mounted) return;
 
-      final state = ref.read(businessNotifierProvider);
+      final state =
+      ref.read(businessNotifierProvider);
+
       if (state.status != BusinessStatus.success ||
           state.business == null) {
         _showMessage(
-          state.errorMessage ?? 'Unable to save the social link.',
+          state.errorMessage ??
+              'Unable to save the social link.',
         );
         return;
       }
 
       await _refreshBusiness();
+
       if (!mounted) return;
 
-      final refreshed = ref.read(businessNotifierProvider).business;
+      final refreshed =
+          ref.read(businessNotifierProvider).business;
+
       if (refreshed == null) {
-        _showMessage('Unable to refresh business details.');
+        _showMessage(
+          'Unable to refresh business details.',
+        );
         return;
       }
 
@@ -434,14 +872,20 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       };
 
       final savedValue = switch (feature) {
-        'instagram' => refreshed.instagramEnabled == true,
-        'facebook' => refreshed.facebookEnabled == true,
-        'youtube' => refreshed.youtubeEnabled == true,
+        'instagram' =>
+        refreshed.instagramEnabled == true,
+        'facebook' =>
+        refreshed.facebookEnabled == true,
+        'youtube' =>
+        refreshed.youtubeEnabled == true,
         _ => false,
       };
 
-      if (savedUrl != url || savedValue != value) {
-        _showMessage('The setting could not be saved. Please try again.');
+      if (savedUrl != url ||
+          savedValue != value) {
+        _showMessage(
+          'The setting could not be saved. Please try again.',
+        );
         return;
       }
 
@@ -454,8 +898,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       if (!mounted) return;
 
       _showMessage(
-        e.toString().replaceFirst('Exception: ', ''),
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
       );
+
       await _refreshBusiness();
     } finally {
       if (mounted) {
@@ -478,8 +926,11 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   bool _isHttpUrl(String value) {
     final uri = Uri.tryParse(value);
+
     if (uri == null) return false;
-    return (uri.scheme == 'http' || uri.scheme == 'https') &&
+
+    return (uri.scheme == 'http' ||
+        uri.scheme == 'https') &&
         uri.host.isNotEmpty;
   }
 
@@ -492,25 +943,34 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     };
   }
 
-  void _syncSocialControllers(dynamic business) {
-    final values = <TextEditingController, String>{
-      _instagramController: business.instagramUrl ?? '',
-      _facebookController: business.facebookUrl ?? '',
-      _youtubeController: business.youtubeUrl ?? '',
+  void _syncSocialControllers(
+      dynamic business,
+      ) {
+    final values =
+    <TextEditingController, String>{
+      _instagramController:
+      business.instagramUrl ?? '',
+      _facebookController:
+      business.facebookUrl ?? '',
+      _youtubeController:
+      business.youtubeUrl ?? '',
     };
 
-    values.forEach((controller, value) {
-      if (controller.text != value) {
-        controller.text = value;
-      }
-    });
+    values.forEach(
+          (controller, value) {
+        if (controller.text != value) {
+          controller.text = value;
+        }
+      },
+    );
   }
 
   Future<void> _updateCustomerFeature({
     required bool value,
     required String feature,
   }) async {
-    final isGoogleReview = feature == 'googleReview';
+    final isGoogleReview =
+        feature == 'googleReview';
 
     setState(() {
       if (isGoogleReview) {
@@ -525,14 +985,19 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           ref.read(businessNotifierProvider).business;
 
       if (business == null) {
-        _showMessage('Business details are not available.');
+        _showMessage(
+          'Business details are not available.',
+        );
         return;
       }
 
-      final businessType = _parseBusinessType(business.businessType);
+      final businessType =
+      _parseBusinessType(business.businessType);
 
       if (businessType == null) {
-        _showMessage('Unable to determine business type.');
+        _showMessage(
+          'Unable to determine business type.',
+        );
         return;
       }
 
@@ -541,6 +1006,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         businessType: businessType,
         phone: business.phone,
         logoUrl: business.logoUrl,
+        logoPublicId: business.logoPublicId,
         whatsapp: business.whatsapp,
         email: business.email,
         address: business.address,
@@ -552,16 +1018,22 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         description: business.description,
         upiId: business.upiId,
         googleReviewUrl: business.googleReviewUrl,
-        googleReviewEnabled:
-        isGoogleReview ? value : business.googleReviewEnabled,
-        paymentEnabled:
-        isGoogleReview ? business.paymentEnabled : value,
+        googleReviewEnabled: isGoogleReview
+            ? value
+            : business.googleReviewEnabled,
+        paymentEnabled: isGoogleReview
+            ? business.paymentEnabled
+            : value,
         instagramUrl: business.instagramUrl,
-        instagramEnabled: business.instagramEnabled,
+        instagramEnabled:
+        business.instagramEnabled,
         facebookUrl: business.facebookUrl,
-        facebookEnabled: business.facebookEnabled,
+        facebookEnabled:
+        business.facebookEnabled,
         youtubeUrl: business.youtubeUrl,
-        youtubeEnabled: business.youtubeEnabled,
+        youtubeEnabled:
+        business.youtubeEnabled,
+        brandColor: business.brandColor,
       );
 
       await ref
@@ -570,23 +1042,24 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
       if (!mounted) return;
 
-      final state = ref.read(businessNotifierProvider);
+      final state =
+      ref.read(businessNotifierProvider);
 
       if (state.status != BusinessStatus.success ||
           state.business == null) {
         _showMessage(
-          state.errorMessage ?? 'Unable to update the setting.',
+          state.errorMessage ??
+              'Unable to update the setting.',
         );
         return;
       }
 
-      // Never rely only on optimistic/local state.
-      // Fetch the saved record again so the switch represents the backend.
       await _refreshBusiness();
 
       if (!mounted) return;
 
-      final refreshed = ref.read(businessNotifierProvider).business;
+      final refreshed =
+          ref.read(businessNotifierProvider).business;
 
       final persistedValue = isGoogleReview
           ? refreshed?.googleReviewEnabled == true
@@ -596,6 +1069,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         _showMessage(
           'The setting could not be saved. Please try again.',
         );
+
         await _refreshBusiness();
         return;
       }
@@ -613,10 +1087,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       if (!mounted) return;
 
       _showMessage(
-        e.toString().replaceFirst('Exception: ', ''),
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
       );
 
-      // Restore the UI from the backend after any failure.
       await _refreshBusiness();
     } finally {
       if (mounted) {
@@ -633,6 +1109,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   void _showLogoLoading(bool value) {
     if (!mounted) return;
+
     setState(() {
       _logoUploading = value;
     });
@@ -651,13 +1128,20 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       );
   }
 
-  BusinessType? _parseBusinessType(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
+  BusinessType? _parseBusinessType(
+      String? value,
+      ) {
+    if (value == null ||
+        value.trim().isEmpty) {
+      return null;
+    }
 
-    final normalized = value.trim().toUpperCase();
+    final normalized =
+    value.trim().toUpperCase();
 
     for (final type in BusinessType.values) {
-      if (type.name.toUpperCase() == normalized) {
+      if (type.name.toUpperCase() ==
+          normalized) {
         return type;
       }
 
@@ -671,7 +1155,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(businessNotifierProvider);
+    final state =
+    ref.watch(businessNotifierProvider);
 
     if (state.business != null) {
       return _buildBusinessPage(
@@ -680,8 +1165,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       );
     }
 
-    if (state.status == BusinessStatus.loading ||
-        state.status == BusinessStatus.initial) {
+    if (state.status ==
+        BusinessStatus.loading ||
+        state.status ==
+            BusinessStatus.initial) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -689,7 +1176,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       );
     }
 
-    if (state.status == BusinessStatus.error) {
+    if (state.status ==
+        BusinessStatus.error) {
       return _buildErrorPage(
         context,
         state.errorMessage,
@@ -721,9 +1209,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           IconButton(
             tooltip: 'Edit Business',
             onPressed: () {
-              context.push('/business-onboarding?edit=true');
+              context.push(
+                '/business-onboarding?edit=true',
+              );
             },
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(
+              Icons.edit_outlined,
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -731,10 +1223,15 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       body: RefreshIndicator(
         onRefresh: _refreshBusiness,
         child: LayoutBuilder(
-          builder: (context, constraints) {
+          builder: (
+              context,
+              constraints,
+              ) {
             return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
+              physics:
+              const AlwaysScrollableScrollPhysics(),
+              padding:
+              const EdgeInsets.fromLTRB(
                 16,
                 16,
                 16,
@@ -743,11 +1240,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
+                    constraints:
+                    const BoxConstraints(
                       maxWidth: 1100,
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.stretch,
                       children: [
                         _buildBusinessHeader(
                           context,
@@ -758,53 +1257,74 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                         _sectionCard(
                           context,
                           title: 'Business Status',
-                          icon: Icons.verified_outlined,
+                          icon:
+                          Icons.verified_outlined,
                           child: Row(
                             children: [
                               Container(
                                 width: 10,
                                 height: 10,
-                                decoration: BoxDecoration(
-                                  color: business.active == true
+                                decoration:
+                                BoxDecoration(
+                                  color:
+                                  business.active ==
+                                      true
                                       ? Colors.green
                                       : Colors.red,
-                                  shape: BoxShape.circle,
+                                  shape:
+                                  BoxShape.circle,
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(
+                                width: 10,
+                              ),
                               Text(
-                                business.active == true
+                                business.active ==
+                                    true
                                     ? 'Active'
                                     : 'Inactive',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                                style: theme
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                  fontWeight:
+                                  FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
                         _sectionCard(
                           context,
-                          title: 'Contact Information',
-                          icon: Icons.contact_phone_outlined,
+                          title:
+                          'Contact Information',
+                          icon: Icons
+                              .contact_phone_outlined,
                           child: Column(
                             children: [
                               _infoRow(
                                 context,
-                                Icons.phone_outlined,
+                                Icons
+                                    .phone_outlined,
                                 'Phone',
                                 business.phone,
                               ),
-                              if (_hasValue(business.whatsapp))
+                              if (_hasValue(
+                                business.whatsapp,
+                              ))
                                 _infoRow(
                                   context,
                                   Icons.chat_outlined,
                                   'WhatsApp',
                                   business.whatsapp,
                                 ),
-                              if (_hasValue(business.email))
+                              if (_hasValue(
+                                business.email,
+                              ))
                                 _infoRow(
                                   context,
                                   Icons.email_outlined,
@@ -814,117 +1334,190 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
-                        if (_hasAddress(business))
+                        if (_hasAddress(
+                          business,
+                        ))
                           _sectionCard(
                             context,
                             title: 'Address',
-                            icon: Icons.location_on_outlined,
+                            icon: Icons
+                                .location_on_outlined,
                             child: Column(
                               children: [
-                                if (_hasValue(business.address))
+                                if (_hasValue(
+                                  business.address,
+                                ))
                                   _infoRow(
                                     context,
                                     Icons.home_outlined,
                                     'Address',
                                     business.address,
                                   ),
-                                if (_hasValue(business.city))
+                                if (_hasValue(
+                                  business.city,
+                                ))
                                   _infoRow(
                                     context,
-                                    Icons.location_city_outlined,
+                                    Icons
+                                        .location_city_outlined,
                                     'City',
                                     business.city,
                                   ),
-                                if (_hasValue(business.state))
+                                if (_hasValue(
+                                  business.state,
+                                ))
                                   _infoRow(
                                     context,
                                     Icons.map_outlined,
                                     'State',
                                     business.state,
                                   ),
-                                if (_hasValue(business.country))
+                                if (_hasValue(
+                                  business.country,
+                                ))
                                   _infoRow(
                                     context,
                                     Icons.public_outlined,
                                     'Country',
                                     business.country,
                                   ),
-                                if (_hasValue(business.pincode))
+                                if (_hasValue(
+                                  business.pincode,
+                                ))
                                   _infoRow(
                                     context,
-                                    Icons.pin_drop_outlined,
+                                    Icons
+                                        .pin_drop_outlined,
                                     'Pincode',
                                     business.pincode,
                                   ),
                               ],
                             ),
                           ),
-                        if (_hasAddress(business))
-                          const SizedBox(height: 16),
+                        if (_hasAddress(
+                          business,
+                        ))
+                          const SizedBox(
+                            height: 16,
+                          ),
 
-                        if (_hasValue(business.website) ||
-                            _hasValue(business.upiId))
+                        if (_hasValue(
+                          business.website,
+                        ) ||
+                            _hasValue(
+                              business.upiId,
+                            ))
                           _sectionCard(
                             context,
-                            title: 'Additional Information',
-                            icon: Icons.info_outline_rounded,
+                            title:
+                            'Additional Information',
+                            icon: Icons
+                                .info_outline_rounded,
                             child: Column(
                               children: [
-                                if (_hasValue(business.website))
+                                if (_hasValue(
+                                  business.website,
+                                ))
                                   _infoRow(
                                     context,
-                                    Icons.language_outlined,
+                                    Icons
+                                        .language_outlined,
                                     'Website',
                                     business.website,
                                   ),
-                                if (_hasValue(business.upiId))
+                                if (_hasValue(
+                                  business.upiId,
+                                ))
                                   _infoRow(
                                     context,
-                                    Icons.account_balance_wallet_outlined,
+                                    Icons
+                                        .account_balance_wallet_outlined,
                                     'UPI ID',
                                     business.upiId,
                                   ),
-                                if (_hasValue(business.googleReviewUrl))
+                                if (_hasValue(
+                                  business
+                                      .googleReviewUrl,
+                                ))
                                   _infoRow(
                                     context,
-                                    Icons.rate_review_outlined,
+                                    Icons
+                                        .rate_review_outlined,
                                     'Google Review Link',
-                                    business.googleReviewUrl,
+                                    business
+                                        .googleReviewUrl,
                                   ),
                               ],
                             ),
                           ),
-                        if (_hasValue(business.website) ||
-                            _hasValue(business.upiId))
-                          const SizedBox(height: 16),
+                        if (_hasValue(
+                          business.website,
+                        ) ||
+                            _hasValue(
+                              business.upiId,
+                            ))
+                          const SizedBox(
+                            height: 16,
+                          ),
+
+                        _sectionCard(
+                          context,
+                          title: 'Brand Color',
+                          icon:
+                          Icons.palette_outlined,
+                          child:
+                          _buildBrandColorControl(
+                            context,
+                            business,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
                         _buildCustomerFeatures(
                           context,
                           business,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(
+                          height: 16,
+                        ),
 
-                        if (_hasValue(business.description))
+                        if (_hasValue(
+                          business.description,
+                        ))
                           _sectionCard(
                             context,
-                            title: 'About Business',
-                            icon: Icons.description_outlined,
+                            title:
+                            'About Business',
+                            icon: Icons
+                                .description_outlined,
                             child: Text(
                               business.description!,
-                              style: theme.textTheme.bodyLarge?.copyWith(
+                              style: theme
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
                                 height: 1.5,
                               ),
                             ),
                           ),
-                        if (_hasValue(business.description))
-                          const SizedBox(height: 24),
+                        if (_hasValue(
+                          business.description,
+                        ))
+                          const SizedBox(
+                            height: 24,
+                          ),
 
                         SizedBox(
                           width: double.infinity,
                           height: 52,
-                          child: FilledButton.icon(
+                          child:
+                          FilledButton.icon(
                             onPressed: () {
                               context.push(
                                 '/business-onboarding?edit=true',
@@ -938,7 +1531,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(
+                          height: 24,
+                        ),
                       ],
                     ),
                   ),
@@ -948,6 +1543,159 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildBrandColorControl(
+      BuildContext context,
+      dynamic business,
+      ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment:
+          CrossAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration:
+              const Duration(milliseconds: 180),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: _brandColor,
+                borderRadius:
+                BorderRadius.circular(14),
+                border: Border.all(
+                  color:
+                  colorScheme.outlineVariant,
+                ),
+              ),
+              child: Icon(
+                Icons.palette_rounded,
+                color: _brandColor
+                    .computeLuminance() >
+                    .42
+                    ? const Color(0xFF172025)
+                    : Colors.white,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your brand color',
+                    style: theme
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'This color is used across your public ScanAura page.',
+                    style: theme
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(
+                      color: colorScheme
+                          .onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller:
+          _brandColorController,
+          maxLength: 7,
+          textCapitalization:
+          TextCapitalization.characters,
+          enabled: !_brandColorSaving,
+          decoration: InputDecoration(
+            labelText: 'HEX color',
+            hintText: '#00674F',
+            prefixIcon: const Icon(
+              Icons.tag_rounded,
+            ),
+            suffixIcon: IconButton(
+              tooltip: 'Choose color',
+              onPressed:
+              _brandColorLoaded &&
+                  !_brandColorSaving
+                  ? _chooseBrandColor
+                  : null,
+              icon: const Icon(
+                Icons.colorize_rounded,
+              ),
+            ),
+            counterText: '',
+            border: OutlineInputBorder(
+              borderRadius:
+              BorderRadius.circular(14),
+            ),
+          ),
+          onChanged:
+          _previewBrandColor,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Paste or type a HEX color code, or use the color picker.',
+          style: theme
+              .textTheme
+              .bodySmall
+              ?.copyWith(
+            color:
+            colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            onPressed:
+            _brandColorLoaded &&
+                !_brandColorSaving
+                ? () =>
+                _saveBrandColor(
+                  business,
+                )
+                : null,
+            icon: _brandColorSaving
+                ? const SizedBox(
+              width: 18,
+              height: 18,
+              child:
+              CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : const Icon(
+              Icons.save_outlined,
+            ),
+            label: Text(
+              _brandColorSaving
+                  ? 'Saving...'
+                  : 'Save Brand Color',
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -963,73 +1711,130 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         children: [
           _buildFeatureTile(
             context,
-            icon: Icons.rate_review_outlined,
+            icon:
+            Icons.rate_review_outlined,
             title: 'Google Reviews',
-            description: _hasValue(business.googleReviewUrl)
-                ? (business.googleReviewEnabled == true
+            description:
+            _hasValue(
+              business.googleReviewUrl,
+            )
+                ? (business
+                .googleReviewEnabled ==
+                true
                 ? 'Showing Review Us button to customers.'
                 : 'Review button is hidden from customers.')
                 : 'Add your Google Review link first.',
-            enabled: _hasValue(business.googleReviewUrl),
-            value: business.googleReviewEnabled == true,
-            loading: _googleReviewUpdating,
-            onChanged: _setGoogleReviewEnabled,
-            brandColor: const Color(0xFF4285F4),
+            enabled: _hasValue(
+              business.googleReviewUrl,
+            ),
+            value:
+            business.googleReviewEnabled ==
+                true,
+            loading:
+            _googleReviewUpdating,
+            onChanged:
+            _setGoogleReviewEnabled,
+            brandColor:
+            const Color(0xFF4285F4),
           ),
           const SizedBox(height: 12),
           _buildFeatureTile(
             context,
-            icon: Icons.account_balance_wallet_outlined,
+            icon: Icons
+                .account_balance_wallet_outlined,
             title: 'UPI Payments',
-            description: _hasValue(business.upiId)
-                ? (business.paymentEnabled == true
+            description:
+            _hasValue(business.upiId)
+                ? (business.paymentEnabled ==
+                true
                 ? 'Pay via UPI is available to customers.'
                 : 'Payment option is hidden from customers.')
                 : 'Add your UPI ID first.',
-            enabled: _hasValue(business.upiId),
-            value: business.paymentEnabled == true,
-            loading: _paymentUpdating,
-            onChanged: _setPaymentEnabled,
-            brandColor: const Color(0xFF00674F),
+            enabled:
+            _hasValue(business.upiId),
+            value:
+            business.paymentEnabled ==
+                true,
+            loading:
+            _paymentUpdating,
+            onChanged:
+            _setPaymentEnabled,
+            brandColor:
+            const Color(0xFF00674F),
           ),
           const SizedBox(height: 12),
           _buildSocialFeatureTile(
             context,
             title: 'Instagram',
-            icon: Icons.photo_camera_rounded,
-            brandColor: const Color(0xFFE1306C),
-            controller: _instagramController,
-            enabled: _hasValue(business.instagramUrl),
-            value: business.instagramEnabled == true,
-            loading: _instagramUpdating,
-            onChanged: _setInstagramEnabled,
-            onSave: () => _saveSocialLink('instagram'),
+            icon:
+            Icons.photo_camera_rounded,
+            brandColor:
+            const Color(0xFFE1306C),
+            controller:
+            _instagramController,
+            enabled: _hasValue(
+              business.instagramUrl,
+            ),
+            value:
+            business.instagramEnabled ==
+                true,
+            loading:
+            _instagramUpdating,
+            onChanged:
+            _setInstagramEnabled,
+            onSave: () =>
+                _saveSocialLink(
+                  'instagram',
+                ),
           ),
           const SizedBox(height: 12),
           _buildSocialFeatureTile(
             context,
             title: 'Facebook',
             icon: Icons.facebook,
-            brandColor: const Color(0xFF1877F2),
-            controller: _facebookController,
-            enabled: _hasValue(business.facebookUrl),
-            value: business.facebookEnabled == true,
-            loading: _facebookUpdating,
-            onChanged: _setFacebookEnabled,
-            onSave: () => _saveSocialLink('facebook'),
+            brandColor:
+            const Color(0xFF1877F2),
+            controller:
+            _facebookController,
+            enabled: _hasValue(
+              business.facebookUrl,
+            ),
+            value:
+            business.facebookEnabled ==
+                true,
+            loading:
+            _facebookUpdating,
+            onChanged:
+            _setFacebookEnabled,
+            onSave: () =>
+                _saveSocialLink(
+                  'facebook',
+                ),
           ),
           const SizedBox(height: 12),
           _buildSocialFeatureTile(
             context,
             title: 'YouTube',
-            icon: Icons.play_circle_filled_rounded,
-            brandColor: const Color(0xFFFF0000),
-            controller: _youtubeController,
-            enabled: _hasValue(business.youtubeUrl),
-            value: business.youtubeEnabled == true,
-            loading: _youtubeUpdating,
-            onChanged: _setYoutubeEnabled,
-            onSave: () => _saveSocialLink('youtube'),
+            icon: Icons
+                .play_circle_filled_rounded,
+            brandColor:
+            const Color(0xFFFF0000),
+            controller:
+            _youtubeController,
+            enabled: _hasValue(
+              business.youtubeUrl,
+            ),
+            value:
+            business.youtubeEnabled ==
+                true,
+            loading:
+            _youtubeUpdating,
+            onChanged:
+            _setYoutubeEnabled,
+            onSave: () =>
+                _saveSocialLink(
+                  'youtube',
+                ),
           ),
         ],
       ),
@@ -1041,36 +1846,49 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         required String title,
         required IconData icon,
         required Color brandColor,
-        required TextEditingController controller,
+        required TextEditingController
+        controller,
         required bool enabled,
         required bool value,
         required bool loading,
-        required ValueChanged<bool> onChanged,
+        required ValueChanged<bool>
+        onChanged,
         required VoidCallback onSave,
       }) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding:
+      const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        color:
+        colorScheme.surfaceContainerHighest,
+        borderRadius:
+        BorderRadius.circular(16),
         border: Border.all(
-          color: brandColor.withValues(alpha: 0.22),
+          color: brandColor.withValues(
+            alpha: 0.22,
+          ),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 width: 42,
                 height: 42,
-                decoration: BoxDecoration(
+                decoration:
+                BoxDecoration(
                   color: brandColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                  BorderRadius.circular(
+                    12,
+                  ),
                 ),
                 child: Icon(
                   icon,
@@ -1081,21 +1899,33 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                      style: theme
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(
+                        fontWeight:
+                        FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(
+                      height: 3,
+                    ),
                     Text(
                       enabled
                           ? 'Show this link to customers on your public page.'
                           : 'Add your link to enable this feature.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      style: theme
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                        color: colorScheme
+                            .onSurfaceVariant,
                         height: 1.3,
                       ),
                     ),
@@ -1106,38 +1936,53 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(
                   width: 22,
                   height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child:
+                  CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
                 )
               else
                 Switch.adaptive(
                   value: value,
-                  onChanged: enabled ? onChanged : null,
-                  activeColor: brandColor,
+                  onChanged: enabled
+                      ? onChanged
+                      : null,
+                  activeColor:
+                  brandColor,
                 ),
             ],
           ),
           const SizedBox(height: 12),
           TextField(
             controller: controller,
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.done,
+            keyboardType:
+            TextInputType.url,
+            textInputAction:
+            TextInputAction.done,
             enabled: !loading,
-            onSubmitted: (_) => onSave(),
-            decoration: InputDecoration(
-              labelText: '$title link',
-              hintText: _socialHint(title),
+            onSubmitted: (_) =>
+                onSave(),
+            decoration:
+            InputDecoration(
+              labelText:
+              '$title link',
+              hintText:
+              _socialHint(title),
               prefixIcon: Icon(
                 icon,
                 color: brandColor,
               ),
-              border: const OutlineInputBorder(),
+              border:
+              const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: loading ? null : onSave,
+            child:
+            OutlinedButton.icon(
+              onPressed:
+              loading ? null : onSave,
               icon: Icon(
                 Icons.save_outlined,
                 color: brandColor,
@@ -1146,12 +1991,17 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 'Save $title Link',
                 style: TextStyle(
                   color: brandColor,
-                  fontWeight: FontWeight.w700,
+                  fontWeight:
+                  FontWeight.w700,
                 ),
               ),
-              style: OutlinedButton.styleFrom(
+              style: OutlinedButton
+                  .styleFrom(
                 side: BorderSide(
-                  color: brandColor.withValues(alpha: 0.45),
+                  color:
+                  brandColor.withValues(
+                    alpha: 0.45,
+                  ),
                 ),
               ),
             ),
@@ -1161,12 +2011,15 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             children: [
               Icon(
                 value && enabled
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.visibility_off_outlined,
+                    ? Icons
+                    .check_circle_outline_rounded
+                    : Icons
+                    .visibility_off_outlined,
                 size: 15,
                 color: value && enabled
                     ? brandColor
-                    : colorScheme.onSurfaceVariant,
+                    : colorScheme
+                    .onSurfaceVariant,
               ),
               const SizedBox(width: 5),
               Flexible(
@@ -1176,10 +2029,16 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       : enabled
                       ? 'Saved but hidden from customers'
                       : 'Setup required',
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  style: theme
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(
+                    color: colorScheme
+                        .onSurfaceVariant,
+                    fontWeight:
+                    FontWeight.w600,
                   ),
                 ),
               ),
@@ -1192,9 +2051,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   String _socialHint(String title) {
     return switch (title) {
-      'Instagram' => 'https://instagram.com/yourbusiness',
-      'Facebook' => 'https://facebook.com/yourbusiness',
-      'YouTube' => 'https://youtube.com/@yourbusiness',
+      'Instagram' =>
+      'https://instagram.com/yourbusiness',
+      'Facebook' =>
+      'https://facebook.com/yourbusiness',
+      'YouTube' =>
+      'https://youtube.com/@yourbusiness',
       _ => 'https://example.com',
     };
   }
@@ -1207,53 +2069,76 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         required bool enabled,
         required bool value,
         required bool loading,
-        required ValueChanged<bool> onChanged,
+        required ValueChanged<bool>
+        onChanged,
         Color? brandColor,
       }) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding:
+      const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        color:
+        colorScheme.surfaceContainerHighest,
+        borderRadius:
+        BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant,
+          color:
+          colorScheme.outlineVariant,
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
           Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
               color: enabled
-                  ? (brandColor?.withValues(alpha: 0.12) ??
-                  colorScheme.primaryContainer)
+                  ? (brandColor
+                  ?.withValues(
+                alpha: 0.12,
+              ) ??
+                  colorScheme
+                      .primaryContainer)
                   : colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+              BorderRadius.circular(
+                12,
+              ),
             ),
             child: Icon(
-              enabled ? icon : Icons.lock_outline_rounded,
+              enabled
+                  ? icon
+                  : Icons.lock_outline_rounded,
               color: enabled
-                  ? colorScheme.onPrimaryContainer
-                  : colorScheme.onSurfaceVariant,
+                  ? colorScheme
+                  .onPrimaryContainer
+                  : colorScheme
+                  .onSurfaceVariant,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                        style: theme
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w700,
                         ),
                       ),
                     ),
@@ -1261,22 +2146,29 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(
+                        child:
+                        CircularProgressIndicator(
                           strokeWidth: 2,
                         ),
                       )
                     else
                       Switch.adaptive(
                         value: value,
-                        onChanged: enabled ? onChanged : null,
+                        onChanged: enabled
+                            ? onChanged
+                            : null,
                       ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  style: theme
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                    color: colorScheme
+                        .onSurfaceVariant,
                     height: 1.35,
                   ),
                 ),
@@ -1302,44 +2194,56 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         required bool loading,
       }) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme;
 
     String text;
     IconData icon;
 
     if (!enabled) {
       text = 'Setup required';
-      icon = Icons.lock_outline_rounded;
+      icon =
+          Icons.lock_outline_rounded;
     } else if (loading) {
       text = 'Saving...';
       icon = Icons.sync_rounded;
     } else if (value) {
       text = 'Active on public page';
-      icon = Icons.check_circle_outline_rounded;
+      icon =
+          Icons.check_circle_outline_rounded;
     } else {
       text = 'Not shown to customers';
-      icon = Icons.visibility_off_outlined;
+      icon =
+          Icons.visibility_off_outlined;
     }
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize:
+      MainAxisSize.min,
       children: [
         Icon(
           icon,
           size: 15,
           color: enabled && value
               ? colorScheme.primary
-              : colorScheme.onSurfaceVariant,
+              : colorScheme
+              .onSurfaceVariant,
         ),
         const SizedBox(width: 5),
         Flexible(
           child: Text(
             text,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+            overflow:
+            TextOverflow.ellipsis,
+            style: theme
+                .textTheme
+                .labelMedium
+                ?.copyWith(
+              color: colorScheme
+                  .onSurfaceVariant,
+              fontWeight:
+              FontWeight.w600,
             ),
           ),
         ),
@@ -1352,37 +2256,52 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       dynamic business,
       ) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme;
 
     return Card(
       elevation: 0,
       color: colorScheme.primaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 500;
+          builder:
+              (context, constraints) {
+            final isCompact =
+                constraints.maxWidth < 500;
 
             if (isCompact) {
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment:
+                CrossAxisAlignment.center,
                 children: [
                   _buildLogo(
                     context,
                     business,
                     size: 84,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
                   Text(
                     business.businessName,
-                    textAlign: TextAlign.center,
+                    textAlign:
+                    TextAlign.center,
                     maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
                   _businessTypeChip(
                     context,
                     business.businessType,
@@ -1392,30 +2311,43 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             }
 
             return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment:
+              CrossAxisAlignment.center,
               children: [
                 _buildLogo(
                   context,
                   business,
                   size: 84,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(
+                  width: 16,
+                ),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
                     children: [
                       Text(
                         business.businessName,
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                        overflow:
+                        TextOverflow.ellipsis,
+                        style: theme
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(
+                        height: 8,
+                      ),
                       _businessTypeChip(
                         context,
-                        business.businessType,
+                        business
+                            .businessType,
                       ),
                     ],
                   ),
@@ -1433,58 +2365,90 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       dynamic business, {
         required double size,
       }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize:
+      MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: _logoUploading ? null : _pickAndUploadLogo,
+          onTap: _logoUploading
+              ? null
+              : _pickAndUploadLogo,
           child: Stack(
             alignment: Alignment.center,
             children: [
               Container(
                 width: size,
                 height: size,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(size * 0.22),
+                decoration:
+                BoxDecoration(
+                  color:
+                  colorScheme.surface,
+                  borderRadius:
+                  BorderRadius.circular(
+                    size * 0.22,
+                  ),
                 ),
-                child: business.logoUrl != null &&
-                    business.logoUrl!.trim().isNotEmpty
+                child: business.logoUrl !=
+                    null &&
+                    business.logoUrl!
+                        .trim()
+                        .isNotEmpty
                     ? ClipRRect(
                   borderRadius:
-                  BorderRadius.circular(size * 0.22),
-                  child: Image.network(
+                  BorderRadius
+                      .circular(
+                    size * 0.22,
+                  ),
+                  child:
+                  Image.network(
                     business.logoUrl!,
                     width: size,
                     height: size,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) {
+                    errorBuilder:
+                        (_, _, _) {
                       return Icon(
-                        Icons.storefront_rounded,
-                        size: size * 0.5,
-                        color: colorScheme.primary,
+                        Icons
+                            .storefront_rounded,
+                        size:
+                        size * 0.5,
+                        color:
+                        colorScheme
+                            .primary,
                       );
                     },
                   ),
                 )
                     : Icon(
-                  Icons.storefront_rounded,
-                  size: size * 0.5,
-                  color: colorScheme.primary,
+                  Icons
+                      .storefront_rounded,
+                  size:
+                  size * 0.5,
+                  color:
+                  colorScheme
+                      .primary,
                 ),
               ),
               if (_logoUploading)
                 Container(
                   width: size,
                   height: size,
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(size * 0.22),
+                  decoration:
+                  BoxDecoration(
+                    color:
+                    Colors.black54,
+                    borderRadius:
+                    BorderRadius.circular(
+                      size * 0.22,
+                    ),
                   ),
-                  child: const Center(
-                    child: CircularProgressIndicator(),
+                  child:
+                  const Center(
+                    child:
+                    CircularProgressIndicator(),
                   ),
                 ),
             ],
@@ -1492,8 +2456,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          _logoUploading ? 'Updating logo...' : 'Tap logo to change',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          _logoUploading
+              ? 'Updating logo...'
+              : 'Tap logo to change',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(
             color: Theme.of(context)
                 .colorScheme
                 .onSurfaceVariant,
@@ -1510,23 +2479,31 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       String type,
       ) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+      const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 5,
       ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+        BorderRadius.circular(20),
       ),
       child: Text(
         _formatBusinessType(type),
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w600,
+        overflow:
+        TextOverflow.ellipsis,
+        style: theme
+            .textTheme
+            .labelMedium
+            ?.copyWith(
+          fontWeight:
+          FontWeight.w600,
         ),
       ),
     );
@@ -1543,9 +2520,11 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+        const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -1553,20 +2532,29 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   icon,
                   size: 21,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 8,
+                ),
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: theme
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 16,
+            ),
             child,
           ],
         ),
@@ -1587,38 +2575,62 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final theme = Theme.of(context);
 
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 420;
+      builder:
+          (context, constraints) {
+        final compact =
+            constraints.maxWidth < 420;
 
         if (compact) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding:
+            const EdgeInsets.only(
+              bottom: 16,
+            ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
               children: [
                 Icon(
                   icon,
                   size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme
+                      .colorScheme
+                      .onSurfaceVariant,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(
+                  width: 12,
+                ),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
                     children: [
                       Text(
                         label,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
+                        style: theme
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                          color: theme
+                              .colorScheme
+                              .onSurfaceVariant,
+                          fontWeight:
+                          FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(
+                        height: 3,
+                      ),
                       Text(
                         value!,
                         softWrap: true,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
+                        style: theme
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w500,
                         ),
                       ),
                     ],
@@ -1630,34 +2642,54 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         }
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 14),
+          padding:
+          const EdgeInsets.only(
+            bottom: 14,
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               Icon(
                 icon,
                 size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: theme
+                    .colorScheme
+                    .onSurfaceVariant,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(
+                width: 12,
+              ),
               SizedBox(
                 width: 85,
                 child: Text(
                   label,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  style: theme
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(
+                width: 8,
+              ),
               Expanded(
                 child: Text(
                   value!,
                   softWrap: true,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
+                  style: theme
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(
+                    fontWeight:
+                    FontWeight.w500,
                   ),
                 ),
               ),
@@ -1677,40 +2709,66 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+          child:
+          SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
+              constraints:
+              const BoxConstraints(
                 maxWidth: 420,
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.cloud_off_rounded,
+                    Icons
+                        .cloud_off_rounded,
                     size: 56,
-                    color: theme.colorScheme.error,
+                    color: theme
+                        .colorScheme
+                        .error,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   Text(
                     'Unable to load business',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    textAlign:
+                    TextAlign.center,
+                    style: theme
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
                   Text(
                     message ??
                         'Something went wrong. Please try again.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
+                    textAlign:
+                    TextAlign.center,
+                    style: theme
+                        .textTheme
+                        .bodyMedium,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(
+                    height: 24,
+                  ),
                   FilledButton.icon(
                     onPressed: _retry,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Retry'),
+                    icon: const Icon(
+                      Icons
+                          .refresh_rounded,
+                    ),
+                    label: const Text(
+                      'Retry',
+                    ),
                   ),
                 ],
               ),
@@ -1722,19 +2780,35 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
   }
 
   bool _hasValue(String? value) {
-    return value != null && value.trim().isNotEmpty;
+    return value != null &&
+        value.trim().isNotEmpty;
   }
 
-  bool _hasAddress(dynamic business) {
-    return _hasValue(business.address) ||
-        _hasValue(business.city) ||
-        _hasValue(business.state) ||
-        _hasValue(business.country) ||
-        _hasValue(business.pincode);
+  bool _hasAddress(
+      dynamic business,
+      ) {
+    return _hasValue(
+      business.address,
+    ) ||
+        _hasValue(
+          business.city,
+        ) ||
+        _hasValue(
+          business.state,
+        ) ||
+        _hasValue(
+          business.country,
+        ) ||
+        _hasValue(
+          business.pincode,
+        );
   }
 
-  String _formatBusinessType(dynamic type) {
-    final value = type.toString().split('.').last;
+  String _formatBusinessType(
+      dynamic type,
+      ) {
+    final value =
+        type.toString().split('.').last;
 
     return value
         .replaceAll('_', ' ')
@@ -1748,4 +2822,3 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         .join(' ');
   }
 }
-

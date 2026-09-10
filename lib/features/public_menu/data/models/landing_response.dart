@@ -5,6 +5,7 @@ class LandingResponse {
     required this.businessType,
     this.city,
     this.logoUrl,
+    this.brandColor,
     required this.menuAvailable,
     required this.paymentEnabled,
     required this.loyaltyEnabled,
@@ -23,6 +24,7 @@ class LandingResponse {
   final String businessType;
   final String? city;
   final String? logoUrl;
+  final String? brandColor;
 
   final bool menuAvailable;
 
@@ -60,6 +62,9 @@ class LandingResponse {
 
       logoUrl:
       json['logoUrl'] as String?,
+
+      brandColor:
+      json['brandColor'] as String?,
 
       menuAvailable:
       json['menuAvailable'] as bool? ?? false,
@@ -103,6 +108,7 @@ class LandingResponse {
       'businessType': businessType,
       'city': city,
       'logoUrl': logoUrl,
+      'brandColor': brandColor,
       'menuAvailable': menuAvailable,
       'paymentEnabled': paymentEnabled,
       'loyaltyEnabled': loyaltyEnabled,

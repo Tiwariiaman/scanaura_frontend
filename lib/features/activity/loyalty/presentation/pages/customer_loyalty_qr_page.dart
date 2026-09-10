@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../../public_menu/presentation/theme/public_theme_resolver.dart';
 
 class CustomerLoyaltyQrPage extends StatelessWidget {
   const CustomerLoyaltyQrPage({
@@ -12,6 +13,8 @@ class CustomerLoyaltyQrPage extends StatelessWidget {
     required this.rewardAmount,
     required this.pointsUsed,
     required this.remainingPoints,
+    this.businessType = '',
+    this.brandColor,
   });
 
   final String qrToken;
@@ -20,6 +23,8 @@ class CustomerLoyaltyQrPage extends StatelessWidget {
   final double rewardAmount;
   final int pointsUsed;
   final int remainingPoints;
+  final String businessType;
+  final String? brandColor;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +37,14 @@ class CustomerLoyaltyQrPage extends StatelessWidget {
       'version': '1',
     });
 
-    return Scaffold(
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: businessName,
+      businessType: businessType,
+      brandColor: brandColor,
+    );
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Scaffold(
       backgroundColor: colors.surface,
       appBar: AppBar(
         elevation: 0,
@@ -443,6 +455,7 @@ class CustomerLoyaltyQrPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

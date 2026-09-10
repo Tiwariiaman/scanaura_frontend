@@ -27,6 +27,7 @@ class BusinessResponse {
     this.facebookEnabled = false,
     this.youtubeUrl,
     this.youtubeEnabled = false,
+    this.brandColor,
   });
 
   final String id;
@@ -61,6 +62,7 @@ class BusinessResponse {
 
   final String? youtubeUrl;
   final bool youtubeEnabled;
+  final String? brandColor;
 
   final String? qrSlug;
   final bool? active;
@@ -122,6 +124,8 @@ class BusinessResponse {
       json['youtubeUrl'] as String?,
       youtubeEnabled:
       json['youtubeEnabled'] as bool? ?? false,
+      brandColor:
+      json['brandColor'] as String?,
     );
   }
 }

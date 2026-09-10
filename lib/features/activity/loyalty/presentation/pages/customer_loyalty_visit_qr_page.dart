@@ -5,14 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../models/loyalty_visit_qr_response.dart';
+import '../../../../public_menu/presentation/theme/public_theme_resolver.dart';
 
 class CustomerLoyaltyVisitQrPage extends StatefulWidget {
   final String businessName;
+  final String businessType;
+  final String? brandColor;
   final LoyaltyVisitQrResponse qrResponse;
 
   const CustomerLoyaltyVisitQrPage({
     super.key,
     required this.businessName,
+    this.businessType = '',
+    this.brandColor,
     required this.qrResponse,
   });
 
@@ -111,7 +116,14 @@ class _CustomerLoyaltyVisitQrPageState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: widget.businessName,
+      businessType: widget.businessType,
+      brandColor: widget.brandColor,
+    );
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Scaffold(
       appBar: AppBar(
         title: const Text(
           'Today’s Loyalty QR',
@@ -349,6 +361,7 @@ class _CustomerLoyaltyVisitQrPageState
             ],
           ),
         ),
+      ),
       ),
     );
   }

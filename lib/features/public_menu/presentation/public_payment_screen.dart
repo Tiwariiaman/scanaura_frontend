@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/models/payment_response.dart';
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
+import 'theme/public_theme_resolver.dart';
 
 class PublicPaymentScreen
     extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _PublicPaymentScreenState
   void initState() {
     super.initState();
 
-    Future.microtask(() {
+    Future.microtask(() async {
       final notifier =
       ref.read(
         publicNotifierProvider
@@ -47,7 +48,8 @@ class _PublicPaymentScreenState
         widget.qrCode,
       );
 
-      notifier.loadPayment();
+      await notifier.loadLanding(widget.qrCode);
+      await notifier.loadPayment();
     });
   }
 
@@ -232,7 +234,14 @@ class _PublicPaymentScreenState
       );
     }
 
-    return Scaffold(
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: payment.businessName,
+      businessType: state.landing?.businessType ?? '',
+      brandColor: state.landing?.brandColor,
+    );
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Scaffold(
       appBar: AppBar(
         title: const Text(
           'Pay via UPI',
@@ -339,6 +348,7 @@ class _PublicPaymentScreenState
             );
           },
         ),
+      ),
       ),
     );
   }

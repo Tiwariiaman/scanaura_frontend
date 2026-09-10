@@ -1,85 +1,116 @@
-
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:go_router/go_router.dart';
 
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_notifier.dart';
 import 'package:scanaura_frontend/features/public_menu/presentation/providers/public_state.dart';
 
+import '../data/customer_selection_controller.dart';
 import '../data/models/menu_category_response.dart';
 import '../data/models/menu_item_response.dart';
-import '../data/customer_selection_controller.dart';
+import 'theme/public_theme_resolver.dart';
 
 class PublicMenuScreen extends ConsumerStatefulWidget {
-  const PublicMenuScreen({
-    super.key,
-    required this.qrCode,
-  });
+  const PublicMenuScreen({super.key, required this.qrCode});
 
   final String qrCode;
 
   @override
-  ConsumerState<PublicMenuScreen> createState() =>
-      _PublicMenuScreenState();
+  ConsumerState<PublicMenuScreen> createState() => _PublicMenuScreenState();
 }
 
-class _PublicMenuScreenState
-    extends ConsumerState<PublicMenuScreen> {
+class _PublicMenuScreenState extends ConsumerState<PublicMenuScreen> {
   String _searchQuery = '';
+  bool _searchActive = false;
+
+  final TextEditingController _searchController = TextEditingController();
+
+  final FocusNode _searchFocusNode = FocusNode();
+
   String? _selectedCategory;
+
   bool _showVegOnly = false;
   bool _showNonVegOnly = false;
   bool _showBestSellerOnly = false;
   bool _showRecommendedOnly = false;
 
-  final CustomerSelectionController _selection =
-  CustomerSelectionController();
+  // Kept intentionally for the future estimate/selection feature.
+  // Customer-facing controls are currently hidden.
+  final CustomerSelectionController _selection = CustomerSelectionController();
 
   @override
   void initState() {
     super.initState();
 
     Future.microtask(() async {
-      final notifier =
-      ref.read(publicNotifierProvider.notifier);
+      final notifier = ref.read(publicNotifierProvider.notifier);
 
       notifier.setQrCode(widget.qrCode);
 
-      // Load business type as well as catalog data.
       await notifier.loadLanding(widget.qrCode);
       await notifier.loadMenu();
     });
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() {
+      _searchActive = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _closeSearch() {
+    _searchFocusNode.unfocus();
+
+    setState(() {
+      _searchActive = false;
+      _searchQuery = '';
+      _searchController.clear();
+      _clearAllFilters();
+    });
+  }
+
   List<MenuCategoryResponse> get _categories {
     final menu = ref.read(publicNotifierProvider).menu;
+
     return menu?.menu ?? const [];
   }
 
   String get _businessType {
     final landing = ref.read(publicNotifierProvider).landing;
+
     return landing?.businessType.trim().toUpperCase() ?? 'OTHER';
   }
 
   bool get _isFoodBusiness => _businessType == 'FOOD';
 
-  _PublicTerminology get _terminology =>
-      _terminologyFor(_businessType);
+  _PublicTerminology get _terminology => _terminologyFor(_businessType);
 
   List<_PublicMenuItem> get _filteredItems {
     final allItems = <_PublicMenuItem>[];
 
-    for (var categoryIndex = 0;
-    categoryIndex < _categories.length;
-    categoryIndex++) {
+    for (
+      var categoryIndex = 0;
+      categoryIndex < _categories.length;
+      categoryIndex++
+    ) {
       final category = _categories[categoryIndex];
 
-      for (var itemIndex = 0;
-      itemIndex < category.items.length;
-      itemIndex++) {
+      for (var itemIndex = 0; itemIndex < category.items.length; itemIndex++) {
         final item = category.items[itemIndex];
 
         allItems.add(
@@ -92,19 +123,20 @@ class _PublicMenuScreenState
       }
     }
 
-    Iterable<_PublicMenuItem> items =
-    allItems.where((entry) => entry.item.available);
+    Iterable<_PublicMenuItem> items = allItems.where(
+      (entry) => entry.item.available,
+    );
 
     if (_selectedCategory != null) {
-      items = items.where(
-            (entry) => entry.categoryName == _selectedCategory,
-      );
+      items = items.where((entry) => entry.categoryName == _selectedCategory);
     }
 
     final query = _searchQuery.trim().toLowerCase();
+
     if (query.isNotEmpty) {
       items = items.where((entry) {
         final item = entry.item;
+
         return item.name.toLowerCase().contains(query) ||
             (item.description?.toLowerCase().contains(query) ?? false);
       });
@@ -129,17 +161,21 @@ class _PublicMenuScreenState
     final result = items.toList();
 
     result.sort((a, b) {
-      final bestSellerCompare =
-      _boolRank(b.item.bestSeller).compareTo(
-        _boolRank(a.item.bestSeller),
-      );
-      if (bestSellerCompare != 0) return bestSellerCompare;
+      final bestSellerCompare = _boolRank(
+        b.item.bestSeller,
+      ).compareTo(_boolRank(a.item.bestSeller));
 
-      final recommendedCompare =
-      _boolRank(b.item.recommended).compareTo(
-        _boolRank(a.item.recommended),
-      );
-      if (recommendedCompare != 0) return recommendedCompare;
+      if (bestSellerCompare != 0) {
+        return bestSellerCompare;
+      }
+
+      final recommendedCompare = _boolRank(
+        b.item.recommended,
+      ).compareTo(_boolRank(a.item.recommended));
+
+      if (recommendedCompare != 0) {
+        return recommendedCompare;
+      }
 
       return 0;
     });
@@ -149,10 +185,12 @@ class _PublicMenuScreenState
 
   int _boolRank(bool value) => value ? 1 : 0;
 
+  // Future selection support.
   bool _isSelected(_PublicMenuItem entry) {
     return _selection.contains(entry.selectionId);
   }
 
+  // Future selection support.
   void _toggleSelection(_PublicMenuItem entry) {
     setState(() {
       _selection.toggleItem(
@@ -161,328 +199,6 @@ class _PublicMenuScreenState
         unitPrice: entry.item.price,
       );
     });
-  }
-
-  void _increaseSelection(String selectionId, void Function(void Function())? modalSetState) {
-    setState(() {
-      _selection.increaseQuantity(selectionId);
-    });
-    modalSetState?.call(() {});
-  }
-
-  void _decreaseSelection(String selectionId, void Function(void Function())? modalSetState) {
-    setState(() {
-      _selection.decreaseQuantity(selectionId);
-    });
-    modalSetState?.call(() {});
-  }
-
-  void _removeSelection(String selectionId, void Function(void Function())? modalSetState) {
-    setState(() {
-      _selection.removeItem(selectionId);
-    });
-    modalSetState?.call(() {});
-  }
-
-  void _clearSelection() {
-    if (_selection.isEmpty) return;
-
-    setState(() {
-      _selection.clear();
-    });
-  }
-
-  String _selectionTotalLabel() {
-    if (!_selection.hasPricedItems) {
-      return 'Price unavailable';
-    }
-
-    return 'Estimated ₹${_selection.estimatedTotal.toStringAsFixed(2)}';
-  }
-
-  Future<void> _openSelectionSheet() async {
-    if (_selection.isEmpty) return;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.50,
-          minChildSize: 0.50,
-          maxChildSize: 0.90,
-          snap: true,
-          snapSizes: const [0.50, 0.90],
-          expand: false,
-          builder: (context, scrollController) {
-            final selectedItems = _selection.selectedItems;
-
-            return Material(
-              clipBehavior: Clip.antiAlias,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              color: Theme.of(context).colorScheme.surface,
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        20,
-                        12,
-                        20,
-                        8,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(alpha: 0.35),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'My Selection',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '${_selection.selectedItemCount} ${_selection.selectedItemCount == 1 ? 'item' : 'items'}',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.separated(
-                        controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(
-                          20,
-                          4,
-                          20,
-                          12,
-                        ),
-                        itemCount: selectedItems.length,
-                        separatorBuilder: (_, _) =>
-                        const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final item = selectedItems[index];
-                          final priceText = item.hasPrice
-                              ? '₹${item.unitPrice.toStringAsFixed(2)} each'
-                              : 'Price unavailable';
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.itemName,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(priceText),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .outlineVariant,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        tooltip: 'Decrease quantity',
-                                        onPressed: () {
-                                          _decreaseSelection(
-                                            item.selectionId,
-                                            null,
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.remove_rounded,
-                                          size: 18,
-                                        ),
-                                        visualDensity:
-                                        VisualDensity.compact,
-                                      ),
-                                      SizedBox(
-                                        width: 28,
-                                        child: Text(
-                                          '${item.quantity}',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Increase quantity',
-                                        onPressed: () {
-                                          _increaseSelection(
-                                            item.selectionId,
-                                            null,
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.add_rounded,
-                                          size: 18,
-                                        ),
-                                        visualDensity:
-                                        VisualDensity.compact,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: 'Remove',
-                                  onPressed: () {
-                                    _removeSelection(
-                                      item.selectionId,
-                                      null,
-                                    );
-
-                                    if (_selection.isEmpty &&
-                                        sheetContext.mounted) {
-                                      Navigator.of(sheetContext).pop();
-                                    }
-                                  },
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(
-                        20,
-                        12,
-                        20,
-                        16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 12,
-                            offset: const Offset(0, -4),
-                            color: Colors.black.withValues(alpha: 0.08),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Estimated Total',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                _selection.hasPricedItems
-                                    ? '₹${_selection.estimatedTotal.toStringAsFixed(2)}'
-                                    : 'Price unavailable',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${_selection.totalUnitCount} ${_selection.totalUnitCount == 1 ? 'unit' : 'units'}',
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  _clearSelection();
-                                  Navigator.of(sheetContext).pop();
-                                },
-                                icon: const Icon(
-                                  Icons.delete_sweep_outlined,
-                                ),
-                                label: const Text('Clear Selection'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Prices shown are for reference and may not include taxes, service charges or other applicable charges.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   void _clearAllFilters() {
@@ -497,36 +213,46 @@ class _PublicMenuScreenState
 
   void _toggleCategory(String? category) {
     setState(() {
-      _selectedCategory =
-      _selectedCategory == category ? null : category;
+      _selectedCategory = _selectedCategory == category ? null : category;
     });
   }
 
   void _toggleVeg() {
-    if (!_isFoodBusiness) return;
+    if (!_isFoodBusiness) {
+      return;
+    }
+
     setState(() {
       _showVegOnly = !_showVegOnly;
-      if (_showVegOnly) _showNonVegOnly = false;
+
+      if (_showVegOnly) {
+        _showNonVegOnly = false;
+      }
     });
   }
 
   void _toggleNonVeg() {
-    if (!_isFoodBusiness) return;
+    if (!_isFoodBusiness) {
+      return;
+    }
+
     setState(() {
       _showNonVegOnly = !_showNonVegOnly;
-      if (_showNonVegOnly) _showVegOnly = false;
+
+      if (_showNonVegOnly) {
+        _showVegOnly = false;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(publicNotifierProvider);
+
     final terminology = _terminology;
 
     if (state.status == PublicStatus.loading && state.menu == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (state.status == PublicStatus.error && state.menu == null) {
@@ -541,241 +267,228 @@ class _PublicMenuScreenState
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          terminology.collectionTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: false,
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final horizontalPadding =
-          width < 360 ? 12.0 : width < 600 ? 16.0 : 20.0;
-          final maxContentWidth = width >= 1000 ? 1000.0 : 700.0;
+    final publicTheme = PublicThemeResolver.resolve(
+      businessName: state.landing?.businessName ?? menu.businessName,
+      businessType: state.landing?.businessType ?? '',
+      brandColor: state.landing?.brandColor,
+    );
 
-          return Stack(
-            children: [
-              RefreshIndicator(
-                onRefresh: () async {
-                  await ref
-                      .read(publicNotifierProvider.notifier)
-                      .refreshMenu();
-                },
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    // ======================================================
-                    // SCROLLABLE SEARCH + FILTER AREA
-                    // These controls are part of the same scroll view as
-                    // the menu, so they naturally move off-screen.
-                    // ======================================================
-                    SliverToBoxAdapter(
-                      child: Material(
-                        elevation: 2,
-                        color: Theme.of(context).colorScheme.surface,
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            horizontalPadding,
-                            12,
-                            horizontalPadding,
-                            10,
-                          ),
+    return Theme(
+      data: publicTheme.materialTheme(context),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            menu.businessName.trim().isEmpty
+                ? terminology.collectionTitle
+                : menu.businessName,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+
+            final horizontalPadding = width < 360
+                ? 12.0
+                : width < 600
+                ? 16.0
+                : 20.0;
+
+            final maxContentWidth = width >= 1000 ? 1000.0 : 720.0;
+
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await ref
+                        .read(publicNotifierProvider.notifier)
+                        .refreshMenu();
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                      // Search and filters are intentionally
+                      // integrated together. They appear only
+                      // when the floating search is opened.
+                      if (_searchActive)
+                        SliverToBoxAdapter(
                           child: Center(
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
                                 maxWidth: maxContentWidth,
                               ),
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.stretch,
-                                children: [
-                                  _buildSearchField(
-                                    context,
-                                    terminology,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  _buildCategoryFilters(menu.menu),
-                                  const SizedBox(height: 8),
-                                  _buildAttributeFilters(),
-                                ],
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: horizontalPadding,
+                                ),
+                                child: _buildSearchAndFilters(
+                                  context,
+                                  terminology,
+                                ),
                               ),
                             ),
                           ),
                         ),
+
+                      if (_searchActive)
+                        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+                      _buildMenuList(
+                        context,
+                        horizontalPadding,
+                        maxContentWidth,
                       ),
-                    ),
 
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 16),
-                    ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 28)),
 
-                    _buildMenuList(
-                      context,
-                      horizontalPadding,
-                      maxContentWidth,
-                    ),
+                      SliverToBoxAdapter(child: _buildFooter()),
 
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 28),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: _buildFooter(),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: _selection.isNotEmpty ? 120 : 32,
-                      ),
-                    ),
-                  ],
+                      const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    ],
+                  ),
                 ),
-              ),
-              if (_selection.isNotEmpty)
+
+                // Floating search button.
                 Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _buildSelectionBar(context),
+                  right: horizontalPadding,
+                  bottom: 18,
+                  child: Material(
+                    color: publicTheme.primary,
+                    elevation: 7,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _searchActive ? _closeSearch : _openSearch,
+                      child: SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: Icon(
+                          _searchActive
+                              ? Icons.close_rounded
+                              : Icons.search_rounded,
+                          color: publicTheme.onPrimary,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildSelectionBar(BuildContext context) {
-    final itemCount = _selection.selectedItemCount;
-    final unitCount = _selection.totalUnitCount;
+  Widget _buildSearchAndFilters(
+    BuildContext context,
+    _PublicTerminology terminology,
+  ) {
+    final theme = Theme.of(context);
 
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Material(
-            elevation: 10,
-            borderRadius: BorderRadius.circular(18),
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: _openSelectionSheet,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$itemCount',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+    final filtersActive =
+        _selectedCategory != null ||
+        _showVegOnly ||
+        _showNonVegOnly ||
+        _showBestSellerOnly ||
+        _showRecommendedOnly;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: theme.colorScheme.surface,
+          elevation: 5,
+          borderRadius: BorderRadius.circular(18),
+          child: TextField(
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: _searchHint(terminology),
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear',
+                      onPressed: () {
+                        setState(() {
+                          _searchQuery = '';
+                          _searchController.clear();
+                        });
+                      },
+                      icon: const Icon(Icons.clear_rounded),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$itemCount ${itemCount == 1 ? 'Item' : 'Items'} • $unitCount ${unitCount == 1 ? 'Unit' : 'Units'}',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _selectionTotalLabel(),
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 15,
               ),
             ),
           ),
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        _buildCategoryFilters(_categories),
+
+        const SizedBox(height: 10),
+
+        _buildAttributeFilters(),
+
+        if (filtersActive) ...[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ActionChip(
+              avatar: const Icon(Icons.clear_rounded, size: 18),
+              label: const Text('Clear'),
+              onPressed: _clearAllFilters,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
-  Widget _buildSearchField(
-      BuildContext context,
-      _PublicTerminology terminology,
-      ) {
+  String _searchHint(_PublicTerminology terminology) {
     final width = MediaQuery.sizeOf(context).width;
 
-    final placeholder = switch (terminology.collectionTitle) {
+    return switch (terminology.collectionTitle) {
       'Menu' => width < 400 ? 'Search menu...' : 'Search menu items...',
       'Services' => width < 400 ? 'Search services...' : 'Search services...',
       _ => width < 400 ? 'Search catalog...' : 'Search catalog items...',
     };
-
-    return TextField(
-      onChanged: (value) {
-        setState(() => _searchQuery = value);
-      },
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: placeholder,
-        prefixIcon: const Icon(Icons.search_rounded),
-        suffixIcon: _searchQuery.isEmpty
-            ? null
-            : IconButton(
-          tooltip: 'Clear',
-          onPressed: () => setState(() => _searchQuery = ''),
-          icon: const Icon(Icons.clear_rounded),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-    );
   }
 
-  Widget _buildCategoryFilters(
-      List<MenuCategoryResponse> categories,
-      ) {
+  Widget _buildCategoryFilters(List<MenuCategoryResponse> categories) {
     final categoryNames = categories
-        .where((category) =>
-    category.categoryName?.trim().isNotEmpty == true)
+        .where((category) => category.categoryName?.trim().isNotEmpty == true)
         .map((category) => category.categoryName!.trim())
         .toList();
+
+    if (categoryNames.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return ScrollConfiguration(
       behavior: const _PublicMenuScrollBehavior(),
       child: SizedBox(
-        height: 44,
+        height: 42,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
@@ -792,12 +505,9 @@ class _PublicMenuScreenState
             }
 
             final category = categoryNames[index - 1];
+
             return FilterChip(
-              label: Text(
-                category,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              label: Text(category),
               selected: _selectedCategory == category,
               onSelected: (_) => _toggleCategory(category),
             );
@@ -808,64 +518,72 @@ class _PublicMenuScreenState
   }
 
   Widget _buildAttributeFilters() {
-    final filtersActive =
-        _selectedCategory != null ||
-            (_isFoodBusiness && (_showVegOnly || _showNonVegOnly)) ||
-            _showBestSellerOnly ||
-            _showRecommendedOnly;
+    final chips = <Widget>[];
+
+    if (_isFoodBusiness) {
+      chips.add(
+        FilterChip(
+          avatar: const _VegIndicator(veg: true),
+          label: const Text('Veg'),
+          selected: _showVegOnly,
+          onSelected: (_) => _toggleVeg(),
+        ),
+      );
+
+      chips.add(
+        FilterChip(
+          avatar: const _VegIndicator(veg: false),
+          label: const Text('Non-Veg'),
+          selected: _showNonVegOnly,
+          onSelected: (_) => _toggleNonVeg(),
+        ),
+      );
+    }
+
+    chips.add(
+      FilterChip(
+        avatar: const Icon(
+          Icons.star_rounded,
+          size: 17,
+        ),
+        label: const Text('Best Seller'),
+        selected: _showBestSellerOnly,
+        onSelected: (_) {
+          setState(() {
+            _showBestSellerOnly = !_showBestSellerOnly;
+          });
+        },
+      ),
+    );
+
+    chips.add(
+      FilterChip(
+        avatar: const Icon(
+          Icons.thumb_up_alt_outlined,
+          size: 16,
+        ),
+        label: const Text('Recommended'),
+        selected: _showRecommendedOnly,
+        onSelected: (_) {
+          setState(() {
+            _showRecommendedOnly = !_showRecommendedOnly;
+          });
+        },
+      ),
+    );
 
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: [
-        if (_isFoodBusiness)
-          FilterChip(
-            avatar: const Icon(Icons.eco_outlined, size: 18),
-            label: const Text('Veg'),
-            selected: _showVegOnly,
-            onSelected: (_) => _toggleVeg(),
-          ),
-
-        if (_isFoodBusiness)
-          FilterChip(
-            label: const Text('Non-Veg'),
-            selected: _showNonVegOnly,
-            onSelected: (_) => _toggleNonVeg(),
-          ),
-
-        FilterChip(
-          avatar: const Icon(Icons.star_outline, size: 18),
-          label: const Text('Best Seller'),
-          selected: _showBestSellerOnly,
-          onSelected: (_) {
-            setState(() => _showBestSellerOnly = !_showBestSellerOnly);
-          },
-        ),
-
-        FilterChip(
-          avatar: const Icon(Icons.thumb_up_alt_outlined, size: 18),
-          label: const Text('Recommended'),
-          selected: _showRecommendedOnly,
-          onSelected: (_) {
-            setState(() => _showRecommendedOnly = !_showRecommendedOnly);
-          },
-        ),
-
-        if (filtersActive)
-          ActionChip(
-            avatar: const Icon(Icons.clear_rounded, size: 18),
-            label: const Text('Clear'),
-            onPressed: _clearAllFilters,
-          ),
-      ],
+      children: chips,
     );
   }
 
   Widget _buildMenuList(
-      BuildContext context,
-      double horizontalPadding,
-      double maxContentWidth,
-      ) {
+    BuildContext context,
+    double horizontalPadding,
+    double maxContentWidth,
+  ) {
     final items = _filteredItems;
 
     if (items.isEmpty) {
@@ -879,45 +597,165 @@ class _PublicMenuScreenState
       );
     }
 
+    // Normal browsing:
+    // keep every category together with
+    // its own items.
+    final browsingNaturally =
+        !_searchActive &&
+        _selectedCategory == null &&
+        _searchQuery.trim().isEmpty &&
+        !_showVegOnly &&
+        !_showNonVegOnly &&
+        !_showBestSellerOnly &&
+        !_showRecommendedOnly;
+
+    if (browsingNaturally) {
+      return SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        sliver: SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxContentWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: List.generate(_categories.length, (categoryIndex) {
+                  final category = _categories[categoryIndex];
+
+                  final available = category.items
+                      .asMap()
+                      .entries
+                      .where((entry) => entry.value.available)
+                      .toList();
+
+                  if (available.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final title = category.categoryName?.trim().isNotEmpty == true
+                      ? category.categoryName!.trim()
+                      : 'More ${_terminology.itemTitle}s';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildCategoryHeader(context, title),
+                        const SizedBox(height: 10),
+                        ...available.map(
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _buildItemCard(
+                              context,
+                              _PublicMenuItem(
+                                item: entry.value,
+                                categoryName: category.categoryName,
+                                selectionId: '$categoryIndex:${entry.key}',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       sliver: SliverToBoxAdapter(
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxContentWidth),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final entry = items[index];
-                return _buildItemCard(
-                  context,
-                  entry,
-                );
-              },
-            ),
+            child: _buildFilteredResults(context, items),
           ),
         ),
       ),
     );
   }
 
+  Widget _buildFilteredResults(
+    BuildContext context,
+    List<_PublicMenuItem> items,
+  ) {
+    final grouped = <String, List<_PublicMenuItem>>{};
+
+    for (final item in items) {
+      final category = item.categoryName?.trim().isNotEmpty == true
+          ? item.categoryName!.trim()
+          : 'More ${_terminology.itemTitle}s';
+
+      grouped.putIfAbsent(category, () => <_PublicMenuItem>[]).add(item);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final group in grouped.entries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCategoryHeader(context, group.key),
+                const SizedBox(height: 10),
+                ...group.value.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildItemCard(context, item),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        Container(
+          width: 32,
+          height: 3,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyState(BuildContext context) {
     final terminology = _terminology;
+
     final hasFilters =
         _searchQuery.trim().isNotEmpty ||
-            _selectedCategory != null ||
-            (_isFoodBusiness && (_showVegOnly || _showNonVegOnly)) ||
-            _showBestSellerOnly ||
-            _showRecommendedOnly;
+        _selectedCategory != null ||
+        (_isFoodBusiness && (_showVegOnly || _showNonVegOnly)) ||
+        _showBestSellerOnly ||
+        _showRecommendedOnly;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 36,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 42),
       child: Column(
         children: [
           Icon(
@@ -926,19 +764,16 @@ class _PublicMenuScreenState
                 : terminology.collectionTitle == 'Services'
                 ? Icons.design_services_outlined
                 : Icons.inventory_2_outlined,
-            size: 52,
+            size: 50,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             'No ${terminology.itemTitle.toLowerCase()}s found',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 7),
           Text(
             hasFilters
                 ? 'Try changing your search or filters.'
@@ -946,6 +781,7 @@ class _PublicMenuScreenState
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.4,
             ),
           ),
           if (hasFilters) ...[
@@ -960,40 +796,44 @@ class _PublicMenuScreenState
     );
   }
 
-  Widget _buildItemCard(
-      BuildContext context,
-      _PublicMenuItem entry,
-      ) {
+  Widget _buildItemCard(BuildContext context, _PublicMenuItem entry) {
     final item = entry.item;
     final hasImage = item.imageUrl?.trim().isNotEmpty == true;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 520;
-        final imageSize = isCompact ? 76.0 : 90.0;
+        final isSmall = constraints.maxWidth < 430;
 
-        return Card(
+        final imageSize = isSmall ? 74.0 : 82.0;
+
+        return Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
           clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: EdgeInsets.all(isCompact ? 10 : 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hasImage) ...[
-                  _buildItemImage(
+          child: InkWell(
+            onTap: () {},
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: EdgeInsets.all(isSmall ? 10 : 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(
                     context,
-                    item,
-                    imageSize,
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: _buildItemContent(
-                    context,
-                    entry,
-                  ),
+                  ).colorScheme.outline.withValues(alpha: .45),
                 ),
-              ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (hasImage) ...[
+                    _buildItemImage(context, item, imageSize),
+                    SizedBox(width: isSmall ? 11 : 13),
+                  ],
+
+                  Expanded(child: _buildItemContent(context, entry)),
+                ],
+              ),
             ),
           ),
         );
@@ -1001,15 +841,13 @@ class _PublicMenuScreenState
     );
   }
 
-  Widget _buildItemContent(
-      BuildContext context,
-      _PublicMenuItem entry,
-      ) {
+  Widget _buildItemContent(BuildContext context, _PublicMenuItem entry) {
     final item = entry.item;
-    final isSelected = _isSelected(entry);
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,80 +858,71 @@ class _PublicMenuScreenState
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                  letterSpacing: -0.15,
                 ),
               ),
             ),
             if (_isFoodBusiness) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               _VegIndicator(veg: item.veg),
             ],
-            const SizedBox(width: 4),
-            Checkbox(
-              value: isSelected,
-              onChanged: (_) => _toggleSelection(entry),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
           ],
         ),
 
         if (item.description?.trim().isNotEmpty == true) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
-            item.description!,
-            maxLines: 3,
+            item.description!.trim(),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 13,
-              height: 1.35,
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 12.5,
+              height: 1.3,
             ),
           ),
         ],
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
 
-        Text(
-          '₹${item.price.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              '₹${item.price.toStringAsFixed(2)}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const Spacer(),
+            if (item.bestSeller)
+              const _CompactBadge(
+                label: 'Best Seller',
+                icon: Icons.star_rounded,
+              ),
+            if (item.recommended && !item.bestSeller)
+              const _CompactBadge(
+                label: 'Recommended',
+                icon: Icons.thumb_up_alt_outlined,
+              ),
+          ],
         ),
-
-        if (item.bestSeller || item.recommended) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              if (item.bestSeller)
-                const _Tag(
-                  label: 'Best Seller',
-                  icon: Icons.star,
-                ),
-              if (item.recommended)
-                const _Tag(
-                  label: 'Recommended',
-                  icon: Icons.thumb_up_alt_outlined,
-                ),
-            ],
-          ),
-        ],
       ],
     );
   }
 
   Widget _buildItemImage(
-      BuildContext context,
-      MenuItemResponse item,
-      double size,
-      ) {
+    BuildContext context,
+    MenuItemResponse item,
+    double size,
+  ) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(13),
       child: Image.network(
         item.imageUrl!,
         width: size,
@@ -1103,27 +932,24 @@ class _PublicMenuScreenState
           return Container(
             width: size,
             height: size,
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             alignment: Alignment.center,
             child: Icon(
               Icons.broken_image_outlined,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant,
+              size: 22,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           );
         },
         loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
+          if (progress == null) {
+            return child;
+          }
 
           return Container(
             width: size,
             height: size,
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             alignment: Alignment.center,
             child: const SizedBox(
               width: 20,
@@ -1156,11 +982,7 @@ class _PublicMenuScreenState
     );
   }
 
-  Widget _buildError(
-      BuildContext context,
-      PublicState state,
-      ) {
-
+  Widget _buildError(BuildContext context, PublicState state) {
     if (state.isBusinessUnavailable) {
       return _buildMaintenancePage(context);
     }
@@ -1184,15 +1006,11 @@ class _PublicMenuScreenState
                   const Text(
                     'Unable to load content',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    state.errorMessage ??
-                        'Unable to load content.',
+                    state.errorMessage ?? 'Unable to load content.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -1200,9 +1018,7 @@ class _PublicMenuScreenState
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: () {
-                        ref
-                            .read(publicNotifierProvider.notifier)
-                            .loadMenu();
+                        ref.read(publicNotifierProvider.notifier).loadMenu();
                       },
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Retry'),
@@ -1217,22 +1033,17 @@ class _PublicMenuScreenState
     );
   }
 
-  Widget _buildMaintenancePage(
-      BuildContext context,
-      ) {
+  Widget _buildMaintenancePage(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor:
-      theme.colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
-              ),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1240,54 +1051,35 @@ class _PublicMenuScreenState
                     width: 88,
                     height: 88,
                     decoration: BoxDecoration(
-                      color: theme
-                          .colorScheme
-                          .surfaceContainerHighest,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.engineering_outlined,
                       size: 44,
-                      color: theme
-                          .colorScheme
-                          .primary,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
                   const Text(
                     'This page is temporarily unavailable',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
                   ),
-
                   const SizedBox(height: 12),
-
                   Text(
-                    'This business\'s ScanAura page is '
-                        'currently under maintenance. '
-                        'Please check back later.',
+                    'This business\'s ScanAura page is currently under maintenance. Please check back later.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       height: 1.5,
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-
                   const SizedBox(height: 28),
-
                   Text(
                     'Powered by ScanAura',
                     style: TextStyle(
-                      color: theme
-                          .colorScheme
-                          .onSurfaceVariant,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1299,7 +1091,6 @@ class _PublicMenuScreenState
       ),
     );
   }
-
 }
 
 class _PublicMenuItem {
@@ -1334,12 +1125,14 @@ _PublicTerminology _terminologyFor(String businessType) {
         itemTitle: 'Item',
         description: 'Explore the latest menu and available items.',
       );
+
     case 'SERVICES':
       return const _PublicTerminology(
         collectionTitle: 'Services',
         itemTitle: 'Service',
         description: 'Explore available services and offerings.',
       );
+
     case 'RETAIL':
     case 'ECOMMERCE':
       return const _PublicTerminology(
@@ -1347,12 +1140,14 @@ _PublicTerminology _terminologyFor(String businessType) {
         itemTitle: 'Product',
         description: 'Browse available products and offerings.',
       );
+
     case 'PERSONAL_BRAND':
       return const _PublicTerminology(
         collectionTitle: 'Catalog',
         itemTitle: 'Item',
         description: 'Explore products, services and offerings.',
       );
+
     case 'OTHER':
     default:
       return const _PublicTerminology(
@@ -1364,9 +1159,7 @@ _PublicTerminology _terminologyFor(String businessType) {
 }
 
 class _VegIndicator extends StatelessWidget {
-  const _VegIndicator({
-    required this.veg,
-  });
+  const _VegIndicator({required this.veg});
 
   final bool veg;
 
@@ -1375,63 +1168,49 @@ class _VegIndicator extends StatelessWidget {
     final color = veg ? Colors.green : Colors.red;
 
     return Container(
-      width: 18,
-      height: 18,
+      width: 17,
+      height: 17,
       decoration: BoxDecoration(
-        border: Border.all(
-          color: color,
-          width: 1.5,
-        ),
+        border: Border.all(color: color, width: 1.4),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Center(
-        child: Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
+      alignment: Alignment.center,
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }
 }
 
-class _Tag extends StatelessWidget {
-  const _Tag({
-    required this.label,
-    required this.icon,
-  });
+class _CompactBadge extends StatelessWidget {
+  const _CompactBadge({required this.label, required this.icon});
 
   final String label;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest,
+        color: theme.colorScheme.primary.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13),
-          const SizedBox(width: 4),
+          Icon(icon, size: 12, color: theme.colorScheme.primary),
+          const SizedBox(width: 3),
           Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -1451,4 +1230,3 @@ class _PublicMenuScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.stylus,
   };
 }
-
