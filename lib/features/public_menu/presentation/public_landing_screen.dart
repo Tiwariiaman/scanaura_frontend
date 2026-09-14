@@ -32,14 +32,14 @@ class PublicLandingScreen extends ConsumerStatefulWidget {
       _PublicLandingScreenState();
 }
 
-class _PublicLandingScreenState
-    extends ConsumerState<PublicLandingScreen> {
+class _PublicLandingScreenState extends ConsumerState<PublicLandingScreen> {
   @override
   void initState() {
     super.initState();
 
     Future.microtask(
-      () => ref.read(publicNotifierProvider.notifier).loadLanding(widget.qrCode),
+      () =>
+          ref.read(publicNotifierProvider.notifier).loadLanding(widget.qrCode),
     );
   }
 
@@ -48,14 +48,11 @@ class _PublicLandingScreenState
 
     final landing = ref.read(publicNotifierProvider).landing;
 
-    final businessName =
-    landing?.businessName.trim().isNotEmpty == true
+    final businessName = landing?.businessName.trim().isNotEmpty == true
         ? landing!.businessName.trim()
         : 'this business';
 
-    final terminology = _terminologyFor(
-      landing?.businessType ?? '',
-    );
+    final terminology = _terminologyFor(landing?.businessType ?? '');
 
     final shareText =
         'Check out $businessName on ScanAura.\n\n'
@@ -66,15 +63,10 @@ class _PublicLandingScreenState
 
     try {
       await SharePlus.instance.share(
-        ShareParams(
-          text: shareText,
-          title: 'Check out $businessName',
-        ),
+        ShareParams(text: shareText, title: 'Check out $businessName'),
       );
     } catch (_) {
-      await Clipboard.setData(
-        ClipboardData(text: shareText),
-      );
+      await Clipboard.setData(ClipboardData(text: shareText));
 
       if (!mounted) {
         return;
@@ -83,9 +75,7 @@ class _PublicLandingScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(
-            'Share message copied to clipboard.',
-          ),
+          content: Text('Share message copied to clipboard.'),
         ),
       );
     }
@@ -102,8 +92,7 @@ class _PublicLandingScreenState
 
     if (uri == null ||
         !uri.hasScheme ||
-        (!uri.isScheme('http') &&
-            !uri.isScheme('https'))) {
+        (!uri.isScheme('http') && !uri.isScheme('https'))) {
       if (!mounted) {
         return;
       }
@@ -111,27 +100,20 @@ class _PublicLandingScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(
-            'Unable to open this link.',
-          ),
+          content: Text('Unable to open this link.'),
         ),
       );
 
       return;
     }
 
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(
-            'Unable to open this link.',
-          ),
+          content: Text('Unable to open this link.'),
         ),
       );
     }
@@ -141,26 +123,36 @@ class _PublicLandingScreenState
     switch (value.trim().toUpperCase()) {
       case 'FOOD':
         return 'Food';
+
       case 'RESTAURANT':
         return 'Restaurant';
+
       case 'CAFE':
         return 'Cafe';
+
       case 'BAKERY':
         return 'Bakery';
+
       case 'RETAIL':
       case 'RETAIL_SHOP':
         return 'Retail';
+
       case 'ECOMMERCE':
       case 'E_COMMERCE':
         return 'E-commerce';
+
       case 'SERVICES':
         return 'Services';
+
       case 'SALON':
         return 'Salon';
+
       case 'PERSONAL_BRAND':
         return 'Personal Brand';
+
       case 'OTHER':
         return 'Other';
+
       default:
         return value.trim().isEmpty
             ? 'Business'
@@ -177,8 +169,7 @@ class _PublicLandingScreenState
         return const _BusinessTerminology(
           collectionTitle: 'Menu',
           itemTitle: 'Item',
-          description:
-          'Explore the menu and discover what is available.',
+          description: 'Explore the menu and discover what is available.',
         );
 
       case 'SERVICES':
@@ -186,8 +177,7 @@ class _PublicLandingScreenState
         return const _BusinessTerminology(
           collectionTitle: 'Services',
           itemTitle: 'Service',
-          description:
-          'Explore available services and offerings.',
+          description: 'Explore available services and offerings.',
         );
 
       case 'RETAIL':
@@ -197,16 +187,14 @@ class _PublicLandingScreenState
         return const _BusinessTerminology(
           collectionTitle: 'Catalogue',
           itemTitle: 'Product',
-          description:
-          'Browse available products and offerings.',
+          description: 'Browse available products and offerings.',
         );
 
       case 'PERSONAL_BRAND':
         return const _BusinessTerminology(
           collectionTitle: 'Offerings',
           itemTitle: 'Item',
-          description:
-          'Explore products, services and offerings.',
+          description: 'Explore products, services and offerings.',
         );
 
       case 'OTHER':
@@ -214,8 +202,7 @@ class _PublicLandingScreenState
         return const _BusinessTerminology(
           collectionTitle: 'Offerings',
           itemTitle: 'Item',
-          description:
-          'Explore products, services and offerings.',
+          description: 'Explore products, services and offerings.',
         );
     }
   }
@@ -224,21 +211,17 @@ class _PublicLandingScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(publicNotifierProvider);
 
-    if (state.status == PublicStatus.loading &&
-        state.landing == null) {
+    if (state.status == PublicStatus.loading && state.landing == null) {
       return const _PublicLoadingPage();
     }
 
-    if (state.status == PublicStatus.error &&
-        state.landing == null) {
+    if (state.status == PublicStatus.error && state.landing == null) {
       return _PublicErrorPage(
         message: state.isBusinessUnavailable
             ? 'This business page is unavailable right now.'
             : 'We could not open this business page.',
         onRetry: () {
-          ref
-              .read(publicNotifierProvider.notifier)
-              .loadLanding(widget.qrCode);
+          ref.read(publicNotifierProvider.notifier).loadLanding(widget.qrCode);
         },
       );
     }
@@ -249,9 +232,7 @@ class _PublicLandingScreenState
       return _PublicErrorPage(
         message: 'This business page is unavailable.',
         onRetry: () {
-          ref
-              .read(publicNotifierProvider.notifier)
-              .loadLanding(widget.qrCode);
+          ref.read(publicNotifierProvider.notifier).loadLanding(widget.qrCode);
         },
       );
     }
@@ -270,12 +251,8 @@ class _PublicLandingScreenState
           child: _LandingContent(
             landing: landing,
             theme: publicTheme,
-            terminology: _terminologyFor(
-              landing.businessType,
-            ),
-            businessTypeLabel: _businessTypeLabel(
-              landing.businessType,
-            ),
+            terminology: _terminologyFor(landing.businessType),
+            businessTypeLabel: _businessTypeLabel(landing.businessType),
             onShare: _sharePage,
             onOpenMenu: widget.onOpenMenu,
             onOpenPayment: widget.onOpenPayment,
@@ -313,52 +290,53 @@ class _LandingContent extends StatelessWidget {
     return value.isEmpty ? 'Business' : value;
   }
 
-  String get city => landing.city?.trim() ?? '';
+  String get city {
+    return landing.city?.trim() ?? '';
+  }
 
-  bool get hasLogo =>
-      landing.logoUrl != null &&
-          landing.logoUrl!.trim().isNotEmpty;
+  bool get hasLogo {
+    return landing.logoUrl != null && landing.logoUrl!.trim().isNotEmpty;
+  }
 
-  // Payment remains part of the surrounding architecture but is
-  // intentionally disabled/hidden on the customer-facing landing page.
+  // Payment remains hidden on the public landing page.
   bool get hasPayment => false;
 
-  bool get hasLoyalty => landing.loyaltyEnabled == true;
+  bool get hasLoyalty {
+    return landing.loyaltyEnabled == true;
+  }
 
-  bool get hasReview =>
-      landing.googleReviewEnabled == true &&
-          landing.googleReviewUrl != null &&
-          landing.googleReviewUrl!.trim().isNotEmpty;
+  bool get hasReview {
+    return landing.googleReviewEnabled == true &&
+        landing.googleReviewUrl != null &&
+        landing.googleReviewUrl!.trim().isNotEmpty;
+  }
 
-  bool get hasInstagram =>
-      landing.instagramEnabled == true &&
-          landing.instagramUrl != null &&
-          landing.instagramUrl!.trim().isNotEmpty;
+  bool get hasInstagram {
+    return landing.instagramEnabled == true &&
+        landing.instagramUrl != null &&
+        landing.instagramUrl!.trim().isNotEmpty;
+  }
 
-  bool get hasFacebook =>
-      landing.facebookEnabled == true &&
-          landing.facebookUrl != null &&
-          landing.facebookUrl!.trim().isNotEmpty;
+  bool get hasFacebook {
+    return landing.facebookEnabled == true &&
+        landing.facebookUrl != null &&
+        landing.facebookUrl!.trim().isNotEmpty;
+  }
 
-  bool get hasYoutube =>
-      landing.youtubeEnabled == true &&
-          landing.youtubeUrl != null &&
-          landing.youtubeUrl!.trim().isNotEmpty;
+  bool get hasYoutube {
+    return landing.youtubeEnabled == true &&
+        landing.youtubeUrl != null &&
+        landing.youtubeUrl!.trim().isNotEmpty;
+  }
 
-  bool get hasSocials =>
-      hasInstagram || hasFacebook || hasYoutube;
+  bool get hasSocials {
+    return hasInstagram || hasFacebook || hasYoutube;
+  }
 
   bool get isFood {
-    const foodTypes = {
-      'FOOD',
-      'RESTAURANT',
-      'CAFE',
-      'BAKERY',
-    };
+    const foodTypes = {'FOOD', 'RESTAURANT', 'CAFE', 'BAKERY'};
 
-    return foodTypes.contains(
-      landing.businessType.trim().toUpperCase(),
-    );
+    return foodTypes.contains(landing.businessType.trim().toUpperCase());
   }
 
   String get primaryActionLabel {
@@ -418,15 +396,10 @@ class _LandingContent extends StatelessWidget {
         return RefreshIndicator(
           color: theme.primary,
           onRefresh: () async {
-            // Refresh is intentionally kept compatible with the
-            // existing public provider architecture.
-            await Future<void>.delayed(
-              const Duration(milliseconds: 100),
-            );
+            await Future<void>.delayed(const Duration(milliseconds: 100));
           },
           child: SingleChildScrollView(
-            physics:
-            const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
               14,
@@ -435,26 +408,26 @@ class _LandingContent extends StatelessWidget {
             ),
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: maxWidth,
-                ),
+                constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildHero(context),
+
                     const SizedBox(height: 18),
+
                     _buildExploreCard(context),
 
-                    // Payment is intentionally not rendered.
-                    if (hasLoyalty) ...[
-                      const SizedBox(height: 16),
-                      _buildExperienceCard(context),
-                    ],
 
                     if (hasReview) ...[
                       const SizedBox(height: 16),
                       _buildReviewCard(context),
+                    ],
+
+
+                    if (hasLoyalty) ...[
+                      const SizedBox(height: 16),
+                      _buildExperienceCard(context),
                     ],
 
                     if (hasSocials) ...[
@@ -463,6 +436,7 @@ class _LandingContent extends StatelessWidget {
                     ],
 
                     const SizedBox(height: 28),
+
                     _buildFooter(context),
                   ],
                 ),
@@ -474,189 +448,206 @@ class _LandingContent extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // HERO
+  // ---------------------------------------------------------------------------
+
   Widget _buildHero(BuildContext context) {
-    return _GlassCard(
+    return _HeroCard(
       theme: theme,
-      padding: const EdgeInsets.fromLTRB(
-        22,
-        18,
-        22,
-        24,
-      ),
       child: Stack(
         children: [
+          // Top-right brand glow.
           Positioned(
-            top: -70,
-            right: -65,
+            top: -80,
+            right: -70,
             child: _GlowOrb(
-              color: theme.primary.withValues(
-                alpha: 0.12,
-              ),
-              size: 170,
+              color: theme.primary.withValues(alpha: 0.13),
+              size: 190,
             ),
           ),
+
+          // Bottom-left brand glow.
           Positioned(
-            bottom: -90,
-            left: -80,
+            bottom: -100,
+            left: -90,
             child: _GlowOrb(
-              color: theme.accent.withValues(
-                alpha: 0.09,
-              ),
-              size: 180,
+              color: theme.accent.withValues(alpha: 0.10),
+              size: 200,
             ),
           ),
-          Column(
-            children: [
-              // Share is now INSIDE the hero card.
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  onPressed: onShare,
-                  tooltip: 'Share',
-                  icon: Icon(
-                    Icons.share,
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 26),
+            child: Column(
+              children: [
+                // Share button.
+                Align(
+                  alignment: Alignment.topRight,
+                  child: _HeroIconButton(
+                    icon: Icons.share_rounded,
+                    tooltip: 'Share',
                     color: theme.primary,
-                    size: 20,
+                    onTap: onShare,
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 2),
+                // Logo intentionally positioned slightly
+                // lower to give the hero more breathing room.
+                const SizedBox(height: 8),
 
-              Text(
-                businessTypeLabel.toUpperCase(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: theme.primary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.7,
+                _BusinessLogo(
+                  logoUrl: hasLogo ? landing.logoUrl : null,
+                  businessName: businessName,
+                  theme: theme,
+                  size: 118,
                 ),
-              ),
 
-              if (city.isNotEmpty) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 18),
+
                 Text(
-                  city,
+                  businessName,
                   textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: theme.textTertiary,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    color: theme.textPrimary,
+                    fontSize: 30,
+                    height: 1.08,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.0,
                   ),
                 ),
-              ],
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-              _BusinessLogo(
-                logoUrl: hasLogo
-                    ? landing.logoUrl
-                    : null,
-                businessName: businessName,
-                theme: theme,
-              ),
-
-              const SizedBox(height: 18),
-
-              Text(
-                businessName,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.textPrimary,
-                  fontSize: 30,
-                  height: 1.08,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.0,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              if (city.isNotEmpty)
+                // Business type + address on the SAME row.
                 Row(
-                  mainAxisAlignment:
-                  MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: theme.textTertiary,
-                    ),
-                    const SizedBox(width: 5),
                     Flexible(
-                      child: Text(
-                        city,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow:
-                        TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: theme.textSecondary,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: theme.primary.withValues(alpha: 0.13),
+                          ),
+                        ),
+                        child: Text(
+                          businessTypeLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: theme.primary,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
 
-              const SizedBox(height: 20),
+                    if (city.isNotEmpty) ...[
+                      const SizedBox(width: 9),
 
-              Container(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.primary.withValues(
-                    alpha: 0.08,
-                  ),
-                  borderRadius:
-                  BorderRadius.circular(30),
-                  border: Border.all(
-                    color: theme.primary.withValues(
-                      alpha: 0.14,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_rounded,
-                      size: 14,
-                      color: theme.primary,
-                    ),
-                    const SizedBox(width: 7),
-                    Text(
-                      'Your digital experience',
-                      style: TextStyle(
-                        color: theme.primary,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.textTertiary.withValues(alpha: 0.55),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(width: 9),
+
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 15,
+                              color: theme.textTertiary,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                city,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: theme.textSecondary,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.primary.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: theme.primary.withValues(alpha: 0.11),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 14,
+                        color: theme.primary,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        'Digital experience',
+                        style: TextStyle(
+                          color: theme.primary,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // EXPLORE
+  // ---------------------------------------------------------------------------
+
   Widget _buildExploreCard(BuildContext context) {
     return _GlassCard(
       theme: theme,
       padding: const EdgeInsets.all(22),
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Explore what we have for you',
@@ -668,7 +659,9 @@ class _LandingContent extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             primaryDescription,
             style: TextStyle(
@@ -678,34 +671,28 @@ class _LandingContent extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+
           const SizedBox(height: 18),
+
           SizedBox(
             width: double.infinity,
             height: 54,
             child: FilledButton(
-              onPressed: landing.menuAvailable
-                  ? onOpenMenu
-                  : null,
+              onPressed: landing.menuAvailable ? onOpenMenu : null,
               style: FilledButton.styleFrom(
                 backgroundColor: theme.primary,
                 foregroundColor: theme.onPrimary,
-                disabledBackgroundColor:
-                theme.primary.withValues(
-                  alpha: 0.35,
-                ),
-                disabledForegroundColor:
-                theme.onPrimary.withValues(
+                disabledBackgroundColor: theme.primary.withValues(alpha: 0.35),
+                disabledForegroundColor: theme.onPrimary.withValues(
                   alpha: 0.75,
                 ),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(17),
+                  borderRadius: BorderRadius.circular(17),
                 ),
               ),
               child: Row(
-                mainAxisAlignment:
-                MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     primaryActionLabel,
@@ -715,10 +702,7 @@ class _LandingContent extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 19,
-                  ),
+                  const Icon(Icons.arrow_forward_rounded, size: 19),
                 ],
               ),
             ),
@@ -728,13 +712,16 @@ class _LandingContent extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // LOYALTY / EXPERIENCE
+  // ---------------------------------------------------------------------------
+
   Widget _buildExperienceCard(BuildContext context) {
     return _GlassCard(
       theme: theme,
       padding: const EdgeInsets.all(22),
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Enjoy more with us',
@@ -746,7 +733,9 @@ class _LandingContent extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
+
           const SizedBox(height: 7),
+
           Text(
             'Discover more ways to enjoy your experience with this business.',
             style: TextStyle(
@@ -756,11 +745,9 @@ class _LandingContent extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+
           const SizedBox(height: 18),
 
-          // Loyalty is the only currently visible action.
-          // Future options can be added beside it without
-          // changing the structure of this card.
           if (hasLoyalty)
             _ExperienceAction(
               icon: Icons.loyalty_rounded,
@@ -769,15 +756,12 @@ class _LandingContent extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) =>
-                        CustomerLoyaltyPage(
-                          businessId:
-                          landing.businessId,
-                          businessName:
-                          businessName,
-                          businessType: landing.businessType,
-                          brandColor: landing.brandColor,
-                        ),
+                    builder: (_) => CustomerLoyaltyPage(
+                      businessId: landing.businessId,
+                      businessName: businessName,
+                      businessType: landing.businessType,
+                      brandColor: landing.brandColor,
+                    ),
                   ),
                 );
               },
@@ -787,23 +771,23 @@ class _LandingContent extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // GOOGLE REVIEW
+  // ---------------------------------------------------------------------------
+
   Widget _buildReviewCard(BuildContext context) {
     return _GlassCard(
       theme: theme,
       padding: const EdgeInsets.all(22),
       child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: theme.primary.withValues(
-                alpha: 0.10,
-              ),
-              borderRadius:
-              BorderRadius.circular(16),
+              color: theme.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               Icons.rate_review_outlined,
@@ -814,11 +798,10 @@ class _LandingContent extends StatelessWidget {
           const SizedBox(width: 15),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Enjoyed your experience?',
+                  'Google Review',
                   style: TextStyle(
                     color: theme.textPrimary,
                     fontSize: 16,
@@ -827,21 +810,11 @@ class _LandingContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'We would love to hear from you.',
+                  'Don’t forget to share your experience with us.',
                   style: TextStyle(
                     color: theme.textSecondary,
                     fontSize: 12.5,
                     height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Please review us on Google.',
-                  style: TextStyle(
-                    color: theme.primary,
-                    fontSize: 12.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -851,23 +824,22 @@ class _LandingContent extends StatelessWidget {
           IconButton(
             tooltip: 'Leave a review',
             onPressed: () {
-              onOpenExternalLink(
-                landing.googleReviewUrl!,
-              );
+              onOpenExternalLink(landing.googleReviewUrl!);
             },
             style: IconButton.styleFrom(
               backgroundColor: theme.primary,
               foregroundColor: theme.onPrimary,
             ),
-            icon: const Icon(
-              Icons.arrow_forward_rounded,
-              size: 20,
-            ),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 20),
           ),
         ],
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // SOCIALS
+  // ---------------------------------------------------------------------------
 
   Widget _buildSocialSection(BuildContext context) {
     final socials = <_SocialItem>[];
@@ -918,23 +890,19 @@ class _LandingContent extends StatelessWidget {
             letterSpacing: 0.4,
           ),
         ),
+
         const SizedBox(height: 14),
+
         Row(
-          mainAxisAlignment:
-          MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: socials.map((social) {
             return Padding(
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal: 7,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 7),
               child: _SocialDot(
                 item: social,
                 theme: theme,
                 onTap: () {
-                  onOpenExternalLink(
-                    social.url,
-                  );
+                  onOpenExternalLink(social.url);
                 },
               ),
             );
@@ -944,43 +912,127 @@ class _LandingContent extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // FOOTER
+  // ---------------------------------------------------------------------------
+
   Widget _buildFooter(BuildContext context) {
     return Column(
       children: [
-        Text(
-          'Powered by ScanAura',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: theme.textTertiary,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/scanaura_logo_white.png',
+              fit: BoxFit.contain,
+              width: 32,
+              height: 24,
+            ),
+
+            const SizedBox(width: 4),
+
+            Text(
+              'Powered by ScanAura',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.textTertiary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 7),
+
+        const SizedBox(height: 6),
+
         TextButton(
           onPressed: () {
-            context.go('/login');
+            context.go('/register');
           },
           style: TextButton.styleFrom(
             foregroundColor: theme.primary,
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
-            'Register your business',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Register your business',
+                style: TextStyle(
+                  color: theme.primary,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Icon(Icons.arrow_forward_rounded, size: 15, color: theme.primary),
+            ],
           ),
         ),
       ],
     );
   }
 }
+
+// =============================================================================
+// HERO CARD
+// =============================================================================
+
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.theme, required this.child});
+
+  final PublicTheme theme;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.glassSurface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: theme.glassBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: theme.primary.withValues(alpha: 0.08),
+            blurRadius: 35,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.primary.withValues(alpha: 0.045),
+                      Colors.transparent,
+                      theme.accent.withValues(alpha: 0.025),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// GLASS CARD
+// =============================================================================
 
 class _GlassCard extends StatelessWidget {
   const _GlassCard({
@@ -998,61 +1050,50 @@ class _GlassCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.glassSurface,
-        borderRadius:
-        BorderRadius.circular(28),
-        border: Border.all(
-          color: theme.glassBorder,
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: theme.glassBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: theme.primary.withValues(
-              alpha: 0.055,
-            ),
+            color: theme.primary.withValues(alpha: 0.055),
             blurRadius: 30,
             offset: const Offset(0, 14),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius:
-        BorderRadius.circular(28),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.primary.withValues(
-                          alpha: 0.035,
-                        ),
-                        Colors.transparent,
-                        theme.accent.withValues(
-                          alpha: 0.025,
-                        ),
-                      ],
-                    ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.primary.withValues(alpha: 0.035),
+                      Colors.transparent,
+                      theme.accent.withValues(alpha: 0.025),
+                    ],
                   ),
                 ),
               ),
             ),
-            Padding(
-              padding: padding,
-              child: child,
-            ),
-          ],
-        ),
+          ),
+
+          Padding(padding: padding, child: child),
+        ],
       ),
     );
   }
 }
 
-class _GlassIconButton extends StatelessWidget {
-  const _GlassIconButton({
+// =============================================================================
+// HERO SHARE BUTTON
+// =============================================================================
+
+class _HeroIconButton extends StatelessWidget {
+  const _HeroIconButton({
     required this.icon,
     required this.tooltip,
     required this.color,
@@ -1070,30 +1111,18 @@ class _GlassIconButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-        BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
-          width: 46,
-          height: 46,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: color.withValues(
-              alpha: 0.08,
-            ),
-            borderRadius:
-            BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withValues(
-                alpha: 0.13,
-              ),
-            ),
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.13)),
           ),
           child: Tooltip(
             message: tooltip,
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
         ),
       ),
@@ -1101,16 +1130,22 @@ class _GlassIconButton extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// BUSINESS LOGO
+// =============================================================================
+
 class _BusinessLogo extends StatelessWidget {
   const _BusinessLogo({
     required this.logoUrl,
     required this.businessName,
     required this.theme,
+    this.size = 118,
   });
 
   final String? logoUrl;
   final String businessName;
   final PublicTheme theme;
+  final double size;
 
   String get initials {
     final parts = businessName
@@ -1123,66 +1158,47 @@ class _BusinessLogo extends StatelessWidget {
       return 'B';
     }
 
-    return parts
-        .map(
-          (part) => part.substring(0, 1),
-    )
-        .join()
-        .toUpperCase();
+    return parts.map((part) => part.substring(0, 1)).join().toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasLogo =
-        logoUrl != null &&
-            logoUrl!.trim().isNotEmpty;
+    final hasLogo = logoUrl != null && logoUrl!.trim().isNotEmpty;
 
     return Container(
-      width: 112,
-      height: 112,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            theme.primary.withValues(
-              alpha: 0.14,
-            ),
-            theme.primary.withValues(
-              alpha: 0.05,
-            ),
+            theme.primary.withValues(alpha: 0.15),
+            theme.primary.withValues(alpha: 0.045),
           ],
         ),
         border: Border.all(
-          color: theme.primary.withValues(
-            alpha: 0.16,
-          ),
+          color: theme.primary.withValues(alpha: 0.18),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.primary.withValues(
-              alpha: 0.10,
-            ),
-            blurRadius: 25,
-            offset: const Offset(0, 8),
+            color: theme.primary.withValues(alpha: 0.11),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: hasLogo
           ? Image.network(
-        logoUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (
-            context,
-            error,
-            stackTrace,
-            ) {
-          return _fallback();
-        },
-      )
+              logoUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _fallback();
+              },
+            )
           : _fallback(),
     );
   }
@@ -1193,14 +1209,18 @@ class _BusinessLogo extends StatelessWidget {
         initials,
         style: TextStyle(
           color: theme.primary,
-          fontSize: 31,
-          fontWeight: FontWeight.w800,
+          fontSize: 33,
+          fontWeight: FontWeight.w900,
           letterSpacing: -0.5,
         ),
       ),
     );
   }
 }
+
+// =============================================================================
+// EXPERIENCE ACTION
+// =============================================================================
 
 class _ExperienceAction extends StatelessWidget {
   const _ExperienceAction({
@@ -1221,34 +1241,18 @@ class _ExperienceAction extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-        BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(17),
         child: Ink(
-          padding:
-          const EdgeInsets.symmetric(
-            horizontal: 15,
-            vertical: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           decoration: BoxDecoration(
-            color: color.withValues(
-              alpha: 0.07,
-            ),
-            borderRadius:
-            BorderRadius.circular(17),
-            border: Border.all(
-              color: color.withValues(
-                alpha: 0.13,
-              ),
-            ),
+            color: color.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: color.withValues(alpha: 0.13)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 19,
-                color: color,
-              ),
+              Icon(icon, size: 19, color: color),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -1265,6 +1269,10 @@ class _ExperienceAction extends StatelessWidget {
     );
   }
 }
+
+// =============================================================================
+// SOCIAL ITEM
+// =============================================================================
 
 class _SocialDot extends StatelessWidget {
   const _SocialDot({
@@ -1283,14 +1291,9 @@ class _SocialDot extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-        BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding:
-          const EdgeInsets.symmetric(
-            horizontal: 5,
-            vertical: 3,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1299,22 +1302,16 @@ class _SocialDot extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: theme.primary.withValues(
-                    alpha: 0.07,
-                  ),
+                  color: theme.primary.withValues(alpha: 0.07),
                   border: Border.all(
-                    color: theme.primary.withValues(
-                      alpha: 0.12,
-                    ),
+                    color: theme.primary.withValues(alpha: 0.12),
                   ),
                 ),
-                child: Icon(
-                  item.icon,
-                  size: 19,
-                  color: theme.primary,
-                ),
+                child: Icon(item.icon, size: 19, color: theme.primary),
               ),
+
               const SizedBox(height: 6),
+
               Text(
                 item.label,
                 textAlign: TextAlign.center,
@@ -1332,11 +1329,12 @@ class _SocialDot extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// GLOW
+// =============================================================================
+
 class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({
-    required this.color,
-    required this.size,
-  });
+  const _GlowOrb({required this.color, required this.size});
 
   final Color color;
   final double size;
@@ -1346,40 +1344,37 @@ class _GlowOrb extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
+
+// =============================================================================
+// LOADING
+// =============================================================================
 
 class _PublicLoadingPage extends StatelessWidget {
   const _PublicLoadingPage();
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
+// =============================================================================
+// ERROR
+// =============================================================================
+
 class _PublicErrorPage extends StatelessWidget {
-  const _PublicErrorPage({
-    required this.message,
-    required this.onRetry,
-  });
+  const _PublicErrorPage({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -1387,10 +1382,7 @@ class _PublicErrorPage extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
-                maxWidth: 440,
-              ),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1398,54 +1390,48 @@ class _PublicErrorPage extends StatelessWidget {
                     width: 78,
                     height: 78,
                     decoration: BoxDecoration(
-                      color:
-                      colors.primaryContainer,
+                      color: colors.primaryContainer,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.storefront_outlined,
                       size: 38,
-                      color: colors
-                          .onPrimaryContainer,
+                      color: colors.onPrimaryContainer,
                     ),
                   ),
+
                   const SizedBox(height: 20),
+
                   Text(
                     'Unable to open this page',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(
-                      fontWeight:
-                      FontWeight.w800,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
+
                   const SizedBox(height: 9),
+
                   Text(
                     message,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color:
-                      colors.onSurfaceVariant,
+                      color: colors.onSurfaceVariant,
                       height: 1.45,
                     ),
                   ),
+
                   const SizedBox(height: 22),
+
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: FilledButton.icon(
                       onPressed: onRetry,
-                      icon: const Icon(
-                        Icons.refresh_rounded,
-                      ),
+                      icon: const Icon(Icons.refresh_rounded),
                       label: const Text(
                         'Try again',
-                        style: TextStyle(
-                          fontWeight:
-                          FontWeight.w800,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
@@ -1459,6 +1445,10 @@ class _PublicErrorPage extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// TERMINOLOGY
+// =============================================================================
+
 class _BusinessTerminology {
   const _BusinessTerminology({
     required this.collectionTitle,
@@ -1470,6 +1460,10 @@ class _BusinessTerminology {
   final String itemTitle;
   final String description;
 }
+
+// =============================================================================
+// SOCIAL MODEL
+// =============================================================================
 
 class _SocialItem {
   const _SocialItem({
