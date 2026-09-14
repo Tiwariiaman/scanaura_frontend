@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../../qr/data/models/qr_response.dart';
-import '../../qr/presentation/widgets/scanaura_qr_card.dart';
+import '../../qr/presentation/widgets/cards/scanaura_qr_card.dart';
 
 class AdminQrPackService {
   AdminQrPackService._();
