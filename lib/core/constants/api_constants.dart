@@ -246,4 +246,7 @@ class ApiConstants {
       ) {
     return '$adminBusinesses/$businessId/subscription';
   }
+
+  static const String businessDashboard =
+      '$businessBase/dashboard';
 }

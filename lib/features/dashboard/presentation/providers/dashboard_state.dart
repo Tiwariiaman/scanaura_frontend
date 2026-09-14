@@ -1,4 +1,5 @@
 import '../../../../features/subscription/data/models/subscription_response.dart';
+import '../../../business/data/models/business_dashboard_response.dart';
 
 enum DashboardStatus {
   initial,
@@ -16,6 +17,7 @@ class DashboardState {
     this.aiImportUsed = 0,
     this.aiImportLimit = 0,
     this.subscription,
+    this.businessDashboard,
     this.errorMessage,
   });
 
@@ -30,6 +32,10 @@ class DashboardState {
 
   final SubscriptionResponse? subscription;
 
+  /// Business-specific dashboard data fetched
+  /// using the logged-in business.
+  final BusinessDashboardResponse? businessDashboard;
+
   final String? errorMessage;
 
   bool get isLoading =>
@@ -40,6 +46,9 @@ class DashboardState {
 
   bool get hasSubscription =>
       subscription != null;
+
+  bool get hasBusinessDashboard =>
+      businessDashboard != null;
 
   int get aiImportsRemaining {
     final remaining =
@@ -56,9 +65,11 @@ class DashboardState {
     int? aiImportUsed,
     int? aiImportLimit,
     SubscriptionResponse? subscription,
+    BusinessDashboardResponse? businessDashboard,
     String? errorMessage,
     bool clearError = false,
     bool clearSubscription = false,
+    bool clearBusinessDashboard = false,
   }) {
     return DashboardState(
       status: status ?? this.status,
@@ -82,6 +93,11 @@ class DashboardState {
       clearSubscription
           ? null
           : subscription ?? this.subscription,
+
+      businessDashboard:
+      clearBusinessDashboard
+          ? null
+          : businessDashboard ?? this.businessDashboard,
 
       errorMessage:
       clearError

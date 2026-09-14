@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import 'models/business_dashboard_response.dart';
 import 'models/business_request.dart';
 import 'models/business_response.dart';
 
@@ -106,6 +107,39 @@ class BusinessRepository {
     try {
       await apiClient.delete<Map<String, dynamic>>(
         ApiConstants.businessBase,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<BusinessDashboardResponse>
+  getMyDashboard() async {
+    try {
+      final response =
+      await apiClient.get<Map<String, dynamic>>(
+        ApiConstants.businessDashboard,
+      );
+
+      final responseBody = response.data;
+
+      if (responseBody == null) {
+        throw Exception(
+          'Empty response from server.',
+        );
+      }
+
+      final data = responseBody['data'];
+
+      if (data is! Map<String, dynamic>) {
+        throw Exception(
+          responseBody['message'] ??
+              'Unable to load business dashboard.',
+        );
+      }
+
+      return BusinessDashboardResponse.fromJson(
+        data,
       );
     } on DioException catch (e) {
       throw _handleError(e);

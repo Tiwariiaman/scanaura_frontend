@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/app_providers.dart';
+import '../../../business/data/business_repository.dart';
+import '../../../business/data/models/business_dashboard_response.dart';
 import '../../../menu/data/menu_repository.dart';
 import '../../../qr/data/qr_repository.dart';
 import '../../../subscription/data/subscription_repository.dart';
@@ -19,6 +21,7 @@ class DashboardNotifier
   late final QrRepository _qrRepository;
   late final SubscriptionRepository
   _subscriptionRepository;
+  late final BusinessRepository _businessRepository;
 
   @override
   DashboardState build() {
@@ -32,6 +35,9 @@ class DashboardNotifier
         ref.read(
           subscriptionRepositoryProvider,
         );
+
+    _businessRepository =
+        ref.read(businessRepositoryProvider);
 
     return const DashboardState();
   }
@@ -47,8 +53,8 @@ class DashboardNotifier
         _menuRepository.getCatalogs(),
         _menuRepository.getCategories(),
         _qrRepository.getMyQrCodes(),
-        _subscriptionRepository
-            .getMySubscription(),
+        _subscriptionRepository.getMySubscription(),
+        _businessRepository.getMyDashboard(),
       ]);
 
       final catalogs =
@@ -61,12 +67,13 @@ class DashboardNotifier
       results[2] as List;
 
       final subscription =
-      results[3]
-      as dynamic;
+      results[3] as dynamic;
+
+      final businessDashboard =
+      results[4] as BusinessDashboardResponse;
 
       state = state.copyWith(
-        status:
-        DashboardStatus.success,
+        status: DashboardStatus.success,
 
         menuItemCount:
         catalogs.length,
@@ -85,6 +92,9 @@ class DashboardNotifier
 
         subscription:
         subscription,
+
+        businessDashboard:
+        businessDashboard,
 
         clearError: true,
       );
