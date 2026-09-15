@@ -128,4 +128,5 @@ class BusinessResponse {
       json['brandColor'] as String?,
     );
   }
+
 }

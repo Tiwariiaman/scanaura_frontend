@@ -206,6 +206,10 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final business =
         businessState.business;
+    final businessName =
+    business?.businessName.trim().isNotEmpty == true
+        ? business!.businessName.trim()
+        : 'Business';
 
     return LayoutBuilder(
       builder: (
@@ -225,6 +229,8 @@ class _AppShellState extends ConsumerState<AppShell> {
             appBar: _MobileHeader(
               logoUrl:
               business?.logoUrl,
+              businessName:
+              businessName,
               onContactUs:
               _openContactUs,
               onScanLoyalty:
@@ -338,6 +344,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                 selectedIndex,
                 logoUrl:
                 business?.logoUrl,
+                businessName:
+                businessName,
                 onSelected:
                     (index) {
                   _navigate(
@@ -406,12 +414,12 @@ class _AppShellState extends ConsumerState<AppShell> {
 // DESKTOP NAVIGATION
 // ============================================================
 
-class _DesktopNavigation
-    extends StatelessWidget {
+class _DesktopNavigation extends StatelessWidget {
   const _DesktopNavigation({
     required this.items,
     required this.selectedIndex,
     required this.logoUrl,
+    required this.businessName,
     required this.onSelected,
     required this.onLogout,
   });
@@ -419,6 +427,7 @@ class _DesktopNavigation
   final List<_NavigationItem> items;
   final int selectedIndex;
   final String? logoUrl;
+  final String businessName;
   final ValueChanged<int> onSelected;
   final VoidCallback onLogout;
 
@@ -592,15 +601,15 @@ class _DesktopNavigation
                         const SizedBox(
                           width: 10,
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Business',
+                            businessName,
                             maxLines: 1,
                             overflow:
                             TextOverflow
                                 .ellipsis,
                             style:
-                            TextStyle(
+                            const TextStyle(
                               fontWeight:
                               FontWeight
                                   .w700,
@@ -906,19 +915,21 @@ class _MobileHeader
     implements PreferredSizeWidget {
   const _MobileHeader({
     required this.logoUrl,
+    required this.businessName,
     required this.onContactUs,
     required this.onScanLoyalty,
     required this.onLogout,
   });
 
   final String? logoUrl;
+  final String businessName;
   final VoidCallback onContactUs;
   final VoidCallback onScanLoyalty;
   final VoidCallback onLogout;
 
   @override
   Size get preferredSize =>
-      const Size.fromHeight(60);
+      const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
@@ -929,24 +940,22 @@ class _MobileHeader
 
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/scanaura_logo.png',
-            width: 34,
-            height: 34,
-            fit: BoxFit.contain,
+          _BusinessAvatar(
+            logoUrl: logoUrl,
+            size: 34,
           ),
 
           const SizedBox(
             width: 10,
           ),
 
-          const Flexible(
+          Flexible(
             child: Text(
-              'ScanAura',
+              businessName,
               maxLines: 1,
               overflow:
               TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight:
                 FontWeight.w700,
               ),
@@ -989,23 +998,57 @@ class _MobileHeader
         ),
 
         const SizedBox(
-          width: 2,
+          width: 4,
         ),
 
         // ======================================================
         // LOGOUT
+        // ICON + TEXT BELOW
         // ======================================================
 
-        IconButton(
-          tooltip: 'Logout',
-          onPressed: onLogout,
-          icon: const Icon(
-            Icons.logout_rounded,
+        Padding(
+          padding:
+          const EdgeInsets.only(
+            right: 10,
+            top: 5,
+            bottom: 3,
           ),
-        ),
-
-        const SizedBox(
-          width: 4,
+          child: InkWell(
+            borderRadius:
+            BorderRadius.circular(
+              10,
+            ),
+            onTap: onLogout,
+            child: SizedBox(
+              width: 42,
+              child: Column(
+                mainAxisAlignment:
+                MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.logout_rounded,
+                    size: 21,
+                  ),
+                  const SizedBox(
+                    height: 1,
+                  ),
+                  Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight:
+                      FontWeight.w600,
+                      color: Theme.of(
+                        context,
+                      )
+                          .colorScheme
+                          .onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -1015,10 +1058,10 @@ class _MobileHeader
 // ============================================================
 // MOBILE NAVIGATION
 //
-// Dashboard | Business | CATALOG | Activity | Subscription
+// Dashboard | Business | Catalog | Activity | QR
 //
-// Catalog is intentionally the prominent center action.
-// QR is intentionally hidden from this five-slot mobile layout.
+// Catalog remains the prominent center action.
+// Subscription is intentionally replaced by QR.
 // ============================================================
 
 class _MobileNavigation
@@ -1048,8 +1091,8 @@ class _MobileNavigation
     final isActivitySelected =
         selectedIndex == 3;
 
-    final isSubscriptionSelected =
-        selectedIndex == 5;
+    final isQrSelected =
+        selectedIndex == 4;
 
     return SafeArea(
       top: false,
@@ -1173,17 +1216,16 @@ class _MobileNavigation
                       child:
                       _MobileNavItem(
                         icon: Icons
-                            .credit_card_outlined,
+                            .qr_code_2_outlined,
                         selectedIcon:
                         Icons
-                            .credit_card_rounded,
-                        label:
-                        'Subscription',
+                            .qr_code_2_rounded,
+                        label: 'QR',
                         selected:
-                        isSubscriptionSelected,
+                        isQrSelected,
                         onTap: () =>
                             onSelected(
-                              '/subscription',
+                              '/qr',
                             ),
                       ),
                     ),

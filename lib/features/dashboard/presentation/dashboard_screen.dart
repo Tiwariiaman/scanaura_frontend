@@ -101,74 +101,67 @@ class _DashboardScreenState
         )
             .refreshDashboard();
       },
-      child: LayoutBuilder(
-        builder: (
-            context,
-            constraints,
-            ) {
-          return SingleChildScrollView(
-            physics:
-            const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              40,
+      child: SingleChildScrollView(
+        physics:
+        const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          40,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints:
+            const BoxConstraints(
+              maxWidth: 1250,
             ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints:
-                const BoxConstraints(
-                  maxWidth: 1250,
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+              children: [
+                _buildBusinessHeader(
+                  context,
+                  state,
                 ),
-                child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.stretch,
-                  children: [
-                    _buildBusinessHeader(
-                      context,
-                      state,
-                    ),
 
-                    const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                    _buildScanOverview(
-                      context,
-                      state,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildMainStats(
-                      context,
-                      state,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildTwoColumnSection(
-                      context,
-                      state,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildQuickActions(
-                      context,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildAiUsageCard(
-                      context,
-                      state,
-                    ),
-                  ],
+                _buildScanOverview(
+                  context,
+                  state,
                 ),
-              ),
+
+                const SizedBox(height: 20),
+
+                _buildMainStats(
+                  context,
+                  state,
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildTwoColumnSection(
+                  context,
+                  state,
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildQuickActions(
+                  context,
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildAiUsageCard(
+                  context,
+                  state,
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -276,18 +269,16 @@ class _DashboardScreenState
           width: 58,
           height: 58,
           decoration: BoxDecoration(
-            color: theme
-                .colorScheme
-                .surface,
+            color:
+            theme.colorScheme.surface,
             borderRadius:
             BorderRadius.circular(17),
           ),
           child: Icon(
             Icons.storefront_rounded,
             size: 29,
-            color: theme
-                .colorScheme
-                .primary,
+            color:
+            theme.colorScheme.primary,
           ),
         ),
         const SizedBox(width: 14),
@@ -368,24 +359,33 @@ class _DashboardScreenState
         BorderRadius.circular(30),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize:
+        MainAxisSize.min,
         children: [
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
+            decoration:
+            BoxDecoration(
               shape: BoxShape.circle,
               color: active
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.error,
+                  ? theme
+                  .colorScheme
+                  .primary
+                  : theme
+                  .colorScheme
+                  .error,
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            active ? 'Business Active' : 'Business Inactive',
+            active
+                ? 'Business Active'
+                : 'Business Inactive',
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight:
+              FontWeight.w700,
               color: active
                   ? theme
                   .colorScheme
@@ -409,7 +409,8 @@ class _DashboardScreenState
       DashboardState state,
       ) {
     final theme = Theme.of(context);
-    final business = state.businessDashboard;
+    final business =
+        state.businessDashboard;
 
     final today =
         business?.todayScans ?? 0;
@@ -432,7 +433,8 @@ class _DashboardScreenState
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -442,12 +444,14 @@ class _DashboardScreenState
                 Container(
                   width: 42,
                   height: 42,
-                  decoration: BoxDecoration(
+                  decoration:
+                  BoxDecoration(
                     color: theme
                         .colorScheme
                         .primaryContainer,
                     borderRadius:
-                    BorderRadius.circular(12),
+                    BorderRadius
+                        .circular(12),
                   ),
                   child: Icon(
                     Icons
@@ -461,10 +465,11 @@ class _DashboardScreenState
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    CrossAxisAlignment
+                        .start,
                     children: [
                       Text(
-                        'QR Scan Analytics',
+                        'Scan Overview',
                         style: theme
                             .textTheme
                             .titleMedium
@@ -475,7 +480,7 @@ class _DashboardScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'See how customers are interacting with your QR.',
+                        'Customer activity through your QR',
                         style: theme
                             .textTheme
                             .bodySmall
@@ -491,7 +496,7 @@ class _DashboardScreenState
               ],
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 20),
 
             LayoutBuilder(
               builder: (
@@ -501,266 +506,134 @@ class _DashboardScreenState
                 final width =
                     constraints.maxWidth;
 
-                if (width < 520) {
+                final columns =
+                width >= 900
+                    ? 4
+                    : width >= 560
+                    ? 2
+                    : 1;
+
+                final children = [
+                  _ScanMetric(
+                    label: 'Today',
+                    value: today,
+                    icon:
+                    Icons.today_outlined,
+                  ),
+                  _ScanMetric(
+                    label: 'Yesterday',
+                    value: yesterday,
+                    icon: Icons
+                        .history_outlined,
+                  ),
+                  _ScanMetric(
+                    label: 'Last 7 Days',
+                    value: last7,
+                    icon: Icons
+                        .date_range_outlined,
+                  ),
+                  _ScanMetric(
+                    label: 'Total',
+                    value: total,
+                    icon: Icons
+                        .bar_chart_rounded,
+                  ),
+                ];
+
+                if (columns == 1) {
                   return Column(
-                    children: [
-                      _buildLargeScanMetric(
-                        context,
-                        'Today',
-                        today,
-                        Icons.today_outlined,
+                    children:
+                    children
+                        .map(
+                          (child) => Padding(
+                        padding:
+                        const EdgeInsets
+                            .only(
+                          bottom: 10,
+                        ),
+                        child: child,
                       ),
-                      const SizedBox(height: 12),
-                      _buildLargeScanMetric(
-                        context,
-                        'Yesterday',
-                        yesterday,
-                        Icons.history_rounded,
-                      ),
-                    ],
+                    )
+                        .toList(),
                   );
                 }
 
-                return Row(
-                  children: [
-                    Expanded(
-                      child:
-                      _buildLargeScanMetric(
-                        context,
-                        'Today',
-                        today,
-                        Icons.today_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child:
-                      _buildLargeScanMetric(
-                        context,
-                        'Yesterday',
-                        yesterday,
-                        Icons.history_rounded,
-                      ),
-                    ),
-                  ],
+                return GridView.count(
+                  crossAxisCount:
+                  columns,
+                  shrinkWrap: true,
+                  physics:
+                  const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio:
+                  width >= 900
+                      ? 2.1
+                      : 2.6,
+                  children: children,
                 );
               },
             ),
 
-            const SizedBox(height: 12),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: 0.45),
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    increase
-                        ? Icons
-                        .trending_up_rounded
-                        : decrease
-                        ? Icons
-                        .trending_down_rounded
-                        : Icons
-                        .remove_rounded,
-                    size: 20,
-                    color: increase
-                        ? theme
-                        .colorScheme
-                        .primary
-                        : decrease
-                        ? theme
-                        .colorScheme
-                        .error
-                        : theme
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      difference == 0
-                          ? 'Same scans as yesterday'
-                          : difference > 0
-                          ? '$difference more scan${difference == 1 ? '' : 's'} than yesterday'
-                          : '${difference.abs()} fewer scan${difference.abs() == 1 ? '' : 's'} than yesterday',
-                      style: theme
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(
-                        fontWeight:
-                        FontWeight.w600,
+            if (increase || decrease) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding:
+                const EdgeInsets.all(13),
+                decoration:
+                BoxDecoration(
+                  color: increase
+                      ? theme
+                      .colorScheme
+                      .secondaryContainer
+                      : decrease
+                      ? theme
+                      .colorScheme
+                      .errorContainer
+                      : theme
+                      .colorScheme
+                      .surfaceContainerHighest,
+                  borderRadius:
+                  BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      increase
+                          ? Icons
+                          .trending_up_rounded
+                          : Icons
+                          .trending_down_rounded,
+                      color: increase
+                          ? theme
+                          .colorScheme
+                          .primary
+                          : theme
+                          .colorScheme
+                          .error,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        increase
+                            ? 'You received $difference more scans than yesterday.'
+                            : 'You received ${difference.abs()} fewer scans than yesterday.',
+                        style: theme
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                          fontWeight:
+                          FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMiniMetric(
-                    context,
-                    'Last 7 Days',
-                    last7,
-                    Icons.date_range_outlined,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMiniMetric(
-                    context,
-                    'All Time',
-                    total,
-                    Icons.insights_rounded,
-                    emphasized: true,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLargeScanMetric(
-      BuildContext context,
-      String label,
-      int value,
-      IconData icon,
-      ) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: theme
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.5),
-        borderRadius:
-        BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: theme.colorScheme.primary,
-            size: 22,
-          ),
-          const SizedBox(width: 11),
-          Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: theme
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(
-                  color: theme
-                      .colorScheme
-                      .onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                _formatNumber(value),
-                style: theme
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(
-                  fontWeight:
-                  FontWeight.w800,
+                  ],
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniMetric(
-      BuildContext context,
-      String label,
-      int value,
-      IconData icon, {
-        bool emphasized = false,
-      }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: theme
-              .colorScheme
-              .outlineVariant,
+          ],
         ),
-        borderRadius:
-        BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 19,
-            color: emphasized
-                ? theme.colorScheme.primary
-                : theme
-                .colorScheme
-                .onSurfaceVariant,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow:
-                  TextOverflow.ellipsis,
-                  style: theme
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(
-                    color: theme
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _formatNumber(value),
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight:
-                    emphasized
-                        ? FontWeight.w800
-                        : FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -781,14 +654,73 @@ class _DashboardScreenState
         final width =
             constraints.maxWidth;
 
-        int columns;
+        final columns =
+        width >= 900
+            ? 4
+            : width >= 560
+            ? 2
+            : 1;
 
-        if (width >= 900) {
-          columns = 4;
-        } else if (width >= 560) {
-          columns = 2;
-        } else {
-          columns = 2;
+        final children = [
+          _DashboardStatCard(
+            icon:
+            Icons.menu_book_outlined,
+            title: 'Menu Items',
+            value:
+            state.menuItemCount,
+            onTap: () {
+              context.push('/menu');
+            },
+          ),
+          _DashboardStatCard(
+            icon:
+            Icons.category_outlined,
+            title: 'Categories',
+            value:
+            state.categoryCount,
+            onTap: () {
+              context.push('/menu');
+            },
+          ),
+          _DashboardStatCard(
+            icon:
+            Icons.qr_code_2_outlined,
+            title: 'QR Codes',
+            value: state.qrCount,
+            onTap: () {
+              context.push('/qr');
+            },
+          ),
+          _DashboardStatCard(
+            icon:
+            Icons.auto_awesome_rounded,
+            title: 'AI Imports',
+            value:
+            state.aiImportUsed,
+            subtitle:
+            '${state.aiImportsRemaining} remaining',
+            onTap: () {
+              context.push(
+                '/ai-import',
+              );
+            },
+          ),
+        ];
+
+        if (columns == 1) {
+          return Column(
+            children: children
+                .map(
+                  (child) => Padding(
+                padding:
+                const EdgeInsets.only(
+                  bottom: 12,
+                ),
+                child: child,
+              ),
+            )
+                .toList(),
+          );
         }
 
         return GridView.count(
@@ -799,47 +731,10 @@ class _DashboardScreenState
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio:
-          width < 560 ? 1.42 : 2.15,
-          children: [
-            _DashboardStatCard(
-              icon: Icons.menu_book_outlined,
-              title: 'Menu Items',
-              value:
-              state.menuItemCount,
-              onTap: () {
-                context.push('/menu');
-              },
-            ),
-            _DashboardStatCard(
-              icon: Icons.category_outlined,
-              title: 'Categories',
-              value:
-              state.categoryCount,
-              onTap: () {
-                context.push('/menu');
-              },
-            ),
-            _DashboardStatCard(
-              icon: Icons.qr_code_2_outlined,
-              title: 'QR Codes',
-              value:
-              state.qrCount,
-              onTap: () {
-                context.push('/qr');
-              },
-            ),
-            _DashboardStatCard(
-              icon: Icons.auto_awesome_rounded,
-              title: 'AI Imports',
-              value:
-              state.aiImportUsed,
-              subtitle:
-              '${state.aiImportsRemaining} remaining',
-              onTap: () {
-                context.push('/ai-import');
-              },
-            ),
-          ],
+          width >= 900
+              ? 2.15
+              : 1.42,
+          children: children,
         );
       },
     );
@@ -882,14 +777,16 @@ class _DashboardScreenState
           CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _buildSubscriptionCard(
+              child:
+              _buildSubscriptionCard(
                 context,
                 state.subscription,
               ),
             ),
             const SizedBox(width: 20),
             Expanded(
-              child: _buildBusinessInsights(
+              child:
+              _buildBusinessInsights(
                 context,
                 state,
               ),
@@ -906,7 +803,8 @@ class _DashboardScreenState
 
   Widget _buildSubscriptionCard(
       BuildContext context,
-      SubscriptionResponse? subscription,
+      SubscriptionResponse?
+      subscription,
       ) {
     final theme = Theme.of(context);
 
@@ -914,7 +812,8 @@ class _DashboardScreenState
       return Card(
         elevation: 0,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding:
+          const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -937,6 +836,20 @@ class _DashboardScreenState
                       .onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.push(
+                      '/subscription',
+                    );
+                  },
+                  child: const Text(
+                    'View Subscription',
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -954,7 +867,8 @@ class _DashboardScreenState
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -1013,8 +927,8 @@ class _DashboardScreenState
               runSpacing: 10,
               children: [
                 _InfoItem(
-                  icon:
-                  Icons.calendar_today_outlined,
+                  icon: Icons
+                      .calendar_today_outlined,
                   text:
                   'Ends ${_formatDate(subscription.endDate)}',
                 ),
@@ -1035,7 +949,9 @@ class _DashboardScreenState
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  context.push('/subscription');
+                  context.push(
+                    '/subscription',
+                  );
                 },
                 child: Text(
                   isExpired
@@ -1052,7 +968,8 @@ class _DashboardScreenState
 
   Widget _buildExpiredBanner(
       BuildContext context,
-      SubscriptionResponse subscription,
+      SubscriptionResponse
+      subscription,
       ) {
     final theme = Theme.of(context);
 
@@ -1064,7 +981,8 @@ class _DashboardScreenState
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(15),
+      padding:
+      const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: theme
             .colorScheme
@@ -1078,7 +996,8 @@ class _DashboardScreenState
         children: [
           Icon(
             Icons.error_outline_rounded,
-            color: theme.colorScheme.error,
+            color:
+            theme.colorScheme.error,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1122,21 +1041,24 @@ class _DashboardScreenState
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
           children: [
             _sectionTitle(
               context,
-              icon: Icons.insights_outlined,
+              icon:
+              Icons.insights_outlined,
               title: 'Business Insights',
             ),
 
             const SizedBox(height: 16),
 
             _InsightRow(
-              icon: Icons.today_outlined,
+              icon:
+              Icons.today_outlined,
               title: 'Today',
               value:
               '${_formatNumber(today)} scans',
@@ -1155,7 +1077,8 @@ class _DashboardScreenState
             const SizedBox(height: 12),
 
             _InsightRow(
-              icon: Icons.bar_chart_rounded,
+              icon:
+              Icons.bar_chart_rounded,
               title: 'Total Reach',
               value:
               '${_formatNumber(total)} scans',
@@ -1165,19 +1088,26 @@ class _DashboardScreenState
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
+              padding:
+              const EdgeInsets.all(14),
+              decoration:
+              BoxDecoration(
                 color: theme
                     .colorScheme
                     .primaryContainer
-                    .withValues(alpha: 0.45),
+                    .withValues(
+                  alpha: 0.45,
+                ),
                 borderRadius:
-                BorderRadius.circular(14),
+                BorderRadius.circular(
+                  14,
+                ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    Icons.lightbulb_outline_rounded,
+                    Icons
+                        .lightbulb_outline_rounded,
                     size: 20,
                     color: theme
                         .colorScheme
@@ -1215,17 +1145,90 @@ class _DashboardScreenState
   Widget _buildQuickActions(
       BuildContext context,
       ) {
+    final actions = [
+      _ActionData(
+        icon:
+        Icons.menu_book_outlined,
+        title: 'Manage Menu',
+        subtitle:
+        'Add or edit items',
+        onTap: () {
+          context.push('/menu');
+        },
+      ),
+      _ActionData(
+        icon:
+        Icons.qr_code_2_outlined,
+        title: 'Manage QR',
+        subtitle:
+        'View your QR',
+        onTap: () {
+          context.push('/qr');
+        },
+      ),
+      _ActionData(
+        icon:
+        Icons.auto_awesome_rounded,
+        title: 'AI Import',
+        subtitle:
+        'Import menu faster',
+        onTap: () {
+          context.push(
+            '/ai-import',
+          );
+        },
+      ),
+      _ActionData(
+        icon:
+        Icons.storefront_outlined,
+        title: 'Business',
+        subtitle:
+        'Business settings',
+        onTap: () {
+          context.push(
+            '/business',
+          );
+        },
+      ),
+      _ActionData(
+        icon:
+        Icons.insights_outlined,
+        title: 'Activity',
+        subtitle:
+        'View customer activity',
+        onTap: () {
+          context.push(
+            '/activity',
+          );
+        },
+      ),
+      _ActionData(
+        icon:
+        Icons.card_membership_outlined,
+        title: 'Subscription',
+        subtitle:
+        'Manage your plan',
+        onTap: () {
+          context.push(
+            '/subscription',
+          );
+        },
+      ),
+    ];
+
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
           children: [
             _sectionTitle(
               context,
-              icon: Icons.flash_on_outlined,
+              icon:
+              Icons.flash_on_outlined,
               title: 'Quick Actions',
             ),
 
@@ -1239,172 +1242,68 @@ class _DashboardScreenState
                 final width =
                     constraints.maxWidth;
 
-                if (width >= 850) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: _ActionTile(
-                          icon: Icons
-                              .menu_book_outlined,
-                          title: 'Manage Menu',
-                          subtitle:
-                          'Add or edit items',
-                          onTap: () {
-                            context.push('/menu');
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ActionTile(
-                          icon: Icons
-                              .qr_code_2_outlined,
-                          title: 'Manage QR',
-                          subtitle:
-                          'View your QR',
-                          onTap: () {
-                            context.push('/qr');
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ActionTile(
-                          icon: Icons
-                              .auto_awesome_rounded,
-                          title: 'AI Import',
-                          subtitle:
-                          'Import menu faster',
-                          onTap: () {
-                            context.push(
-                              '/ai-import',
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ActionTile(
-                          icon: Icons
-                              .storefront_outlined,
-                          title: 'Business',
-                          subtitle:
-                          'Business settings',
-                          onTap: () {
-                            context.push(
-                              '/business',
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                final columns =
+                width >= 900
+                    ? 3
+                    : width >= 520
+                    ? 2
+                    : 1;
+
+                if (columns == 1) {
+                  return Column(
+                    children: actions
+                        .map(
+                          (action) =>
+                          Padding(
+                            padding:
+                            const EdgeInsets
+                                .only(
+                              bottom: 10,
+                            ),
+                            child:
+                            _ActionTile(
+                              icon:
+                              action.icon,
+                              title:
+                              action.title,
+                              subtitle:
+                              action.subtitle,
+                              onTap:
+                              action.onTap,
+                            ),
+                          ),
+                    )
+                        .toList(),
                   );
                 }
 
-                if (width >= 520) {
-                  return GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics:
-                    const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 3.2,
-                    children: [
-                      _ActionTile(
-                        icon: Icons
-                            .menu_book_outlined,
-                        title: 'Manage Menu',
-                        subtitle:
-                        'Add or edit items',
-                        onTap: () {
-                          context.push('/menu');
-                        },
-                      ),
-                      _ActionTile(
-                        icon: Icons
-                            .qr_code_2_outlined,
-                        title: 'Manage QR',
-                        subtitle:
-                        'View your QR',
-                        onTap: () {
-                          context.push('/qr');
-                        },
-                      ),
-                      _ActionTile(
-                        icon: Icons
-                            .auto_awesome_rounded,
-                        title: 'AI Import',
-                        subtitle:
-                        'Import menu faster',
-                        onTap: () {
-                          context.push(
-                            '/ai-import',
-                          );
-                        },
-                      ),
-                      _ActionTile(
-                        icon: Icons
-                            .storefront_outlined,
-                        title: 'Business',
-                        subtitle:
-                        'Business settings',
-                        onTap: () {
-                          context.push(
-                            '/business',
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                }
-
-                return Column(
-                  children: [
-                    _ActionTile(
-                      icon: Icons
-                          .menu_book_outlined,
-                      title: 'Manage Menu',
-                      subtitle:
-                      'Add or edit items',
-                      onTap: () {
-                        context.push('/menu');
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _ActionTile(
-                      icon: Icons
-                          .qr_code_2_outlined,
-                      title: 'Manage QR',
-                      subtitle:
-                      'View your QR',
-                      onTap: () {
-                        context.push('/qr');
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _ActionTile(
-                      icon: Icons
-                          .auto_awesome_rounded,
-                      title: 'AI Import',
-                      subtitle:
-                      'Import menu faster',
-                      onTap: () {
-                        context.push('/ai-import');
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _ActionTile(
-                      icon: Icons
-                          .storefront_outlined,
-                      title: 'Business',
-                      subtitle:
-                      'Business settings',
-                      onTap: () {
-                        context.push('/business');
-                      },
-                    ),
-                  ],
+                return GridView.count(
+                  crossAxisCount:
+                  columns,
+                  shrinkWrap: true,
+                  physics:
+                  const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio:
+                  columns == 3
+                      ? 2.9
+                      : 3.2,
+                  children: actions
+                      .map(
+                        (action) =>
+                        _ActionTile(
+                          icon:
+                          action.icon,
+                          title:
+                          action.title,
+                          subtitle:
+                          action.subtitle,
+                          onTap:
+                          action.onTap,
+                        ),
+                  )
+                      .toList(),
                 );
               },
             ),
@@ -1439,7 +1338,8 @@ class _DashboardScreenState
     return Card(
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -1449,15 +1349,19 @@ class _DashboardScreenState
                 Container(
                   width: 42,
                   height: 42,
-                  decoration: BoxDecoration(
+                  decoration:
+                  BoxDecoration(
                     color: theme
                         .colorScheme
                         .primaryContainer,
                     borderRadius:
-                    BorderRadius.circular(12),
+                    BorderRadius.circular(
+                      12,
+                    ),
                   ),
                   child: Icon(
-                    Icons.auto_awesome_rounded,
+                    Icons
+                        .auto_awesome_rounded,
                     color: theme
                         .colorScheme
                         .onPrimaryContainer,
@@ -1467,7 +1371,8 @@ class _DashboardScreenState
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    CrossAxisAlignment
+                        .start,
                     children: [
                       Text(
                         'AI Import Usage',
@@ -1512,7 +1417,8 @@ class _DashboardScreenState
             ClipRRect(
               borderRadius:
               BorderRadius.circular(10),
-              child: LinearProgressIndicator(
+              child:
+              LinearProgressIndicator(
                 value: progress,
                 minHeight: 9,
               ),
@@ -1555,7 +1461,8 @@ class _DashboardScreenState
         Icon(
           icon,
           size: 21,
-          color: theme.colorScheme.primary,
+          color:
+          theme.colorScheme.primary,
         ),
         const SizedBox(width: 9),
         Text(
@@ -1564,7 +1471,8 @@ class _DashboardScreenState
               .textTheme
               .titleMedium
               ?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight:
+            FontWeight.w800,
           ),
         ),
       ],
@@ -1583,19 +1491,22 @@ class _DashboardScreenState
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding:
+        const EdgeInsets.all(24),
         child: ConstrainedBox(
           constraints:
           const BoxConstraints(
             maxWidth: 430,
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+            MainAxisSize.min,
             children: [
               Container(
                 width: 72,
                 height: 72,
-                decoration: BoxDecoration(
+                decoration:
+                BoxDecoration(
                   color: theme
                       .colorScheme
                       .errorContainer,
@@ -1605,8 +1516,9 @@ class _DashboardScreenState
                   Icons
                       .cloud_off_rounded,
                   size: 34,
-                  color:
-                  theme.colorScheme.error,
+                  color: theme
+                      .colorScheme
+                      .error,
                 ),
               ),
 
@@ -1629,7 +1541,7 @@ class _DashboardScreenState
 
               Text(
                 state.errorMessage ??
-                    'Something went wrong while loading your business data.',
+                    'Something went wrong while loading your dashboard.',
                 textAlign:
                 TextAlign.center,
                 style: theme
@@ -1651,13 +1563,14 @@ class _DashboardScreenState
                     dashboardNotifierProvider
                         .notifier,
                   )
-                      .loadDashboard();
+                      .refreshDashboard();
                 },
                 icon: const Icon(
                   Icons.refresh_rounded,
                 ),
-                label:
-                const Text('Try Again'),
+                label: const Text(
+                  'Try Again',
+                ),
               ),
             ],
           ),
@@ -1667,62 +1580,209 @@ class _DashboardScreenState
   }
 
   // ============================================================
-  // WHATSAPP
-  // ============================================================
-
-  Future<void> _openSupportWhatsApp() async {
-    const supportNumber =
-        '917056222557';
-
-    final uri = Uri.parse(
-      'https://wa.me/$supportNumber?text=${Uri.encodeComponent(
-        'Hello ScanAura Support, I need help with my account.',
-      )}',
-    );
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode:
-        LaunchMode.externalApplication,
-      );
-    }
-  }
-
-  // ============================================================
   // HELPERS
   // ============================================================
 
   String _formatNumber(int value) {
-    if (value < 1000) {
-      return value.toString();
-    }
-
-    if (value < 1000000) {
-      final result =
-          value / 1000;
-
-      return '${result.toStringAsFixed(
-        result.truncateToDouble() == result
-            ? 0
-            : 1,
-      )}K';
-    }
-
-    final result =
-        value / 1000000;
-
-    return '${result.toStringAsFixed(
-      result.truncateToDouble() == result
-          ? 0
-          : 1,
-    )}M';
+    return value.toString();
   }
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
+  }
+}
+
+// ================================================================
+// ACTION DATA
+// ================================================================
+
+class _ActionData {
+  const _ActionData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+}
+
+// ================================================================
+// SCAN METRIC
+// ================================================================
+
+class _ScanMetric
+    extends StatelessWidget {
+  const _ScanMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final int value;
+  final IconData icon;
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Container(
+      padding:
+      const EdgeInsets.all(15),
+      decoration:
+      BoxDecoration(
+        color: theme
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.45),
+        borderRadius:
+        BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration:
+            BoxDecoration(
+              color: theme
+                  .colorScheme
+                  .primaryContainer,
+              borderRadius:
+              BorderRadius.circular(11),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: theme
+                  .colorScheme
+                  .onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  style: theme
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                    color: theme
+                        .colorScheme
+                        .onSurfaceVariant,
+                    fontWeight:
+                    FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _format(value),
+                  style: theme
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(
+                    fontWeight:
+                    FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _format(int value) {
+    return value.toString();
+  }
+}
+
+// ================================================================
+// INSIGHT ROW
+// ================================================================
+
+class _InsightRow
+    extends StatelessWidget {
+  const _InsightRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration:
+          BoxDecoration(
+            color: theme
+                .colorScheme
+                .primaryContainer,
+            borderRadius:
+            BorderRadius.circular(11),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: theme
+                .colorScheme
+                .onPrimaryContainer,
+          ),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Text(
+            title,
+            style: theme
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
+              fontWeight:
+              FontWeight.w600,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: theme
+              .textTheme
+              .bodyMedium
+              ?.copyWith(
+            fontWeight:
+            FontWeight.w800,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1767,12 +1827,15 @@ class _DashboardStatCard
               Container(
                 width: 46,
                 height: 46,
-                decoration: BoxDecoration(
+                decoration:
+                BoxDecoration(
                   color: theme
                       .colorScheme
                       .primaryContainer,
                   borderRadius:
-                  BorderRadius.circular(13),
+                  BorderRadius.circular(
+                    13,
+                  ),
                 ),
                 child: Icon(
                   icon,
@@ -1787,7 +1850,8 @@ class _DashboardStatCard
               Expanded(
                 child: Column(
                   crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  CrossAxisAlignment
+                      .start,
                   mainAxisAlignment:
                   MainAxisAlignment.center,
                   children: [
@@ -1901,7 +1965,8 @@ class _ActionTile
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
+            decoration:
+            BoxDecoration(
               color: theme
                   .colorScheme
                   .primaryContainer
@@ -1993,12 +2058,13 @@ class _StatusPill
         horizontal: 10,
         vertical: 6,
       ),
-      decoration: BoxDecoration(
+      decoration:
+      BoxDecoration(
         color: error
             ? scheme.errorContainer
             : scheme.secondaryContainer,
         borderRadius:
-        BorderRadius.circular(30),
+        BorderRadius.circular(20),
       ),
       child: Text(
         label,
@@ -2007,7 +2073,8 @@ class _StatusPill
           fontWeight:
           FontWeight.w800,
           color: error
-              ? scheme.onErrorContainer
+              ? scheme
+              .onErrorContainer
               : scheme
               .onSecondaryContainer,
         ),
@@ -2043,7 +2110,7 @@ class _InfoItem
       children: [
         Icon(
           icon,
-          size: 16,
+          size: 17,
           color: theme
               .colorScheme
               .onSurfaceVariant,
@@ -2063,72 +2130,6 @@ class _InfoItem
           ),
         ),
       ],
-    );
-  }
-}
-
-// ================================================================
-// INSIGHT ROW
-// ================================================================
-
-class _InsightRow
-    extends StatelessWidget {
-  const _InsightRow({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-
-  @override
-  Widget build(
-      BuildContext context,
-      ) {
-    final theme =
-    Theme.of(context);
-
-    return Container(
-      padding:
-      const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: theme
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.45),
-        borderRadius:
-        BorderRadius.circular(13),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: theme
-                .colorScheme
-                .primary,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontWeight:
-                FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight:
-              FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

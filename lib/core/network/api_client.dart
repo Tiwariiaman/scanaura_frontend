@@ -74,13 +74,13 @@ class ApiClient {
       return ApiConstants.productionBaseUrl;
     }
 
-    // 3. Android emulator.
-    if (defaultTargetPlatform ==
-        TargetPlatform.android) {
-      return ApiConstants.androidBaseUrl;
+    // 3. Production mobile apps.
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return ApiConstants.productionBaseUrl;
     }
 
-    // 4. Fallback.
+// 4. Fallback.
     return ApiConstants.productionBaseUrl;
   }
 
