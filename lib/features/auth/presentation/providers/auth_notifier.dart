@@ -85,6 +85,10 @@ class AuthNotifier extends Notifier<AuthState> {
         response.accessToken,
       );
 
+      await storage.saveRefreshToken(
+        response.refreshToken,
+      );
+
       state = AuthState(
         status:
         AuthStatus.authenticated,
@@ -156,6 +160,7 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.read(secureStorageProvider);
 
     await storage.deleteAccessToken();
+    await storage.deleteRefreshToken();
 
     // Explicitly clear the previous user's
     // role and identity.
