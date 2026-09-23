@@ -249,4 +249,35 @@ class ApiConstants {
 
   static const String businessDashboard =
       '$businessBase/dashboard';
+
+
+
+  // ============================================================
+// GALLERY
+// ============================================================
+
+  static const String galleryBase =
+      '/api/v1/gallery';
+
+  static String galleryByBusiness(
+      String businessId,
+      ) {
+    return '$galleryBase/$businessId';
+  }
+
+  static String galleryImage(
+      String businessId,
+      String imageId,
+      ) {
+    return '$galleryBase/$businessId/$imageId';
+  }
+
+  static String galleryReorder(
+      String businessId,
+      ) {
+    return '$galleryBase/$businessId/reorder';
+  }
+
+
 }
+

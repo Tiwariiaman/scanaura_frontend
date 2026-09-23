@@ -18,6 +18,10 @@ class MenuItemCard extends StatelessWidget {
   final ValueChanged<bool> onAvailabilityChanged;
   final bool showVegIndicator;
 
+  bool get _hasImage =>
+      item.imageUrl != null &&
+          item.imageUrl!.trim().isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -59,14 +63,24 @@ class MenuItemCard extends StatelessWidget {
       crossAxisAlignment:
       CrossAxisAlignment.start,
       children: [
+        _buildImageThumbnail(
+          context,
+        ),
+
+        const SizedBox(
+          width: 16,
+        ),
+
         Expanded(
           child: _buildMainContent(
             context,
           ),
         ),
+
         const SizedBox(
           width: 24,
         ),
+
         _buildWideActions(
           context,
         ),
@@ -93,8 +107,24 @@ class MenuItemCard extends StatelessWidget {
           height: 12,
         ),
 
-        _buildMainContent(
-          context,
+        Row(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+          children: [
+            _buildImageThumbnail(
+              context,
+            ),
+
+            const SizedBox(
+              width: 14,
+            ),
+
+            Expanded(
+              child: _buildMainContent(
+                context,
+              ),
+            ),
+          ],
         ),
 
         const SizedBox(
@@ -105,6 +135,113 @@ class MenuItemCard extends StatelessWidget {
           context,
         ),
       ],
+    );
+  }
+
+  // ============================================================
+  // IMAGE THUMBNAIL
+  // ============================================================
+
+  Widget _buildImageThumbnail(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return SizedBox(
+      width: 96,
+      height: 96,
+      child: ClipRRect(
+        borderRadius:
+        BorderRadius.circular(14),
+        child: _hasImage
+            ? Image.network(
+          item.imageUrl!,
+          fit: BoxFit.cover,
+          loadingBuilder: (
+              context,
+              child,
+              progress,
+              ) {
+            if (progress == null) {
+              return child;
+            }
+
+            return _imagePlaceholder(
+              context,
+              loading: true,
+            );
+          },
+          errorBuilder: (
+              context,
+              error,
+              stackTrace,
+              ) {
+            return _imagePlaceholder(
+              context,
+            );
+          },
+        )
+            : _imagePlaceholder(
+          context,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // IMAGE PLACEHOLDER
+  // ============================================================
+
+  Widget _imagePlaceholder(
+      BuildContext context, {
+        bool loading = false,
+      }) {
+    final theme =
+    Theme.of(context);
+
+    return Container(
+      color: theme
+          .colorScheme
+          .surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: loading
+          ? const SizedBox(
+        width: 22,
+        height: 22,
+        child:
+        CircularProgressIndicator(
+          strokeWidth: 2,
+        ),
+      )
+          : Column(
+        mainAxisAlignment:
+        MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons
+                .image_outlined,
+            size: 30,
+            color: theme
+                .colorScheme
+                .onSurfaceVariant,
+          ),
+          const SizedBox(
+            height: 4,
+          ),
+          Text(
+            'No image',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight:
+              FontWeight.w600,
+              color: theme
+                  .colorScheme
+                  .onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -163,7 +300,8 @@ class MenuItemCard extends StatelessWidget {
             ),
 
             if (showVegIndicator &&
-                MediaQuery.sizeOf(context).width >=
+                MediaQuery.sizeOf(context)
+                    .width >=
                     620) ...[
               const SizedBox(
                 width: 10,
@@ -191,8 +329,9 @@ class MenuItemCard extends StatelessWidget {
             maxLines: 3,
             overflow:
             TextOverflow.ellipsis,
-            style:
-            theme.textTheme.bodyMedium
+            style: theme
+                .textTheme
+                .bodyMedium
                 ?.copyWith(
               color: theme
                   .colorScheme
@@ -224,7 +363,8 @@ class MenuItemCard extends StatelessWidget {
             ),
 
             if (showVegIndicator &&
-                MediaQuery.sizeOf(context).width <
+                MediaQuery.sizeOf(context)
+                    .width <
                     620) ...[
               const SizedBox(
                 width: 10,
@@ -309,7 +449,8 @@ class MenuItemCard extends StatelessWidget {
                 tooltip: 'Delete item',
                 onPressed: onDelete,
                 icon: const Icon(
-                  Icons.delete_outline_rounded,
+                  Icons
+                      .delete_outline_rounded,
                 ),
               ),
             ],
@@ -327,8 +468,7 @@ class MenuItemCard extends StatelessWidget {
                   !item.available,
                 ),
             child: Container(
-              width:
-              double.infinity,
+              width: double.infinity,
               padding:
               const EdgeInsets.symmetric(
                 horizontal: 10,
@@ -352,40 +492,59 @@ class MenuItemCard extends StatelessWidget {
                 children: [
                   Icon(
                     item.available
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.visibility_off_outlined,
+                        ? Icons
+                        .check_circle_outline_rounded
+                        : Icons
+                        .visibility_off_outlined,
                     size: 19,
                     color: item.available
-                        ? theme.colorScheme.onSecondaryContainer
-                        : theme.colorScheme.onErrorContainer,
+                        ? theme
+                        .colorScheme
+                        .onSecondaryContainer
+                        : theme
+                        .colorScheme
+                        .onErrorContainer,
                   ),
 
-                  const SizedBox(width: 7),
+                  const SizedBox(
+                    width: 7,
+                  ),
 
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                      alignment:
+                      Alignment.centerLeft,
                       child: Text(
-                        item.available ? 'Available' : 'Hidden',
+                        item.available
+                            ? 'Available'
+                            : 'Hidden',
                         maxLines: 1,
                         softWrap: false,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontWeight:
+                          FontWeight.w700,
                           color: item.available
-                              ? theme.colorScheme.onSecondaryContainer
-                              : theme.colorScheme.onErrorContainer,
+                              ? theme
+                              .colorScheme
+                              .onSecondaryContainer
+                              : theme
+                              .colorScheme
+                              .onErrorContainer,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 8,
+                  ),
 
                   Switch.adaptive(
                     value: item.available,
-                    onChanged: onAvailabilityChanged,
+                    onChanged:
+                    onAvailabilityChanged,
                   ),
                 ],
               ),
@@ -465,8 +624,7 @@ class MenuItemCard extends StatelessWidget {
                 : Icons
                 .visibility_off_outlined,
             size: 19,
-            color:
-            foregroundColor,
+            color: foregroundColor,
           ),
 
           const SizedBox(
@@ -482,8 +640,7 @@ class MenuItemCard extends StatelessWidget {
                   item.available
                       ? 'Available'
                       : 'Hidden',
-                  style:
-                  TextStyle(
+                  style: TextStyle(
                     fontWeight:
                     FontWeight.w700,
                     color:
@@ -500,8 +657,7 @@ class MenuItemCard extends StatelessWidget {
                   maxLines: 1,
                   overflow:
                   TextOverflow.ellipsis,
-                  style:
-                  TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     color:
                     foregroundColor,
@@ -512,8 +668,7 @@ class MenuItemCard extends StatelessWidget {
           ),
 
           Switch.adaptive(
-            value:
-            item.available,
+            value: item.available,
             onChanged:
             onAvailabilityChanged,
           ),
@@ -530,8 +685,7 @@ class MenuItemCard extends StatelessWidget {
       BuildContext context,
       ) {
     return PopupMenuButton<String>(
-      tooltip:
-      'Item actions',
+      tooltip: 'Item actions',
       icon: const Icon(
         Icons.more_vert_rounded,
       ),
@@ -637,18 +791,15 @@ class MenuItemCard extends StatelessWidget {
       ),
       decoration:
       BoxDecoration(
-        color:
-        color.withValues(
+        color: color.withValues(
           alpha: 0.08,
         ),
         borderRadius:
         BorderRadius.circular(
           20,
         ),
-        border:
-        Border.all(
-          color:
-          color.withValues(
+        border: Border.all(
+          color: color.withValues(
             alpha: 0.20,
           ),
         ),
@@ -667,8 +818,7 @@ class MenuItemCard extends StatelessWidget {
             item.veg
                 ? 'Veg'
                 : 'Non-Veg',
-            style:
-            TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight:
               FontWeight.w700,
@@ -713,8 +863,7 @@ class MenuItemCard extends StatelessWidget {
           label: 'Recommended',
           icon: Icons
               .thumb_up_alt_outlined,
-          iconColor:
-          Theme.of(context)
+          iconColor: Theme.of(context)
               .colorScheme
               .primary,
           backgroundColor:
@@ -735,8 +884,7 @@ class MenuItemCard extends StatelessWidget {
           label: 'Currently Hidden',
           icon: Icons
               .visibility_off_outlined,
-          iconColor:
-          Theme.of(context)
+          iconColor: Theme.of(context)
               .colorScheme
               .error,
           backgroundColor:

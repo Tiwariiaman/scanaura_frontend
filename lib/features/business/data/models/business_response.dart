@@ -4,6 +4,7 @@ class BusinessResponse {
     required this.businessName,
     required this.businessType,
     required this.phone,
+
     this.logoUrl,
     this.whatsapp,
     this.email,
@@ -15,19 +16,32 @@ class BusinessResponse {
     this.website,
     this.description,
     this.upiId,
+
     this.googleReviewUrl,
     this.googleReviewEnabled,
     this.paymentEnabled,
+
     this.qrSlug,
     this.active,
+
     this.logoPublicId,
+
     this.instagramUrl,
     this.instagramEnabled = false,
+
     this.facebookUrl,
     this.facebookEnabled = false,
+
     this.youtubeUrl,
     this.youtubeEnabled = false,
+
     this.brandColor,
+
+    this.googleMapsUrl,
+    this.callEnabled = false,
+    this.whatsappEnabled = false,
+    this.mapsEnabled = false,
+    this.galleryEnabled = false,
   });
 
   final String id;
@@ -38,6 +52,7 @@ class BusinessResponse {
   final String? logoUrl;
   final String? whatsapp;
   final String? email;
+
   final String? address;
   final String? city;
   final String? state;
@@ -52,6 +67,10 @@ class BusinessResponse {
   final String? googleReviewUrl;
   final bool? googleReviewEnabled;
   final bool? paymentEnabled;
+
+  final String? qrSlug;
+  final bool? active;
+
   final String? logoPublicId;
 
   final String? instagramUrl;
@@ -62,71 +81,122 @@ class BusinessResponse {
 
   final String? youtubeUrl;
   final bool youtubeEnabled;
+
   final String? brandColor;
 
-  final String? qrSlug;
-  final bool? active;
+  // Google Maps
+  final String? googleMapsUrl;
+
+  // Feature controls
+  final bool callEnabled;
+  final bool whatsappEnabled;
+  final bool mapsEnabled;
+  final bool galleryEnabled;
 
   factory BusinessResponse.fromJson(
       Map<String, dynamic> json,
       ) {
     return BusinessResponse(
-      id: json['id']?.toString() ?? '',
+      id:
+      json['id']?.toString() ?? '',
+
       businessName:
       json['businessName'] as String? ?? '',
+
       businessType:
       json['businessType'] as String? ?? '',
+
       phone:
       json['phone'] as String? ?? '',
+
       logoUrl:
       json['logoUrl'] as String?,
+
       whatsapp:
       json['whatsapp'] as String?,
+
       email:
       json['email'] as String?,
+
       address:
       json['address'] as String?,
+
       city:
       json['city'] as String?,
+
       state:
       json['state'] as String?,
+
       country:
       json['country'] as String?,
+
       pincode:
       json['pincode'] as String?,
+
       website:
       json['website'] as String?,
+
       description:
       json['description'] as String?,
+
       upiId:
       json['upiId'] as String?,
+
       googleReviewUrl:
       json['googleReviewUrl'] as String?,
+
       googleReviewEnabled:
       json['googleReviewEnabled'] as bool?,
+
       paymentEnabled:
       json['paymentEnabled'] as bool?,
+
       qrSlug:
       json['qrSlug'] as String?,
+
       active:
       json['active'] as bool?,
+
       logoPublicId:
-      json['logoPublicId'],
+      json['logoPublicId'] as String?,
+
       instagramUrl:
       json['instagramUrl'] as String?,
+
       instagramEnabled:
       json['instagramEnabled'] as bool? ?? false,
+
       facebookUrl:
       json['facebookUrl'] as String?,
+
       facebookEnabled:
       json['facebookEnabled'] as bool? ?? false,
+
       youtubeUrl:
       json['youtubeUrl'] as String?,
+
       youtubeEnabled:
       json['youtubeEnabled'] as bool? ?? false,
+
       brandColor:
       json['brandColor'] as String?,
+
+      // Google Maps
+      googleMapsUrl:
+      json['googleMapsUrl'] as String?,
+
+      // Feature controls
+      callEnabled:
+      json['callEnabled'] as bool? ?? false,
+
+      whatsappEnabled:
+      json['whatsappEnabled'] as bool? ?? false,
+
+      mapsEnabled:
+      json['mapsEnabled'] as bool? ?? false,
+
+      galleryEnabled:
+      json['galleryEnabled'] as bool? ?? false,
     );
   }
-
 }

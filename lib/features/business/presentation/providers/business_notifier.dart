@@ -21,6 +21,10 @@ class BusinessNotifier extends Notifier<BusinessState> {
     return const BusinessState();
   }
 
+  // ============================================================
+  // CREATE BUSINESS
+  // ============================================================
+
   Future<void> createBusiness(
       BusinessRequest request,
       ) async {
@@ -41,10 +45,15 @@ class BusinessNotifier extends Notifier<BusinessState> {
     } catch (e) {
       state = state.copyWith(
         status: BusinessStatus.error,
-        errorMessage: _messageFromException(e),
+        errorMessage:
+        _messageFromException(e),
       );
     }
   }
+
+  // ============================================================
+  // LOAD BUSINESS
+  // ============================================================
 
   Future<void> loadMyBusiness() async {
     state = state.copyWith(
@@ -62,7 +71,8 @@ class BusinessNotifier extends Notifier<BusinessState> {
         clearError: true,
       );
     } catch (e) {
-      final message = _messageFromException(e);
+      final message =
+      _messageFromException(e);
 
       state = state.copyWith(
         status: BusinessStatus.error,
@@ -70,6 +80,10 @@ class BusinessNotifier extends Notifier<BusinessState> {
       );
     }
   }
+
+  // ============================================================
+  // UPDATE BUSINESS
+  // ============================================================
 
   Future<void> updateBusiness(
       BusinessRequest request,
@@ -81,7 +95,9 @@ class BusinessNotifier extends Notifier<BusinessState> {
 
     try {
       final business =
-      await _repository.updateBusiness(request);
+      await _repository.updateBusiness(
+        request,
+      );
 
       state = state.copyWith(
         status: BusinessStatus.success,
@@ -91,10 +107,15 @@ class BusinessNotifier extends Notifier<BusinessState> {
     } catch (e) {
       state = state.copyWith(
         status: BusinessStatus.error,
-        errorMessage: _messageFromException(e),
+        errorMessage:
+        _messageFromException(e),
       );
     }
   }
+
+  // ============================================================
+  // DELETE BUSINESS
+  // ============================================================
 
   Future<void> deleteBusiness() async {
     state = state.copyWith(
@@ -111,10 +132,15 @@ class BusinessNotifier extends Notifier<BusinessState> {
     } catch (e) {
       state = state.copyWith(
         status: BusinessStatus.error,
-        errorMessage: _messageFromException(e),
+        errorMessage:
+        _messageFromException(e),
       );
     }
   }
+
+  // ============================================================
+  // CLEAR ERROR
+  // ============================================================
 
   void clearError() {
     state = state.copyWith(
@@ -122,11 +148,19 @@ class BusinessNotifier extends Notifier<BusinessState> {
     );
   }
 
-  String _messageFromException(Object error) {
+  // ============================================================
+  // ERROR MESSAGE
+  // ============================================================
+
+  String _messageFromException(
+      Object error,
+      ) {
     if (error is Exception) {
       final message = error.toString();
 
-      if (message.startsWith('Exception: ')) {
+      if (message.startsWith(
+        'Exception: ',
+      )) {
         return message.substring(11);
       }
 

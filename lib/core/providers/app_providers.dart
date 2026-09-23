@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/admin/data/admin_repository.dart';
 import '../../features/admin/data/admin_subscription_repository.dart';
 import '../../features/business/data/business_repository.dart';
+import '../../features/gallery/data/gallery_repository.dart';
 import '../../features/menu/data/menu_repository.dart';
 import '../../features/public_menu/data/public_repository.dart';
 import '../../features/qr/data/qr_repository.dart';
@@ -85,6 +86,13 @@ Provider<AdminRepository>((ref) {
 final adminSubscriptionRepositoryProvider =
 Provider<AdminSubscriptionRepository>((ref) {
   return AdminSubscriptionRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final galleryRepositoryProvider =
+Provider<GalleryRepository>((ref) {
+  return GalleryRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });

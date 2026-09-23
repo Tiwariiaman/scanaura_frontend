@@ -1,15 +1,20 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/image_upload_service.dart';
 import '../../../core/providers/app_providers.dart';
+
+import '../../../core/utils/image_compression_helper.dart';
 import '../../business/presentation/providers/business_notifier.dart';
 import '../data/models/catalog_request.dart';
 import '../data/models/catalog_response.dart';
 import 'providers/menu_notifier.dart';
 import 'providers/menu_state.dart';
 
-class AddMenuItemScreen
-    extends ConsumerStatefulWidget {
+class AddMenuItemScreen extends ConsumerStatefulWidget {
   const AddMenuItemScreen({
     super.key,
     this.item,
@@ -17,31 +22,21 @@ class AddMenuItemScreen
 
   final CatalogResponse? item;
 
-  bool get isEditing =>
-      item != null;
+  bool get isEditing => item != null;
 
   @override
-  ConsumerState<AddMenuItemScreen>
-  createState() =>
+  ConsumerState<AddMenuItemScreen> createState() =>
       _AddMenuItemScreenState();
 }
 
 class _AddMenuItemScreenState
     extends ConsumerState<AddMenuItemScreen> {
-  final _formKey =
-  GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController
-  _nameController;
-
-  late final TextEditingController
-  _descriptionController;
-
-  late final TextEditingController
-  _priceController;
-
-  late final TextEditingController
-  _displayOrderController;
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _priceController;
+  late final TextEditingController _displayOrderController;
 
   String? _categoryId;
 
@@ -51,8 +46,10 @@ class _AddMenuItemScreenState
   bool _recommended = false;
 
   String? _imageUrl;
+  String? _imagePublicId;
 
   bool _imageRemoved = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -60,46 +57,30 @@ class _AddMenuItemScreenState
 
     final item = widget.item;
 
-    _nameController =
-        TextEditingController(
-          text: item?.name ?? '',
-        );
+    _nameController = TextEditingController(
+      text: item?.name ?? '',
+    );
 
-    _descriptionController =
-        TextEditingController(
-          text: item?.description ?? '',
-        );
+    _descriptionController = TextEditingController(
+      text: item?.description ?? '',
+    );
 
-    _priceController =
-        TextEditingController(
-          text: item?.price.toString() ?? '',
-        );
+    _priceController = TextEditingController(
+      text: item?.price.toString() ?? '',
+    );
 
-    _displayOrderController =
-        TextEditingController(
-          text:
-          item?.displayOrder
-              .toString() ??
-              '0',
-        );
+    _displayOrderController = TextEditingController(
+      text: item?.displayOrder.toString() ?? '0',
+    );
 
-    _categoryId =
-        item?.categoryId;
+    _categoryId = item?.categoryId;
 
-    _veg =
-        item?.veg ?? true;
+    _veg = item?.veg ?? true;
+    _available = item?.available ?? true;
+    _bestSeller = item?.bestSeller ?? false;
+    _recommended = item?.recommended ?? false;
 
-    _available =
-        item?.available ?? true;
-
-    _bestSeller =
-        item?.bestSeller ?? false;
-
-    _recommended =
-        item?.recommended ?? false;
-
-    _imageUrl =
-        item?.imageUrl;
+    _imageUrl = item?.imageUrl;
   }
 
   @override
@@ -117,17 +98,128 @@ class _AddMenuItemScreenState
   // ============================================================
 
   bool get _isFoodBusiness {
-    final business =
-        ref
-            .read(
-          businessNotifierProvider,
-        )
-            .business;
+    final business = ref
+        .read(
+      businessNotifierProvider,
+    )
+        .business;
 
-    return business?.businessType
-        .trim()
-        .toUpperCase() ==
-        'FOOD';
+    return business?.businessType.trim().toUpperCase() == 'FOOD';
+  }
+
+  // ============================================================
+  // IMAGE UPLOAD
+  // ============================================================
+
+  Future<void> _pickAndUploadImage() async {
+    if (_isUploadingImage) {
+      return;
+    }
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      final file = result.files.first;
+
+      if (file.bytes == null || file.bytes!.isEmpty) {
+        _showMessage(
+          'Unable to read the selected image.',
+        );
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      final Uint8List compressedBytes =
+      await ImageCompressionHelper.compressLogo(
+        file.bytes!,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final apiClient = ref.read(apiClientProvider);
+
+      final imageUploadService = ImageUploadService(
+        apiClient: apiClient,
+      );
+
+      final uploadResponse =
+      await imageUploadService.uploadCatalogImage(
+        compressedBytes,
+        file.name,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _imageUrl = uploadResponse.imageUrl;
+        _imagePublicId = uploadResponse.publicId;
+        _imageRemoved = false;
+      });
+
+      _showMessage(
+        'Image uploaded successfully.',
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = e
+          .toString()
+          .replaceFirst(
+        'Exception: ',
+        '',
+      );
+
+      _showMessage(
+        message.isEmpty
+            ? 'Image upload failed.'
+            : message,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
+  }
+
+  // ============================================================
+  // MESSAGE
+  // ============================================================
+
+  void _showMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
   }
 
   // ============================================================
@@ -135,31 +227,20 @@ class _AddMenuItemScreenState
   // ============================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    final state =
-    ref.watch(
+  Widget build(BuildContext context) {
+    final state = ref.watch(
       menuNotifierProvider,
     );
 
-    final businessState =
-    ref.watch(
+    final businessState = ref.watch(
       businessNotifierProvider,
     );
 
     final showVegOption =
-        businessState.business
-            ?.businessType
+        businessState.business?.businessType
             .trim()
             .toUpperCase() ==
             'FOOD';
-
-    final hasExistingImage =
-        widget.isEditing &&
-            _imageUrl != null &&
-            _imageUrl!.trim().isNotEmpty &&
-            !_imageRemoved;
 
     return Scaffold(
       appBar: AppBar(
@@ -167,10 +248,8 @@ class _AddMenuItemScreenState
           widget.isEditing
               ? 'Edit Item'
               : 'Add Item',
-          style:
-          const TextStyle(
-            fontWeight:
-            FontWeight.w700,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -180,11 +259,9 @@ class _AddMenuItemScreenState
               context,
               constraints,
               ) {
-            final width =
-                constraints.maxWidth;
+            final width = constraints.maxWidth;
 
-            final horizontalPadding =
-            width < 360
+            final horizontalPadding = width < 360
                 ? 12.0
                 : width < 600
                 ? 16.0
@@ -196,8 +273,7 @@ class _AddMenuItemScreenState
                 keyboardDismissBehavior:
                 ScrollViewKeyboardDismissBehavior
                     .onDrag,
-                padding:
-                EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   horizontalPadding,
                   16,
                   horizontalPadding,
@@ -205,43 +281,23 @@ class _AddMenuItemScreenState
                 ),
                 children: [
                   Center(
-                    child:
-                    ConstrainedBox(
-                      constraints:
-                      const BoxConstraints(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
                         maxWidth: 760,
                       ),
                       child: Column(
                         crossAxisAlignment:
-                        CrossAxisAlignment
-                            .stretch,
+                        CrossAxisAlignment.stretch,
                         children: [
                           // ==================================================
-                          // EXISTING IMAGE
+                          // ITEM IMAGE
                           // ==================================================
 
-                          if (hasExistingImage) ...[
-                            _buildExistingImageSection(
-                              context,
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                          ],
+                          _buildImageSection(context),
 
-                          // ==================================================
-                          // IMAGE REMOVED / NO IMAGE INFORMATION
-                          // ==================================================
-
-                          if (widget.isEditing &&
-                              _imageRemoved) ...[
-                            _buildImageRemovedNotice(
-                              context,
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                          ],
+                          const SizedBox(
+                            height: 20,
+                          ),
 
                           // ==================================================
                           // ITEM INFORMATION
@@ -260,30 +316,22 @@ class _AddMenuItemScreenState
                             controller:
                             _nameController,
                             textInputAction:
-                            TextInputAction
-                                .next,
+                            TextInputAction.next,
                             textCapitalization:
-                            TextCapitalization
-                                .words,
+                            TextCapitalization.words,
                             decoration:
                             const InputDecoration(
-                              labelText:
-                              'Item name',
+                              labelText: 'Item name',
                               hintText:
                               'e.g. Product or Service Name',
-                              prefixIcon:
-                              Icon(
+                              prefixIcon: Icon(
                                 Icons
                                     .inventory_2_outlined,
                               ),
                             ),
-                            validator:
-                                (value) {
-                              if (value ==
-                                  null ||
-                                  value
-                                      .trim()
-                                      .isEmpty) {
+                            validator: (value) {
+                              if (value == null ||
+                                  value.trim().isEmpty) {
                                 return 'Item name is required';
                               }
 
@@ -300,16 +348,13 @@ class _AddMenuItemScreenState
                             _descriptionController,
                             maxLines: 3,
                             textCapitalization:
-                            TextCapitalization
-                                .sentences,
+                            TextCapitalization.sentences,
                             decoration:
                             const InputDecoration(
-                              labelText:
-                              'Description',
+                              labelText: 'Description',
                               hintText:
                               'Describe this item',
-                              prefixIcon:
-                              Icon(
+                              prefixIcon: Icon(
                                 Icons
                                     .description_outlined,
                               ),
@@ -415,8 +460,7 @@ class _AddMenuItemScreenState
                               onChanged:
                                   (value) {
                                 setState(() {
-                                  _veg =
-                                      value;
+                                  _veg = value;
                                 });
                               },
                             ),
@@ -429,23 +473,18 @@ class _AddMenuItemScreenState
                             context,
                             icon: Icons
                                 .visibility_outlined,
-                            title:
-                            'Available',
+                            title: 'Available',
                             subtitle:
                             'Turn off to hide this item from customers.',
-                            value:
-                            _available,
+                            value: _available,
                             activeColor:
-                            Theme.of(
-                              context,
-                            )
+                            Theme.of(context)
                                 .colorScheme
                                 .primary,
                             onChanged:
                                 (value) {
                               setState(() {
-                                _available =
-                                    value;
+                                _available = value;
                               });
                             },
                           ),
@@ -458,19 +497,16 @@ class _AddMenuItemScreenState
                             context,
                             icon: Icons
                                 .star_outline_rounded,
-                            title:
-                            'Best Seller',
+                            title: 'Best Seller',
                             subtitle:
                             'Highlight this item as a best seller.',
-                            value:
-                            _bestSeller,
+                            value: _bestSeller,
                             activeColor:
                             Colors.orange,
                             onChanged:
                                 (value) {
                               setState(() {
-                                _bestSeller =
-                                    value;
+                                _bestSeller = value;
                               });
                             },
                           ),
@@ -483,23 +519,18 @@ class _AddMenuItemScreenState
                             context,
                             icon: Icons
                                 .thumb_up_alt_outlined,
-                            title:
-                            'Recommended',
+                            title: 'Recommended',
                             subtitle:
                             'Mark this item as recommended.',
-                            value:
-                            _recommended,
+                            value: _recommended,
                             activeColor:
-                            Theme.of(
-                              context,
-                            )
+                            Theme.of(context)
                                 .colorScheme
                                 .primary,
                             onChanged:
                                 (value) {
                               setState(() {
-                                _recommended =
-                                    value;
+                                _recommended = value;
                               });
                             },
                           ),
@@ -513,21 +544,18 @@ class _AddMenuItemScreenState
                           // ==================================================
 
                           SizedBox(
-                            width:
-                            double.infinity,
+                            width: double.infinity,
                             height: 54,
                             child:
                             FilledButton.icon(
                               onPressed:
                               state.status ==
-                                  MenuStatus
-                                      .loading
+                                  MenuStatus.loading ||
+                                  _isUploadingImage
                                   ? null
                                   : _saveItem,
-                              icon:
-                              state.status ==
-                                  MenuStatus
-                                      .loading
+                              icon: state.status ==
+                                  MenuStatus.loading
                                   ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -538,24 +566,19 @@ class _AddMenuItemScreenState
                                 ),
                               )
                                   : Icon(
-                                widget
-                                    .isEditing
+                                widget.isEditing
                                     ? Icons
                                     .save_outlined
                                     : Icons
                                     .check_rounded,
                               ),
-                              label:
-                              Text(
+                              label: Text(
                                 state.status ==
-                                    MenuStatus
-                                        .loading
-                                    ? widget
-                                    .isEditing
+                                    MenuStatus.loading
+                                    ? widget.isEditing
                                     ? 'Saving Changes...'
                                     : 'Saving Item...'
-                                    : widget
-                                    .isEditing
+                                    : widget.isEditing
                                     ? 'Save Changes'
                                     : 'Save Item',
                               ),
@@ -567,15 +590,15 @@ class _AddMenuItemScreenState
                           ),
 
                           SizedBox(
-                            width:
-                            double.infinity,
+                            width: double.infinity,
                             height: 48,
                             child:
                             OutlinedButton(
                               onPressed:
                               state.status ==
                                   MenuStatus
-                                      .loading
+                                      .loading ||
+                                  _isUploadingImage
                                   ? null
                                   : () {
                                 Navigator.of(
@@ -606,6 +629,572 @@ class _AddMenuItemScreenState
   }
 
   // ============================================================
+  // IMAGE SECTION
+  // ============================================================
+
+  Widget _buildImageSection(
+      BuildContext context,
+      ) {
+    final hasImage =
+        _imageUrl != null &&
+            _imageUrl!.trim().isNotEmpty &&
+            !_imageRemoved;
+
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          context,
+          'Item Image',
+        ),
+
+        const SizedBox(
+          height: 12,
+        ),
+
+        if (hasImage)
+          _buildExistingImageSection(
+            context,
+          )
+        else
+          _buildAddImageBox(
+            context,
+          ),
+
+        if (_imageRemoved) ...[
+          const SizedBox(
+            height: 12,
+          ),
+          _buildImageRemovedNotice(
+            context,
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ============================================================
+  // ADD IMAGE BOX
+  // ============================================================
+
+  Widget _buildAddImageBox(
+      BuildContext context,
+      ) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _isUploadingImage
+            ? null
+            : _pickAndUploadImage,
+        borderRadius:
+        BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding:
+          const EdgeInsets.symmetric(
+            vertical: 32,
+            horizontal: 20,
+          ),
+          decoration: BoxDecoration(
+            borderRadius:
+            BorderRadius.circular(16),
+            border: Border.all(
+              color: theme
+                  .colorScheme
+                  .outlineVariant,
+            ),
+            color: theme
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(
+              alpha: 0.25,
+            ),
+          ),
+          child: Column(
+            children: [
+              if (_isUploadingImage)
+                const SizedBox(
+                  width: 34,
+                  height: 34,
+                  child:
+                  CircularProgressIndicator(),
+                )
+              else
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration:
+                  BoxDecoration(
+                    color: theme
+                        .colorScheme
+                        .primary
+                        .withValues(
+                      alpha: 0.10,
+                    ),
+                    borderRadius:
+                    BorderRadius.circular(
+                      16,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons
+                        .add_photo_alternate_outlined,
+                    size: 32,
+                    color: theme
+                        .colorScheme
+                        .primary,
+                  ),
+                ),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              Text(
+                _isUploadingImage
+                    ? 'Uploading image...'
+                    : 'Add Item Image',
+                style: theme
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(
+                height: 4,
+              ),
+
+              Text(
+                _isUploadingImage
+                    ? 'Please wait'
+                    : 'Tap to select an image',
+                style: theme
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(
+                  color: theme
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // EXISTING IMAGE
+  // ============================================================
+
+  Widget _buildExistingImageSection(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Card(
+      clipBehavior:
+      Clip.antiAlias,
+      elevation: 0,
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.stretch,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  _imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (
+                      _,
+                      _,
+                      _,
+                      ) {
+                    return Container(
+                      color: theme
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      alignment:
+                      Alignment.center,
+                      child: Icon(
+                        Icons
+                            .broken_image_outlined,
+                        size: 48,
+                        color: theme
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    );
+                  },
+                  loadingBuilder:
+                      (
+                      context,
+                      child,
+                      progress,
+                      ) {
+                    if (progress == null) {
+                      return child;
+                    }
+
+                    return Container(
+                      color: theme
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      alignment:
+                      Alignment.center,
+                      child:
+                      const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child:
+                        CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // ========================================================
+                // REPLACE / EDIT IMAGE BUTTON
+                // ========================================================
+
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Material(
+                    color: Colors.black
+                        .withValues(
+                      alpha: 0.65,
+                    ),
+                    borderRadius:
+                    BorderRadius.circular(
+                      12,
+                    ),
+                    child: InkWell(
+                      borderRadius:
+                      BorderRadius.circular(
+                        12,
+                      ),
+                      onTap:
+                      _isUploadingImage
+                          ? null
+                          : _pickAndUploadImage,
+                      child: Padding(
+                        padding:
+                        const EdgeInsets
+                            .all(10),
+                        child:
+                        _isUploadingImage
+                            ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                          CircularProgressIndicator(
+                            strokeWidth:
+                            2,
+                            color:
+                            Colors.white,
+                          ),
+                        )
+                            : const Icon(
+                          Icons
+                              .edit_outlined,
+                          color:
+                          Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding:
+            const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.image_outlined,
+                      size: 20,
+                      color: theme
+                          .colorScheme
+                          .primary,
+                    ),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                        children: [
+                          const Text(
+                            'Item Image',
+                            style: TextStyle(
+                              fontWeight:
+                              FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 3,
+                          ),
+                          Text(
+                            'Tap the edit icon to replace this image.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(
+                  height: 12,
+                ),
+
+                // ========================================================
+                // REPLACE BUTTON
+                // ========================================================
+
+                OutlinedButton.icon(
+                  onPressed:
+                  _isUploadingImage
+                      ? null
+                      : _pickAndUploadImage,
+                  icon: _isUploadingImage
+                      ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child:
+                    CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Icon(
+                    Icons
+                        .photo_camera_outlined,
+                  ),
+                  label: Text(
+                    _isUploadingImage
+                        ? 'Uploading...'
+                        : 'Replace Image',
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 8,
+                ),
+
+                // ========================================================
+                // REMOVE BUTTON
+                // ========================================================
+
+                OutlinedButton.icon(
+                  onPressed:
+                  _isUploadingImage
+                      ? null
+                      : _confirmRemoveImage,
+                  icon: const Icon(
+                    Icons
+                        .delete_outline_rounded,
+                  ),
+                  label: const Text(
+                    'Remove Image',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // IMAGE REMOVED NOTICE
+  // ============================================================
+
+  Widget _buildImageRemovedNotice(
+      BuildContext context,
+      ) {
+    final theme =
+    Theme.of(context);
+
+    return Container(
+      padding:
+      const EdgeInsets.all(14),
+      decoration:
+      BoxDecoration(
+        color: theme
+            .colorScheme
+            .errorContainer,
+        borderRadius:
+        BorderRadius.circular(14),
+        border:
+        Border.all(
+          color: theme
+              .colorScheme
+              .error
+              .withValues(
+            alpha: 0.22,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons
+                .image_not_supported_outlined,
+            color: theme
+                .colorScheme
+                .onErrorContainer,
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Image will be removed',
+                  style: TextStyle(
+                    fontWeight:
+                    FontWeight.w700,
+                    color: theme
+                        .colorScheme
+                        .onErrorContainer,
+                  ),
+                ),
+                const SizedBox(
+                  height: 3,
+                ),
+                Text(
+                  'Save the item to permanently remove the image from this menu item.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme
+                        .colorScheme
+                        .onErrorContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(
+            width: 8,
+          ),
+          IconButton(
+            tooltip:
+            'Undo remove',
+            onPressed: _isUploadingImage
+                ? null
+                : () {
+              setState(() {
+                _imageRemoved = false;
+              });
+            },
+            icon: const Icon(
+              Icons.undo_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // REMOVE IMAGE
+  // ============================================================
+
+  Future<void> _confirmRemoveImage() async {
+    final confirmed =
+    await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) {
+        return AlertDialog(
+          title:
+          const Text(
+            'Remove Image?',
+          ),
+          content:
+          const Text(
+            'This will remove the image from this menu item. The image file itself will not be deleted.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
+              },
+              child:
+              const Text(
+                'Cancel',
+              ),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
+              },
+              child:
+              const Text(
+                'Remove',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted ||
+        confirmed != true) {
+      return;
+    }
+
+    setState(() {
+      _imageUrl = null;
+      _imagePublicId = null;
+      _imageRemoved = true;
+    });
+  }
+
+  // ============================================================
   // SECTION TITLE
   // ============================================================
 
@@ -615,8 +1204,7 @@ class _AddMenuItemScreenState
       ) {
     return Text(
       title,
-      style:
-      Theme.of(context)
+      style: Theme.of(context)
           .textTheme
           .titleLarge
           ?.copyWith(
@@ -717,39 +1305,32 @@ class _AddMenuItemScreenState
     }
 
     return DropdownButtonFormField<String?>(
-      initialValue:
-      _categoryId,
+      initialValue: _categoryId,
       isExpanded: true,
       decoration:
       const InputDecoration(
-        labelText:
-        'Category',
+        labelText: 'Category',
         prefixIcon:
         Icon(
-          Icons
-              .category_outlined,
+          Icons.category_outlined,
         ),
       ),
       items: [
         const DropdownMenuItem<String?>(
           value: null,
-          child:
-          Text(
+          child: Text(
             'No category',
           ),
         ),
         ...state.categories.map(
               (category) {
             return DropdownMenuItem<String?>(
-              value:
-              category.id,
-              child:
-              Text(
+              value: category.id,
+              child: Text(
                 category.name,
                 maxLines: 1,
                 overflow:
-                TextOverflow
-                    .ellipsis,
+                TextOverflow.ellipsis,
               ),
             );
           },
@@ -757,8 +1338,7 @@ class _AddMenuItemScreenState
       ],
       onChanged: (value) {
         setState(() {
-          _categoryId =
-              value;
+          _categoryId = value;
         });
       },
     );
@@ -811,8 +1391,7 @@ class _AddMenuItemScreenState
           child:
           Icon(
             icon,
-            color:
-            activeColor,
+            color: activeColor,
             size: 21,
           ),
         ),
@@ -830,341 +1409,10 @@ class _AddMenuItemScreenState
           overflow:
           TextOverflow.ellipsis,
         ),
-        value:
-        value,
-        onChanged:
-        onChanged,
+        value: value,
+        onChanged: onChanged,
       ),
     );
-  }
-
-  // ============================================================
-  // EXISTING IMAGE
-  // ============================================================
-
-  Widget _buildExistingImageSection(
-      BuildContext context,
-      ) {
-    final theme =
-    Theme.of(context);
-
-    return Card(
-      clipBehavior:
-      Clip.antiAlias,
-      elevation: 0,
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio:
-            16 / 9,
-            child:
-            Image.network(
-              _imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder:
-                  (
-                  _,
-                  _,
-                  _,
-                  ) {
-                return Container(
-                  color: theme
-                      .colorScheme
-                      .surfaceContainerHighest,
-                  alignment:
-                  Alignment.center,
-                  child:
-                  Icon(
-                    Icons
-                        .broken_image_outlined,
-                    size: 48,
-                    color: theme
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                );
-              },
-              loadingBuilder:
-                  (
-                  context,
-                  child,
-                  progress,
-                  ) {
-                if (progress ==
-                    null) {
-                  return child;
-                }
-
-                return Container(
-                  color: theme
-                      .colorScheme
-                      .surfaceContainerHighest,
-                  alignment:
-                  Alignment.center,
-                  child:
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child:
-                    CircularProgressIndicator(
-                      strokeWidth:
-                      2.4,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          Padding(
-            padding:
-            const EdgeInsets.all(
-              14,
-            ),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment
-                  .stretch,
-              children: [
-                Row(
-                  crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
-                  children: [
-                    Icon(
-                      Icons
-                          .image_outlined,
-                      size: 20,
-                      color: theme
-                          .colorScheme
-                          .primary,
-                    ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-                        children: [
-                          const Text(
-                            'Item Image',
-                            style:
-                            TextStyle(
-                              fontWeight:
-                              FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 3,
-                          ),
-                          Text(
-                            'Images can no longer be replaced. You can remove the current image.',
-                            style:
-                            TextStyle(
-                              fontSize:
-                              13,
-                              color: theme
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                              height:
-                              1.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                OutlinedButton.icon(
-                  onPressed:
-                  _confirmRemoveImage,
-                  icon:
-                  const Icon(
-                    Icons
-                        .delete_outline_rounded,
-                  ),
-                  label:
-                  const Text(
-                    'Remove Image',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // IMAGE REMOVED NOTICE
-  // ============================================================
-
-  Widget _buildImageRemovedNotice(
-      BuildContext context,
-      ) {
-    final theme =
-    Theme.of(context);
-
-    return Container(
-      padding:
-      const EdgeInsets.all(14),
-      decoration:
-      BoxDecoration(
-        color: theme
-            .colorScheme
-            .errorContainer,
-        borderRadius:
-        BorderRadius.circular(
-          14,
-        ),
-        border:
-        Border.all(
-          color: theme
-              .colorScheme
-              .error
-              .withValues(
-            alpha: 0.22,
-          ),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment
-            .start,
-        children: [
-          Icon(
-            Icons
-                .image_not_supported_outlined,
-            color: theme
-                .colorScheme
-                .onErrorContainer,
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
-              children: [
-                Text(
-                  'Image will be removed',
-                  style:
-                  TextStyle(
-                    fontWeight:
-                    FontWeight.w700,
-                    color: theme
-                        .colorScheme
-                        .onErrorContainer,
-                  ),
-                ),
-                const SizedBox(
-                  height: 3,
-                ),
-                Text(
-                  'Save the item to permanently remove the image from this menu item.',
-                  style:
-                  TextStyle(
-                    fontSize:
-                    13,
-                    color: theme
-                        .colorScheme
-                        .onErrorContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(
-            width: 8,
-          ),
-          IconButton(
-            tooltip:
-            'Undo remove',
-            onPressed: () {
-              setState(() {
-                _imageRemoved =
-                false;
-              });
-            },
-            icon:
-            const Icon(
-              Icons.undo_rounded,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // REMOVE IMAGE
-  // ============================================================
-
-  Future<void>
-  _confirmRemoveImage() async {
-    final confirmed =
-    await showDialog<bool>(
-      context: context,
-      builder:
-          (dialogContext) {
-        return AlertDialog(
-          title:
-          const Text(
-            'Remove Image?',
-          ),
-          content:
-          const Text(
-            'This will remove the image from this menu item. The image file itself will not be deleted.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(false);
-              },
-              child:
-              const Text(
-                'Cancel',
-              ),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(true);
-              },
-              child:
-              const Text(
-                'Remove',
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (!mounted ||
-        confirmed != true) {
-      return;
-    }
-
-    setState(() {
-      _imageUrl = null;
-      _imageRemoved = true;
-    });
   }
 
   // ============================================================
@@ -1177,10 +1425,16 @@ class _AddMenuItemScreenState
       return;
     }
 
+    if (_isUploadingImage) {
+      _showMessage(
+        'Please wait for the image upload to finish.',
+      );
+      return;
+    }
+
     final price =
     double.tryParse(
-      _priceController.text
-          .trim(),
+      _priceController.text.trim(),
     );
 
     if (price == null ||
@@ -1210,49 +1464,35 @@ class _AddMenuItemScreenState
 
     final request =
     CatalogRequest(
-      categoryId:
-      _categoryId,
+      categoryId: _categoryId,
       name:
-      _nameController
-          .text
-          .trim(),
+      _nameController.text.trim(),
       description:
       _descriptionController
           .text
           .trim(),
-      price:
-      price,
-      imageUrl:
-      imageUrl,
-      veg:
-      showVegOption
+      price: price,
+      imageUrl: imageUrl,
+      veg: showVegOption
           ? _veg
           : true,
-      available:
-      _available,
-      bestSeller:
-      _bestSeller,
-      recommended:
-      _recommended,
-      displayOrder:
-      displayOrder,
+      available: _available,
+      bestSeller: _bestSeller,
+      recommended: _recommended,
+      displayOrder: displayOrder,
     );
 
     final notifier =
     ref.read(
-      menuNotifierProvider
-          .notifier,
+      menuNotifierProvider.notifier,
     );
 
-    final success =
-    widget.isEditing
-        ? await notifier
-        .updateCatalog(
+    final success = widget.isEditing
+        ? await notifier.updateCatalog(
       widget.item!.id,
       request,
     )
-        : await notifier
-        .createCatalog(
+        : await notifier.createCatalog(
       request,
     );
 
@@ -1266,10 +1506,8 @@ class _AddMenuItemScreenState
       ).showSnackBar(
         SnackBar(
           behavior:
-          SnackBarBehavior
-              .floating,
-          content:
-          Text(
+          SnackBarBehavior.floating,
+          content: Text(
             widget.isEditing
                 ? 'Item updated successfully.'
                 : 'Item added successfully.',
@@ -1277,19 +1515,16 @@ class _AddMenuItemScreenState
         ),
       );
 
-      Navigator.of(
-        context,
-      ).pop();
+      Navigator.of(context).pop();
 
       return;
     }
 
-    final error =
-        ref
-            .read(
-          menuNotifierProvider,
-        )
-            .errorMessage;
+    final error = ref
+        .read(
+      menuNotifierProvider,
+    )
+        .errorMessage;
 
     if (error != null) {
       ScaffoldMessenger.of(
@@ -1297,10 +1532,8 @@ class _AddMenuItemScreenState
       ).showSnackBar(
         SnackBar(
           behavior:
-          SnackBarBehavior
-              .floating,
-          content:
-          Text(error),
+          SnackBarBehavior.floating,
+          content: Text(error),
         ),
       );
     }

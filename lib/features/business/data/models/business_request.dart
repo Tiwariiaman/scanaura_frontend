@@ -1,5 +1,6 @@
 enum BusinessType {
   food,
+  hotel,
   retail,
   ecommerce,
   services,
@@ -12,6 +13,9 @@ extension BusinessTypeExtension on BusinessType {
     switch (this) {
       case BusinessType.food:
         return 'FOOD';
+
+      case BusinessType.hotel:
+        return 'HOTEL';
 
       case BusinessType.retail:
         return 'RETAIL';
@@ -34,6 +38,9 @@ extension BusinessTypeExtension on BusinessType {
     switch (this) {
       case BusinessType.food:
         return 'Food';
+
+      case BusinessType.hotel:
+        return 'Hotel';
 
       case BusinessType.retail:
         return 'Retail';
@@ -80,6 +87,12 @@ class BusinessRequest {
     this.youtubeUrl,
     this.youtubeEnabled,
     this.brandColor,
+
+    this.googleMapsUrl,
+    this.callEnabled,
+    this.whatsappEnabled,
+    this.mapsEnabled,
+    this.galleryEnabled,
   });
 
   final String businessName;
@@ -111,38 +124,67 @@ class BusinessRequest {
 
   final String? youtubeUrl;
   final bool? youtubeEnabled;
+
   final String? brandColor;
 
   final String? logoUrl;
   final String? logoPublicId;
+
+  // Google Maps
+  final String? googleMapsUrl;
+
+  // Feature controls
+  final bool? callEnabled;
+  final bool? whatsappEnabled;
+  final bool? mapsEnabled;
+  final bool? galleryEnabled;
 
   Map<String, dynamic> toJson() {
     return {
       'businessName': businessName,
       'businessType': businessType.apiValue,
       'phone': phone,
+
       'whatsapp': whatsapp,
       'email': email,
+
       'address': address,
       'city': city,
       'state': state,
       'country': country,
       'pincode': pincode,
+
       'website': website,
       'description': description,
+
       'upiId': upiId,
+
       'googleReviewUrl': googleReviewUrl,
       'googleReviewEnabled': googleReviewEnabled,
       'paymentEnabled': paymentEnabled,
+
       'logoUrl': logoUrl,
       'logoPublicId': logoPublicId,
+
       'instagramUrl': instagramUrl,
       'instagramEnabled': instagramEnabled,
+
       'facebookUrl': facebookUrl,
       'facebookEnabled': facebookEnabled,
+
       'youtubeUrl': youtubeUrl,
       'youtubeEnabled': youtubeEnabled,
+
       'brandColor': brandColor,
+
+      // Google Maps
+      'googleMapsUrl': googleMapsUrl,
+
+      // Feature controls
+      'callEnabled': callEnabled,
+      'whatsappEnabled': whatsappEnabled,
+      'mapsEnabled': mapsEnabled,
+      'galleryEnabled': galleryEnabled,
     };
   }
 }

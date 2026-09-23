@@ -133,4 +133,16 @@ class ImageUploadService {
       throw Exception(errorMessage);
     }
   }
+
+  Future<ImageUploadResponse> uploadGalleryImage(
+      Uint8List bytes,
+      String fileName,
+      ) async {
+    return _upload(
+      bytes: bytes,
+      fileName: fileName,
+      type: 'GALLERY',
+      errorMessage: 'Gallery image upload failed.',
+    );
+  }
 }

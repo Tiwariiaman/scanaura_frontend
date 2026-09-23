@@ -6,8 +6,7 @@ import '../data/models/business_request.dart';
 import '../presentation/providers/business_notifier.dart';
 import '../presentation/providers/business_state.dart';
 
-class BusinessReviewScreen
-    extends ConsumerStatefulWidget {
+class BusinessReviewScreen extends ConsumerStatefulWidget {
   const BusinessReviewScreen({
     super.key,
     required this.businessName,
@@ -24,6 +23,7 @@ class BusinessReviewScreen
     required this.description,
     required this.upiId,
     required this.googleReviewUrl,
+    required this.googleMapsUrl,
     this.googleReviewEnabled,
     this.paymentEnabled,
     this.isEditMode = false,
@@ -43,20 +43,18 @@ class BusinessReviewScreen
   final String description;
   final String upiId;
   final String googleReviewUrl;
+  final String googleMapsUrl;
   final bool? googleReviewEnabled;
   final bool? paymentEnabled;
-
   final bool isEditMode;
 
   @override
-  ConsumerState<BusinessReviewScreen>
-  createState() =>
+  ConsumerState<BusinessReviewScreen> createState() =>
       _BusinessReviewScreenState();
 }
 
 class _BusinessReviewScreenState
-    extends ConsumerState<
-        BusinessReviewScreen> {
+    extends ConsumerState<BusinessReviewScreen> {
   bool _isSaving = false;
 
   // ============================================================
@@ -72,68 +70,58 @@ class _BusinessReviewScreenState
       _isSaving = true;
     });
 
-    final request =
-    BusinessRequest(
-      businessName:
-      widget.businessName,
-      businessType:
-      widget.businessType,
+    final request = BusinessRequest(
+      businessName: widget.businessName,
+      businessType: widget.businessType,
       phone: widget.phone,
 
-      whatsapp:
-      widget.whatsapp.isEmpty
+      whatsapp: widget.whatsapp.isEmpty
           ? null
           : widget.whatsapp,
 
-      email:
-      widget.email.isEmpty
+      email: widget.email.isEmpty
           ? null
           : widget.email,
 
-      address:
-      widget.address.isEmpty
+      address: widget.address.isEmpty
           ? null
           : widget.address,
 
-      city:
-      widget.city.isEmpty
+      city: widget.city.isEmpty
           ? null
           : widget.city,
 
-      state:
-      widget.state.isEmpty
+      state: widget.state.isEmpty
           ? null
           : widget.state,
 
-      country:
-      widget.country.isEmpty
+      country: widget.country.isEmpty
           ? null
           : widget.country,
 
-      pincode:
-      widget.pincode.isEmpty
+      pincode: widget.pincode.isEmpty
           ? null
           : widget.pincode,
 
-      website:
-      widget.website.isEmpty
+      website: widget.website.isEmpty
           ? null
           : widget.website,
 
-      description:
-      widget.description.isEmpty
+      description: widget.description.isEmpty
           ? null
           : widget.description,
 
-      upiId:
-      widget.upiId.isEmpty
+      upiId: widget.upiId.isEmpty
           ? null
           : widget.upiId,
 
-      googleReviewUrl:
-      widget.googleReviewUrl.isEmpty
+      googleReviewUrl: widget.googleReviewUrl.isEmpty
           ? null
           : widget.googleReviewUrl,
+
+      googleMapsUrl: widget.googleMapsUrl.isEmpty
+          ? null
+          : widget.googleMapsUrl,
 
       googleReviewEnabled:
       widget.googleReviewEnabled,
@@ -142,33 +130,25 @@ class _BusinessReviewScreenState
       widget.paymentEnabled,
     );
 
-    final notifier =
-    ref.read(
-      businessNotifierProvider
-          .notifier,
+    final notifier = ref.read(
+      businessNotifierProvider.notifier,
     );
 
     if (widget.isEditMode) {
-      await notifier.updateBusiness(
-        request,
-      );
+      await notifier.updateBusiness(request);
     } else {
-      await notifier.createBusiness(
-        request,
-      );
+      await notifier.createBusiness(request);
     }
 
     if (!mounted) {
       return;
     }
 
-    final state =
-    ref.read(
+    final state = ref.read(
       businessNotifierProvider,
     );
 
-    if (state.status ==
-        BusinessStatus.success &&
+    if (state.status == BusinessStatus.success &&
         state.business != null) {
       setState(() {
         _isSaving = false;
@@ -187,11 +167,9 @@ class _BusinessReviewScreenState
       _isSaving = false;
     });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        behavior:
-        SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.floating,
         content: Text(
           state.errorMessage ??
               (widget.isEditMode
@@ -207,24 +185,18 @@ class _BusinessReviewScreenState
   // ============================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    final theme =
-    Theme.of(context);
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
-    final title =
-    widget.isEditMode
+    final title = widget.isEditMode
         ? 'Review Changes'
         : 'Review Business';
 
-    final description =
-    widget.isEditMode
+    final description = widget.isEditMode
         ? 'Review your updated business information before saving.'
         : 'Review your business information before creating your ScanAura business.';
 
-    final buttonText =
-    widget.isEditMode
+    final buttonText = widget.isEditMode
         ? 'Save Changes'
         : 'Create My Business';
 
@@ -232,41 +204,33 @@ class _BusinessReviewScreenState
       appBar: AppBar(
         title: Text(
           title,
-          style:
-          const TextStyle(
-            fontWeight:
-            FontWeight.w700,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-
       body: SafeArea(
         child: LayoutBuilder(
           builder: (
               context,
               constraints,
               ) {
-            final width =
-                constraints.maxWidth;
+            final width = constraints.maxWidth;
 
-            final horizontalPadding =
-            width < 360
+            final horizontalPadding = width < 360
                 ? 16.0
                 : width < 600
                 ? 20.0
                 : 24.0;
 
-            final topPadding =
-            width < 600
+            final topPadding = width < 600
                 ? 16.0
                 : 24.0;
 
             return SingleChildScrollView(
               keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior
-                  .onDrag,
-              padding:
-              EdgeInsets.fromLTRB(
+              ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
                 horizontalPadding,
                 topPadding,
                 horizontalPadding,
@@ -274,14 +238,12 @@ class _BusinessReviewScreenState
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints:
-                  const BoxConstraints(
+                  constraints: const BoxConstraints(
                     maxWidth: 700,
                   ),
                   child: Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment
-                        .stretch,
+                    CrossAxisAlignment.stretch,
                     children: [
                       // ==================================================
                       // INTRO
@@ -291,32 +253,23 @@ class _BusinessReviewScreenState
                         widget.isEditMode
                             ? 'Review Your Changes'
                             : 'Almost there!',
-                        textAlign:
-                        width < 600
+                        textAlign: width < 600
                             ? TextAlign.center
                             : TextAlign.start,
-                        style: theme
-                            .textTheme
-                            .headlineMedium
+                        style: theme.textTheme.headlineMedium
                             ?.copyWith(
-                          fontWeight:
-                          FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 8,
-                      ),
+                      const SizedBox(height: 8),
 
                       Text(
                         description,
-                        textAlign:
-                        width < 600
+                        textAlign: width < 600
                             ? TextAlign.center
                             : TextAlign.start,
-                        style: theme
-                            .textTheme
-                            .bodyLarge
+                        style: theme.textTheme.bodyLarge
                             ?.copyWith(
                           color: theme
                               .colorScheme
@@ -325,9 +278,7 @@ class _BusinessReviewScreenState
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 26,
-                      ),
+                      const SizedBox(height: 26),
 
                       // ==================================================
                       // BUSINESS
@@ -336,8 +287,7 @@ class _BusinessReviewScreenState
                       _section(
                         context,
                         title: 'Business',
-                        icon: Icons
-                            .storefront_outlined,
+                        icon: Icons.storefront_outlined,
                         children: [
                           _infoRow(
                             context,
@@ -347,15 +297,12 @@ class _BusinessReviewScreenState
                           _infoRow(
                             context,
                             'Business type',
-                            widget.businessType
-                                .displayName,
+                            widget.businessType.displayName,
                           ),
                         ],
                       ),
 
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
 
                       // ==================================================
                       // CONTACT
@@ -364,8 +311,7 @@ class _BusinessReviewScreenState
                       _section(
                         context,
                         title: 'Contact',
-                        icon: Icons
-                            .contact_phone_outlined,
+                        icon: Icons.contact_phone_outlined,
                         children: [
                           _infoRow(
                             context,
@@ -373,18 +319,14 @@ class _BusinessReviewScreenState
                             widget.phone,
                           ),
 
-                          if (widget
-                              .whatsapp
-                              .isNotEmpty)
+                          if (widget.whatsapp.isNotEmpty)
                             _infoRow(
                               context,
                               'WhatsApp',
                               widget.whatsapp,
                             ),
 
-                          if (widget
-                              .email
-                              .isNotEmpty)
+                          if (widget.email.isNotEmpty)
                             _infoRow(
                               context,
                               'Email',
@@ -393,9 +335,7 @@ class _BusinessReviewScreenState
                         ],
                       ),
 
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
 
                       // ==================================================
                       // LOCATION
@@ -404,59 +344,53 @@ class _BusinessReviewScreenState
                       _section(
                         context,
                         title: 'Location',
-                        icon: Icons
-                            .location_on_outlined,
+                        icon: Icons.location_on_outlined,
                         children: [
-                          if (widget
-                              .address
-                              .isNotEmpty)
+                          if (widget.address.isNotEmpty)
                             _infoRow(
                               context,
                               'Address',
                               widget.address,
                             ),
 
-                          if (widget
-                              .city
-                              .isNotEmpty)
+                          if (widget.city.isNotEmpty)
                             _infoRow(
                               context,
                               'City',
                               widget.city,
                             ),
 
-                          if (widget
-                              .state
-                              .isNotEmpty)
+                          if (widget.state.isNotEmpty)
                             _infoRow(
                               context,
                               'State',
                               widget.state,
                             ),
 
-                          if (widget
-                              .country
-                              .isNotEmpty)
+                          if (widget.country.isNotEmpty)
                             _infoRow(
                               context,
                               'Country',
                               widget.country,
                             ),
 
-                          if (widget
-                              .pincode
-                              .isNotEmpty)
+                          if (widget.pincode.isNotEmpty)
                             _infoRow(
                               context,
                               'Pincode',
                               widget.pincode,
                             ),
+
+                          if (widget.googleMapsUrl.isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Google Maps Link',
+                              widget.googleMapsUrl,
+                            ),
                         ],
                       ),
 
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
 
                       // ==================================================
                       // ADDITIONAL INFORMATION
@@ -464,34 +398,32 @@ class _BusinessReviewScreenState
 
                       _section(
                         context,
-                        title:
-                        'Additional Information',
-                        icon: Icons
-                            .info_outline_rounded,
+                        title: 'Additional Information',
+                        icon: Icons.info_outline_rounded,
                         children: [
-                          if (widget
-                              .googleReviewUrl
-                              .isNotEmpty)
+                          if (widget.googleReviewUrl.isNotEmpty)
                             _infoRow(
                               context,
                               'Google Review Link',
                               widget.googleReviewUrl,
                             ),
 
-                          if (widget
-                              .description
-                              .isNotEmpty)
+                          if (widget.website.isNotEmpty)
+                            _infoRow(
+                              context,
+                              'Website',
+                              widget.website,
+                            ),
+
+                          if (widget.description.isNotEmpty)
                             _infoRow(
                               context,
                               'Description',
                               widget.description,
-                              allowMultiline:
-                              true,
+                              allowMultiline: true,
                             ),
 
-                          if (widget
-                              .upiId
-                              .isNotEmpty)
+                          if (widget.upiId.isNotEmpty)
                             _infoRow(
                               context,
                               'UPI ID',
@@ -500,35 +432,25 @@ class _BusinessReviewScreenState
                         ],
                       ),
 
-                      const SizedBox(
-                        height: 24,
-                      ),
+                      const SizedBox(height: 24),
 
                       // ==================================================
                       // CONFIRMATION MESSAGE
                       // ==================================================
 
                       Container(
-                        width:
-                        double.infinity,
-                        padding:
-                        const EdgeInsets.all(
-                          16,
-                        ),
-                        decoration:
-                        BoxDecoration(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
                           color: theme
                               .colorScheme
                               .primaryContainer,
                           borderRadius:
-                          BorderRadius.circular(
-                            16,
-                          ),
+                          BorderRadius.circular(16),
                         ),
                         child: Row(
                           crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                          CrossAxisAlignment.start,
                           children: [
                             Icon(
                               Icons
@@ -538,9 +460,7 @@ class _BusinessReviewScreenState
                                   .onPrimaryContainer,
                             ),
 
-                            const SizedBox(
-                              width: 12,
-                            ),
+                            const SizedBox(width: 12),
 
                             Expanded(
                               child: Text(
@@ -562,22 +482,17 @@ class _BusinessReviewScreenState
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 24,
-                      ),
+                      const SizedBox(height: 24),
 
                       // ==================================================
                       // SAVE
                       // ==================================================
 
                       SizedBox(
-                        width:
-                        double.infinity,
+                        width: double.infinity,
                         height: 54,
-                        child:
-                        FilledButton.icon(
-                          onPressed:
-                          _isSaving
+                        child: FilledButton.icon(
+                          onPressed: _isSaving
                               ? null
                               : _saveBusiness,
                           icon: _isSaving
@@ -586,17 +501,13 @@ class _BusinessReviewScreenState
                             height: 20,
                             child:
                             CircularProgressIndicator(
-                              strokeWidth:
-                              2.5,
+                              strokeWidth: 2.5,
                             ),
                           )
                               : Icon(
-                            widget
-                                .isEditMode
-                                ? Icons
-                                .save_outlined
-                                : Icons
-                                .check_rounded,
+                            widget.isEditMode
+                                ? Icons.save_outlined
+                                : Icons.check_rounded,
                           ),
                           label: Text(
                             _isSaving
@@ -608,38 +519,26 @@ class _BusinessReviewScreenState
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       // ==================================================
                       // BACK
                       // ==================================================
 
                       SizedBox(
-                        width:
-                        double.infinity,
+                        width: double.infinity,
                         height: 48,
-                        child:
-                        OutlinedButton(
-                          onPressed:
-                          _isSaving
+                        child: OutlinedButton(
+                          onPressed: _isSaving
                               ? null
                               : () {
-                            Navigator.of(
-                              context,
-                            ).pop();
+                            Navigator.of(context).pop();
                           },
-                          child:
-                          const Text(
-                            'Back',
-                          ),
+                          child: const Text('Back'),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 24,
-                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -661,17 +560,14 @@ class _BusinessReviewScreenState
         required IconData icon,
         required List<Widget> children,
       }) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
     return Card(
       elevation: 0,
       child: Padding(
-        padding:
-        const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -680,31 +576,23 @@ class _BusinessReviewScreenState
                   size: 21,
                 ),
 
-                const SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
 
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 1,
-                    overflow:
-                    TextOverflow.ellipsis,
-                    style: theme
-                        .textTheme
-                        .titleMedium
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium
                         ?.copyWith(
-                      fontWeight:
-                      FontWeight.w700,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(
-              height: 14,
-            ),
+            const SizedBox(height: 14),
 
             ...children,
           ],
@@ -723,45 +611,35 @@ class _BusinessReviewScreenState
       String value, {
         bool allowMultiline = false,
       }) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
     return LayoutBuilder(
-      builder:
-          (context, constraints) {
+      builder: (context, constraints) {
         final compact =
-            constraints.maxWidth <
-                460;
+            constraints.maxWidth < 460;
 
         if (compact) {
           return Padding(
-            padding:
-            const EdgeInsets.only(
+            padding: const EdgeInsets.only(
               bottom: 14,
             ),
             child: Row(
               crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 32,
                   height: 32,
-                  alignment:
-                  Alignment.center,
-                  decoration:
-                  BoxDecoration(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
                     color: theme
                         .colorScheme
                         .surfaceContainerHighest,
                     borderRadius:
-                    BorderRadius.circular(
-                      9,
-                    ),
+                    BorderRadius.circular(9),
                   ),
                   child: Icon(
-                    Icons
-                        .arrow_right_rounded,
+                    Icons.arrow_right_rounded,
                     size: 18,
                     color: theme
                         .colorScheme
@@ -769,15 +647,12 @@ class _BusinessReviewScreenState
                   ),
                 ),
 
-                const SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
 
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
                     children: [
                       Text(
                         label,
@@ -788,36 +663,28 @@ class _BusinessReviewScreenState
                           color: theme
                               .colorScheme
                               .onSurfaceVariant,
-                          fontWeight:
-                          FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 3,
-                      ),
+                      const SizedBox(height: 3),
 
                       Text(
                         value.isEmpty
                             ? '—'
                             : value,
                         softWrap: true,
-                        maxLines:
-                        allowMultiline
+                        maxLines: allowMultiline
                             ? null
                             : 3,
-                        overflow:
-                        allowMultiline
-                            ? TextOverflow
-                            .visible
-                            : TextOverflow
-                            .ellipsis,
+                        overflow: allowMultiline
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
                         style: theme
                             .textTheme
                             .bodyMedium
                             ?.copyWith(
-                          fontWeight:
-                          FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                           height: 1.4,
                         ),
                       ),
@@ -830,14 +697,12 @@ class _BusinessReviewScreenState
         }
 
         return Padding(
-          padding:
-          const EdgeInsets.only(
+          padding: const EdgeInsets.only(
             bottom: 12,
           ),
           child: Row(
             crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
+            CrossAxisAlignment.start,
             children: [
               SizedBox(
                 width: 120,
@@ -854,9 +719,7 @@ class _BusinessReviewScreenState
                 ),
               ),
 
-              const SizedBox(
-                width: 12,
-              ),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: Text(
@@ -864,22 +727,17 @@ class _BusinessReviewScreenState
                       ? '—'
                       : value,
                   softWrap: true,
-                  maxLines:
-                  allowMultiline
+                  maxLines: allowMultiline
                       ? null
                       : 4,
-                  overflow:
-                  allowMultiline
-                      ? TextOverflow
-                      .visible
-                      : TextOverflow
-                      .ellipsis,
+                  overflow: allowMultiline
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
                   style: theme
                       .textTheme
                       .bodyMedium
                       ?.copyWith(
-                    fontWeight:
-                    FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                     height: 1.4,
                   ),
                 ),
