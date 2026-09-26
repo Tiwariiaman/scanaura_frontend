@@ -75,13 +75,10 @@ class _BusinessDetailsScreenState extends ConsumerState<BusinessDetailsScreen> {
   void initState() {
     super.initState();
 
-    if (widget.isEditMode) {
-      _loadBusiness();
-    } else {
-      _isLoaded = true;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadBusinessFromState();
+    });
   }
-
   @override
   void dispose() {
     _addressController.dispose();
@@ -102,35 +99,37 @@ class _BusinessDetailsScreenState extends ConsumerState<BusinessDetailsScreen> {
   // LOAD BUSINESS
   // ============================================================
 
-  Future<void> _loadBusiness() async {
-    if (_isLoading) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    final notifier = ref.read(businessNotifierProvider.notifier);
-
-    await notifier.loadMyBusiness();
-
-    if (!mounted) {
+  void _loadBusinessFromState() {
+    if (!widget.isEditMode) {
+      if (mounted) {
+        setState(() {
+          _isLoaded = true;
+        });
+      }
       return;
     }
 
     final state = ref.read(businessNotifierProvider);
-
     final business = state.business;
 
-    if (business != null) {
-      _populateBusiness(business);
+    if (business == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoaded = true;
+        });
+      }
+      return;
     }
 
-    setState(() {
-      _isLoading = false;
-      _isLoaded = true;
-    });
+    _populateBusiness(business);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _isLoaded = true;
+      });
+    }
   }
 
   // ============================================================

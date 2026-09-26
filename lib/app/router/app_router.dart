@@ -29,6 +29,7 @@ import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_screen.dart';
 
 import '../../features/business/presentation/business_onboarding_screen.dart';
+import '../../features/business/presentation/business_review_screen.dart';
 import '../../features/business/presentation/business_screen.dart';
 
 import '../../features/common/presentation/screens/contact_us_screen.dart';
@@ -597,6 +598,27 @@ class AppRouter {
                 return BusinessOnboardingScreen(
                   isEditMode: isEditMode,
                 );
+              },
+            ),
+
+            GoRoute(
+              path: '/business/review',
+              builder: (
+                  context,
+                  state,
+                  ) {
+                final reviewScreen =
+                state.extra as BusinessReviewScreen?;
+
+                if (reviewScreen == null) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text('Review data is missing.'),
+                    ),
+                  );
+                }
+
+                return reviewScreen;
               },
             ),
 

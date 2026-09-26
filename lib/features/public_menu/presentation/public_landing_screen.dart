@@ -1141,85 +1141,100 @@ class _LandingContent extends StatelessWidget {
     return _GlassCard(
       theme: theme,
       padding: const EdgeInsets.all(22),
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color:
-              theme.primary.withValues(
-                alpha: .10,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: theme.primary.withValues(
+                    alpha: .10,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.rate_review_outlined,
+                  color: theme.primary,
+                  size: 25,
+                ),
               ),
-              borderRadius:
-              BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.rate_review_outlined,
-              color: theme.primary,
-              size: 25,
-            ),
+
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enjoyed your experience?',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      'Share your experience with us on Google.',
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(width: 15),
+          const SizedBox(height: 18),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Enjoyed your experience?',
-                  style: TextStyle(
-                    color: theme.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: FilledButton(
+              onPressed: () {
+                onOpenExternalLink(
+                  landing.googleReviewUrl!,
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.primary,
+                foregroundColor: theme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(17),
                 ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  'We would love to hear from you.',
-                  style: TextStyle(
-                    color: theme.textSecondary,
-                    fontSize: 12.5,
-                    height: 1.35,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.rate_review_rounded,
+                    size: 19,
                   ),
-                ),
-
-                const SizedBox(height: 5),
-
-                Text(
-                  'Please review us on Google.',
-                  style: TextStyle(
-                    color: theme.primary,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Review us',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 10),
-
-          IconButton(
-            tooltip: 'Leave a review',
-            onPressed: () {
-              onOpenExternalLink(
-                landing.googleReviewUrl!,
-              );
-            },
-            style: IconButton.styleFrom(
-              backgroundColor: theme.primary,
-              foregroundColor: theme.onPrimary,
-            ),
-            icon: const Icon(
-              Icons.arrow_forward_rounded,
-              size: 20,
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 19,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -1955,8 +1970,7 @@ class _SocialDot extends StatelessWidget {
 // WHATSAPP FLOATING BUTTON
 // =============================================================================
 
-class _WhatsAppFloatingButton
-    extends StatelessWidget {
+class _WhatsAppFloatingButton extends StatelessWidget {
   const _WhatsAppFloatingButton({
     required this.onTap,
     required this.theme,
@@ -1968,7 +1982,6 @@ class _WhatsAppFloatingButton
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 10,
       color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkWell(
@@ -1984,16 +1997,6 @@ class _WhatsAppFloatingButton
               color: Colors.white,
               width: 3,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.primary.withValues(
-                  alpha: .30,
-                ),
-                blurRadius: 18,
-                spreadRadius: 1,
-                offset: const Offset(0, 7),
-              ),
-            ],
           ),
           child: const Center(
             child: Icon(
@@ -2007,7 +2010,6 @@ class _WhatsAppFloatingButton
     );
   }
 }
-
 // =============================================================================
 // HERO CARD
 // =============================================================================

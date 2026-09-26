@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:scanaura_frontend/features/business/presentation/providers/business_notifier.dart';
 import 'package:scanaura_frontend/features/business/presentation/providers/business_state.dart';
 
@@ -140,12 +141,22 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
     if (!mounted) return;
 
-    final business =
-        ref.read(businessNotifierProvider).business;
+    final state = ref.read(businessNotifierProvider);
+
+    final business = state.business;
 
     if (business != null) {
       _syncBusinessControllers(business);
+      return;
     }
+
+    if (state.status == BusinessStatus.error &&
+        state.errorMessage == 'Business not found.') {
+      context.go('/business-onboarding');
+      return;
+    }
+
+    setState(() {});
   }
 
   Future<void> _refreshBusiness() async {
@@ -1742,10 +1753,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(
-                      '/business/edit',
+                    context.push(
+                      '/business-onboarding?edit=true',
                     );
                   },
                   icon: const Icon(
