@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_notifier.dart';
 
@@ -29,6 +30,10 @@ class _ForgotPasswordScreenState
     _emailController.dispose();
     super.dispose();
   }
+
+  // =========================================================
+  // FORGOT PASSWORD
+  // =========================================================
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
@@ -78,6 +83,10 @@ class _ForgotPasswordScreenState
       );
   }
 
+  // =========================================================
+  // EMAIL VALIDATION
+  // =========================================================
+
   String? _validateEmail(
       String? value,
       ) {
@@ -100,6 +109,57 @@ class _ForgotPasswordScreenState
 
     return null;
   }
+
+  // =========================================================
+  // WHATSAPP SUPPORT
+  // =========================================================
+
+  Future<void> _contactSupport() async {
+    final Uri whatsappUri = Uri.parse(
+      'https://wa.me/917056222557?text=Hi%20ScanAura%20Support%2C%20I%20need%20help%20recovering%20my%20account.',
+    );
+
+    try {
+      final launched = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Unable to open WhatsApp.',
+              ),
+              behavior:
+              SnackBarBehavior.floating,
+            ),
+          );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to open WhatsApp.',
+            ),
+            behavior:
+            SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
+  // =========================================================
+  // BUILD
+  // =========================================================
 
   @override
   Widget build(
@@ -168,7 +228,7 @@ class _ForgotPasswordScreenState
                     ),
 
                     Text(
-                      'Enter your email and we’ll send you a secure password reset link.',
+                      'Enter the email address registered with your ScanAura account and we’ll send you a secure password reset link.',
                       textAlign:
                       TextAlign.center,
                       style: Theme.of(
@@ -182,6 +242,54 @@ class _ForgotPasswordScreenState
                         )
                             .colorScheme
                             .onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    // =================================================
+                    // EMAIL-ONLY INFORMATION
+                    // =================================================
+
+                    Container(
+                      width:
+                      double.infinity,
+                      padding:
+                      const EdgeInsets
+                          .all(14),
+                      decoration:
+                      BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        )
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        borderRadius:
+                        BorderRadius
+                            .circular(
+                          14,
+                        ),
+                      ),
+                      child: Text(
+                        'Password reset is currently available only for accounts with a registered email address.',
+                        textAlign:
+                        TextAlign.center,
+                        style: Theme.of(
+                          context,
+                        )
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                          color: Theme.of(
+                            context,
+                          )
+                              .colorScheme
+                              .onSurfaceVariant,
+                          height: 1.4,
+                        ),
                       ),
                     ),
 
@@ -251,8 +359,81 @@ class _ForgotPasswordScreenState
                     ),
 
                     const SizedBox(
+                      height: 20,
+                    ),
+
+                    // =================================================
+                    // WHATSAPP SUPPORT
+                    // =================================================
+
+                    Text(
+                      'Don’t have an email registered?',
+                      textAlign:
+                      TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      )
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                        fontWeight:
+                        FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 6,
+                    ),
+
+                    Text(
+                      'Contact ScanAura Support on WhatsApp for account recovery assistance.',
+                      textAlign:
+                      TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      )
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                        color: Theme.of(
+                          context,
+                        )
+                            .colorScheme
+                            .onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    SizedBox(
+                      height: 52,
+                      child:
+                      OutlinedButton.icon(
+                        onPressed:
+                        isLoading
+                            ? null
+                            : _contactSupport,
+                        icon: const Icon(
+                          Icons
+                              .chat_outlined,
+                        ),
+                        label:
+                        const Text(
+                          'Contact ScanAura Support',
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
                       height: 14,
                     ),
+
+                    // =================================================
+                    // BACK TO LOGIN
+                    // =================================================
 
                     SizedBox(
                       height: 52,
@@ -282,6 +463,10 @@ class _ForgotPasswordScreenState
       ),
     );
   }
+
+  // =========================================================
+  // SUCCESS SCREEN
+  // =========================================================
 
   Widget _buildSuccess(
       BuildContext context,
@@ -482,6 +667,10 @@ class _ForgotPasswordScreenState
       ),
     );
   }
+
+  // =========================================================
+  // BRANDING
+  // =========================================================
 
   Widget _buildBranding(
       BuildContext context,

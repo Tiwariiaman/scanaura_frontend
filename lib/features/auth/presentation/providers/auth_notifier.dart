@@ -56,7 +56,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> login({
-    required String email,
+    required String identifier,
     required String password,
   }) async {
     state = const AuthState(
@@ -73,7 +73,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final response =
       await repository.login(
         LoginRequest(
-          email: email.trim(),
+          identifier: identifier.trim(),
           password: password,
         ),
       );
@@ -90,23 +90,18 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       state = AuthState(
-        status:
-        AuthStatus.authenticated,
-        userEmail:
-        email.trim(),
+        status: AuthStatus.authenticated,
+        userEmail: identifier.trim(),
         role: role,
       );
 
       debugPrint(
-        'LOGIN SUCCESS: '
-            'email=${email.trim()} '
-            'role=$role',
+        'LOGIN SUCCESS: identifier=${identifier.trim()} role=$role',
       );
     } catch (e) {
       state = AuthState(
         status: AuthStatus.error,
-        errorMessage:
-        _cleanErrorMessage(e),
+        errorMessage: _cleanErrorMessage(e),
       );
 
       debugPrint(
@@ -117,7 +112,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<bool> register({
     required String fullName,
-    required String email,
+    String? email,
     required String mobile,
     required String password,
   }) async {
@@ -132,7 +127,9 @@ class AuthNotifier extends Notifier<AuthState> {
       await repository.register(
         RegisterRequest(
           fullName: fullName.trim(),
-          email: email.trim(),
+          email: email?.trim().isEmpty == true
+              ? null
+              : email?.trim(),
           mobile: mobile.trim(),
           password: password,
         ),

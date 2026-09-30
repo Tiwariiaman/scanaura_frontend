@@ -17,14 +17,14 @@ class _LoginScreenState
     extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
 
     super.dispose();
@@ -40,7 +40,7 @@ class _LoginScreenState
     await ref
         .read(authNotifierProvider.notifier)
         .login(
-      email: _emailController.text,
+      identifier: _identifierController.text,
       password: _passwordController.text,
     );
 
@@ -51,21 +51,35 @@ class _LoginScreenState
     final authState = ref.read(authNotifierProvider);
 
     if (authState.status == AuthStatus.authenticated) {
-      context.go('/dashboard');
+      context.go('/business');
     }
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Email is required';
+  String? _validateIdentifier(String? value) {
+    final identifier = value?.trim() ?? '';
+
+    if (identifier.isEmpty) {
+      return 'Email or mobile number is required';
     }
 
-    final emailRegex = RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    if (identifier.contains('@')) {
+      final emailRegex = RegExp(
+        r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+      );
+
+      if (!emailRegex.hasMatch(identifier)) {
+        return 'Enter a valid email address';
+      }
+
+      return null;
+    }
+
+    final mobileRegex = RegExp(
+      r'^[6-9]\d{9}$',
     );
 
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Enter a valid email address';
+    if (!mobileRegex.hasMatch(identifier)) {
+      return 'Enter a valid 10-digit mobile number';
     }
 
     return null;
@@ -92,44 +106,44 @@ class _LoginScreenState
           return;
         }
 
-        final message = next.errorMessage!;
+        // final message = next.errorMessage!;
+        //
+        // if (message ==
+        //     'Please verify your email before signing in.') {
+        //   ScaffoldMessenger.of(context)
+        //     ..hideCurrentSnackBar()
+        //     ..showSnackBar(
+        //       SnackBar(
+        //         behavior:
+        //         SnackBarBehavior.floating,
+        //         content: const Text(
+        //           'Please verify your email before signing in.',
+        //         ),
+        //         action: SnackBarAction(
+        //           label: 'Verify',
+        //           onPressed: () {
+        //             context.go(
+        //               '/verify-email?email=${Uri.encodeComponent(
+        //                 _identifierController.text.trim(),
+        //               )}',
+        //             );
+        //           },
+        //         ),
+        //       ),
+        //     );
+        //
+        //   return;
+        // }
 
-        if (message ==
-            'Please verify your email before signing in.') {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                behavior:
-                SnackBarBehavior.floating,
-                content: const Text(
-                  'Please verify your email before signing in.',
-                ),
-                action: SnackBarAction(
-                  label: 'Verify',
-                  onPressed: () {
-                    context.go(
-                      '/verify-email?email=${Uri.encodeComponent(
-                        _emailController.text.trim(),
-                      )}',
-                    );
-                  },
-                ),
-              ),
-            );
-
-          return;
-        }
-
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(message),
-              behavior:
-              SnackBarBehavior.floating,
-            ),
-          );
+      //   ScaffoldMessenger.of(context)
+      //     ..hideCurrentSnackBar()
+      //     ..showSnackBar(
+      //       SnackBar(
+      //         content: Text(message),
+      //         behavior:
+      //         SnackBarBehavior.floating,
+      //       ),
+      //     );
       },
     );
 
@@ -174,16 +188,16 @@ class _LoginScreenState
                     const SizedBox(height: 32),
 
                     TextFormField(
-                      controller: _emailController,
+                      controller: _identifierController,
                       keyboardType:
                       TextInputType.emailAddress,
                       textInputAction:
                       TextInputAction.next,
                       enabled: !isLoading,
-                      validator: _validateEmail,
+                      validator: _validateIdentifier,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'you@example.com',
+                        labelText: 'Email or Mobile',
+                        hintText: 'Email or 10-digit mobile number',
                         prefixIcon: Icon(
                           Icons.email_outlined,
                         ),

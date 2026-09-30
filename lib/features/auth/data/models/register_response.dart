@@ -8,14 +8,16 @@ class RegisterResponse {
 
   final String userId;
   final String fullName;
-  final String email;
+  final String? email;
   final String mobile;
 
-  factory RegisterResponse.fromJson(Map<String, dynamic> json) {
+  factory RegisterResponse.fromJson(
+      Map<String, dynamic> json,
+      ) {
     return RegisterResponse(
       userId: json['userId'] as String,
       fullName: json['fullName'] as String,
-      email: json['email'] as String,
+      email: json['email'] as String?,
       mobile: json['mobile'] as String,
     );
   }

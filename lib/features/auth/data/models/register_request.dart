@@ -7,7 +7,7 @@ class RegisterRequest {
   });
 
   final String fullName;
-  final String email;
+  final String? email;
   final String mobile;
   final String password;
 

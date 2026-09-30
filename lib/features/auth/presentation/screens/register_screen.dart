@@ -58,11 +58,20 @@ class _RegisterScreenState
     }
 
     if (success) {
-      context.go(
-        '/verify-email?email=${Uri.encodeComponent(
-          _emailController.text.trim(),
-        )}',
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Account created successfully. You can now sign in.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
+
+      context.go('/login');
     }
   }
 
@@ -84,11 +93,11 @@ class _RegisterScreenState
     return null;
   }
 
-  String? _validateEmail(String? value) {
+  String? _validateOptionalEmail(String? value) {
     final email = value?.trim() ?? '';
 
     if (email.isEmpty) {
-      return 'Email is required';
+      return null;
     }
 
     final emailRegex = RegExp(
@@ -234,7 +243,7 @@ class _RegisterScreenState
                       textInputAction:
                       TextInputAction.next,
                       enabled: !isLoading,
-                      validator: _validateEmail,
+                      validator: _validateOptionalEmail,
                       decoration: const InputDecoration(
                         labelText: 'Email',
                         hintText: 'you@example.com',

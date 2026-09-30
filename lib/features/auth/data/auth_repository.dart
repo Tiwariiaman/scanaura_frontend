@@ -43,17 +43,13 @@ class AuthRepository {
     }
   }
 
-  Future<LoginResponse> login(
-      LoginRequest request,
-      ) async {
+  Future<LoginResponse> login(LoginRequest request) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
         ApiConstants.authLogin,
         data: request.toJson(),
       );
-
       final responseData = response.data;
-
       if (responseData == null) {
         throw Exception('Empty response from server.');
       }
