@@ -103,48 +103,22 @@ class _LoginScreenState
       authNotifierProvider,
           (previous, next) {
         if (next.status != AuthStatus.error ||
-            next.errorMessage == null) {
+            next.errorMessage == null ||
+            next.errorMessage!.trim().isEmpty) {
           return;
         }
 
-        // final message = next.errorMessage!;
-        //
-        // if (message ==
-        //     'Please verify your email before signing in.') {
-        //   ScaffoldMessenger.of(context)
-        //     ..hideCurrentSnackBar()
-        //     ..showSnackBar(
-        //       SnackBar(
-        //         behavior:
-        //         SnackBarBehavior.floating,
-        //         content: const Text(
-        //           'Please verify your email before signing in.',
-        //         ),
-        //         action: SnackBarAction(
-        //           label: 'Verify',
-        //           onPressed: () {
-        //             context.go(
-        //               '/verify-email?email=${Uri.encodeComponent(
-        //                 _identifierController.text.trim(),
-        //               )}',
-        //             );
-        //           },
-        //         ),
-        //       ),
-        //     );
-        //
-        //   return;
-        // }
+        final message = next.errorMessage!.trim();
 
-      //   ScaffoldMessenger.of(context)
-      //     ..hideCurrentSnackBar()
-      //     ..showSnackBar(
-      //       SnackBar(
-      //         content: Text(message),
-      //         behavior:
-      //         SnackBarBehavior.floating,
-      //       ),
-      //     );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(message),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
       },
     );
 
