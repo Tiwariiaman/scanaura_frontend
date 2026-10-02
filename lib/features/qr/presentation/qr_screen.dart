@@ -3,8 +3,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../business/presentation/providers/business_notifier.dart';
 import '../data/models/qr_response.dart';
@@ -45,7 +47,7 @@ class _QrScreenState extends ConsumerState<QrScreen> {
   }
 
   String _publicQrUrl(String qrCode) =>
-      'https://scanaura.in/#/q/$qrCode';
+      'https://scanaura.in/q/$qrCode';
 
   Future<void> _loadSavedTheme() async {
     final business =
@@ -192,6 +194,64 @@ class _QrScreenState extends ConsumerState<QrScreen> {
     }
   }
 
+  Future<void> _copyQrLink() async {
+    try {
+      final qr = ref.read(qrNotifierProvider).digitalQr;
+
+      if (qr == null) {
+        throw Exception('Digital QR not available.');
+      }
+
+      final publicUrl = _publicQrUrl(qr.qrCode);
+
+      await Clipboard.setData(
+        ClipboardData(text: publicUrl),
+      );
+
+      if (mounted) {
+        _showMessage('QR link copied successfully.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage(
+          'Copy failed: ${_cleanError(e)}',
+        );
+      }
+    }
+  }
+
+  Future<void> _previewQrPage() async {
+    try {
+      final qr = ref.read(qrNotifierProvider).digitalQr;
+
+      if (qr == null) {
+        throw Exception('Digital QR not available.');
+      }
+
+      final publicUrl = _publicQrUrl(qr.qrCode);
+
+      // Open the business page in a new browser tab.
+      // This works naturally on Flutter Web.
+      // ignore: avoid_web_libraries_in_flutter
+      final uri = Uri.parse(publicUrl);
+
+      // Use url_launcher if already available in your project.
+      final launched = await launchUrl(
+        uri,
+        webOnlyWindowName: '_blank',
+      );
+
+      if (!launched && mounted) {
+        _showMessage('Unable to open preview page.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage(
+          'Preview failed: ${_cleanError(e)}',
+        );
+      }
+    }
+  }
   String _cleanError(Object error) {
     final message = error.toString();
     if (message.startsWith('Exception: ')) {
@@ -458,26 +518,51 @@ class _QrScreenState extends ConsumerState<QrScreen> {
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
+                final buttons = [
+                  OutlinedButton.icon(
+                    onPressed: _downloadQr,
+                    icon: const Icon(Icons.download_rounded),
+                    label: const Text('Download'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: _shareQr,
+                    icon: const Icon(Icons.share_rounded),
+                    label: const Text('Share QR'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _copyQrLink,
+                    icon: const Icon(Icons.link_rounded),
+                    label: const Text('Copy Link'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _previewQrPage,
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: const Text('Preview Page'),
+                  ),
+                ];
+
                 if (constraints.maxWidth < 500) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SizedBox(
                         height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: _downloadQr,
-                          icon: const Icon(Icons.download_rounded),
-                          label: const Text('Download QR'),
-                        ),
+                        child: buttons[0],
                       ),
                       const SizedBox(height: 10),
                       SizedBox(
                         height: 48,
-                        child: FilledButton.icon(
-                          onPressed: _shareQr,
-                          icon: const Icon(Icons.share_rounded),
-                          label: const Text('Share QR'),
-                        ),
+                        child: buttons[1],
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: buttons[2],
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: buttons[3],
                       ),
                     ],
                   );
@@ -486,19 +571,19 @@ class _QrScreenState extends ConsumerState<QrScreen> {
                 return Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _downloadQr,
-                        icon: const Icon(Icons.download_rounded),
-                        label: const Text('Download QR'),
-                      ),
+                      child: buttons[0],
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _shareQr,
-                        icon: const Icon(Icons.share_rounded),
-                        label: const Text('Share QR'),
-                      ),
+                      child: buttons[1],
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buttons[2],
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buttons[3],
                     ),
                   ],
                 );

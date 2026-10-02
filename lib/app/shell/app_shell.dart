@@ -40,7 +40,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       route: '/business',
     ),
     _NavigationItem(
-      label: 'Catalog',
+      label: 'Items',
       icon: Icons.inventory_2_outlined,
       selectedIcon: Icons.inventory_2_rounded,
       route: '/menu',
@@ -227,16 +227,11 @@ class _AppShellState extends ConsumerState<AppShell> {
         if (width < 600) {
           return Scaffold(
             appBar: _MobileHeader(
-              logoUrl:
-              business?.logoUrl,
-              businessName:
-              businessName,
-              onContactUs:
-              _openContactUs,
-              onScanLoyalty:
-              _openLoyaltyScanner,
-              onLogout:
-              _logout,
+              logoUrl: business?.logoUrl,
+              businessName: businessName,
+              onContactUs: _openContactUs,
+              onScanLoyalty: _openLoyaltyScanner,
+              onLogout: _logout,
             ),
 
             body: SafeArea(
@@ -244,12 +239,16 @@ class _AppShellState extends ConsumerState<AppShell> {
               child: widget.child,
             ),
 
-            bottomNavigationBar:
-            _MobileNavigation(
-              selectedIndex:
-              selectedIndex,
-              onSelected:
-                  (route) {
+            // floatingActionButton: _MobileSupportButton(
+            //   onPressed: _openScanAuraSupport,
+            // ),
+
+            // floatingActionButtonLocation:
+            // FloatingActionButtonLocation.endFloat,
+
+            bottomNavigationBar: _MobileNavigation(
+              selectedIndex: selectedIndex,
+              onSelected: (route) {
                 context.go(route);
               },
             ),
@@ -1064,8 +1063,7 @@ class _MobileHeader
 // Subscription is intentionally replaced by QR.
 // ============================================================
 
-class _MobileNavigation
-    extends StatelessWidget {
+class _MobileNavigation extends StatelessWidget {
   const _MobileNavigation({
     required this.selectedIndex,
     required this.onSelected,
@@ -1076,243 +1074,90 @@ class _MobileNavigation
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).colorScheme;
-
-    final isCatalogSelected =
-        selectedIndex == 2;
-
-    final isDashboardSelected =
-        selectedIndex == 0;
-
-    final isBusinessSelected =
-        selectedIndex == 1;
-
-    final isActivitySelected =
-        selectedIndex == 3;
-
-    final isQrSelected =
-        selectedIndex == 4;
+    final colors = Theme.of(context).colorScheme;
 
     return SafeArea(
       top: false,
-      child: SizedBox(
-        height: 82,
-        child: Stack(
-          clipBehavior:
-          Clip.none,
-          alignment:
-          Alignment.topCenter,
+      child: Container(
+        height: 72,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border(
+            top: BorderSide(
+              color: colors.outlineVariant.withValues(
+                alpha: 0.55,
+              ),
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: 0.06,
+              ),
+              blurRadius: 20,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Row(
           children: [
-            // ======================================================
-            // BAR
-            // ======================================================
-
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: 68,
-                decoration:
-                BoxDecoration(
-                  color:
-                  colors.surface,
-                  border: Border(
-                    top: BorderSide(
-                      color: colors
-                          .outlineVariant,
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black
-                          .withValues(
-                        alpha: 0.06,
-                      ),
-                      blurRadius: 18,
-                      offset:
-                      const Offset(
-                        0,
-                        -5,
-                      ),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // ==================================================
-                    // LEFT SIDE
-                    // ==================================================
-
-                    Expanded(
-                      child:
-                      _MobileNavItem(
-                        icon: Icons
-                            .dashboard_outlined,
-                        selectedIcon:
-                        Icons
-                            .dashboard_rounded,
-                        label:
-                        'Dashboard',
-                        selected:
-                        isDashboardSelected,
-                        onTap: () =>
-                            onSelected(
-                              '/dashboard',
-                            ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child:
-                      _MobileNavItem(
-                        icon: Icons
-                            .storefront_outlined,
-                        selectedIcon:
-                        Icons
-                            .storefront_rounded,
-                        label: 'Business',
-                        selected:
-                        isBusinessSelected,
-                        onTap: () =>
-                            onSelected(
-                              '/business',
-                            ),
-                      ),
-                    ),
-
-                    // ==================================================
-                    // CENTER SPACE
-                    // ==================================================
-
-                    const SizedBox(
-                      width: 76,
-                    ),
-
-                    // ==================================================
-                    // RIGHT SIDE
-                    // ==================================================
-
-                    Expanded(
-                      child:
-                      _MobileNavItem(
-                        icon: Icons
-                            .auto_awesome_outlined,
-                        selectedIcon:
-                        Icons
-                            .auto_awesome_rounded,
-                        label: 'Activity',
-                        selected:
-                        isActivitySelected,
-                        onTap: () =>
-                            onSelected(
-                              '/activity',
-                            ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child:
-                      _MobileNavItem(
-                        icon: Icons
-                            .qr_code_2_outlined,
-                        selectedIcon:
-                        Icons
-                            .qr_code_2_rounded,
-                        label: 'QR',
-                        selected:
-                        isQrSelected,
-                        onTap: () =>
-                            onSelected(
-                              '/qr',
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
+            Expanded(
+              child: _MobileNavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: 'Home',
+                selected: selectedIndex == 0,
+                onTap: () {
+                  onSelected('/dashboard');
+                },
               ),
             ),
 
-            // ======================================================
-            // FLOATING CATALOG BUTTON
-            // ======================================================
-
-            Positioned(
-              top: -8,
-              child: GestureDetector(
-                onTap: () =>
-                    onSelected(
-                      '/menu',
-                    ),
-                child: AnimatedContainer(
-                  duration:
-                  const Duration(
-                    milliseconds: 180,
-                  ),
-                  width: 62,
-                  height: 62,
-                  decoration:
-                  BoxDecoration(
-                    color: isCatalogSelected
-                        ? colors.primary
-                        : colors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colors.surface,
-                      width: 5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black
-                            .withValues(
-                          alpha: 0.14,
-                        ),
-                        blurRadius: 18,
-                        offset:
-                        const Offset(
-                          0,
-                          7,
-                        ),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isCatalogSelected
-                        ? Icons
-                        .inventory_2_rounded
-                        : Icons
-                        .inventory_2_outlined,
-                    size: 29,
-                    color: isCatalogSelected
-                        ? colors
-                        .onPrimary
-                        : colors.primary,
-                  ),
-                ),
+            Expanded(
+              child: _MobileNavItem(
+                icon: Icons.storefront_outlined,
+                selectedIcon: Icons.storefront_rounded,
+                label: 'Business',
+                selected: selectedIndex == 1,
+                onTap: () {
+                  onSelected('/business');
+                },
               ),
             ),
 
-            // ======================================================
-            // CATALOG LABEL
-            // ======================================================
+            Expanded(
+              child: _MobileNavItem(
+                icon: Icons.inventory_2_outlined,
+                selectedIcon: Icons.inventory_2_rounded,
+                label: 'Items',
+                selected: selectedIndex == 2,
+                onTap: () {
+                  onSelected('/menu');
+                },
+              ),
+            ),
 
-            Positioned(
-              top: 57,
-              child: Text(
-                'Catalog',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight:
-                  isCatalogSelected
-                      ? FontWeight.w800
-                      : FontWeight.w600,
-                  color:
-                  isCatalogSelected
-                      ? colors.primary
-                      : colors
-                      .onSurfaceVariant,
-                ),
+            Expanded(
+              child: _MobileNavItem(
+                icon: Icons.auto_awesome_outlined,
+                selectedIcon: Icons.auto_awesome_rounded,
+                label: 'Activity',
+                selected: selectedIndex == 3,
+                onTap: () {
+                  onSelected('/activity');
+                },
+              ),
+            ),
+
+            Expanded(
+              child: _MobileNavItem(
+                icon: Icons.qr_code_2_outlined,
+                selectedIcon: Icons.qr_code_2_rounded,
+                label: 'QR',
+                selected: selectedIndex == 4,
+                onTap: () {
+                  onSelected('/qr');
+                },
               ),
             ),
           ],
@@ -1321,7 +1166,6 @@ class _MobileNavigation
     );
   }
 }
-
 // ============================================================
 // MOBILE NAV ITEM
 // ============================================================
@@ -1505,3 +1349,54 @@ class _NavigationItem {
   final IconData selectedIcon;
   final String route;
 }
+
+// class _MobileSupportButton extends StatelessWidget {
+//   const _MobileSupportButton({
+//     required this.onPressed,
+//   });
+//
+//   final VoidCallback onPressed;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final colors = Theme.of(context).colorScheme;
+//
+//     return Material(
+//       elevation: 6,
+//       shadowColor: Colors.black.withValues(
+//         alpha: 0.18,
+//       ),
+//       color: colors.primary,
+//       borderRadius: BorderRadius.circular(18),
+//       child: InkWell(
+//         onTap: onPressed,
+//         borderRadius: BorderRadius.circular(18),
+//         child: Padding(
+//           padding: const EdgeInsets.symmetric(
+//             horizontal: 15,
+//             vertical: 12,
+//           ),
+//           child: Row(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               const Icon(
+//                 Icons.support_agent_rounded,
+//                 size: 21,
+//                 color: Colors.white,
+//               ),
+//               const SizedBox(width: 7),
+//               const Text(
+//                 'Support',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontSize: 13,
+//                   fontWeight: FontWeight.w700,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

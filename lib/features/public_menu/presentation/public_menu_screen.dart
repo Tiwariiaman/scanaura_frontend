@@ -2203,6 +2203,19 @@ class _PublicMenuScreenState extends ConsumerState<PublicMenuScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  'Own a business? Grow it with ScanAura.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
                 TextButton(
                   onPressed: () {
                     context.go('/register');
@@ -2211,12 +2224,95 @@ class _PublicMenuScreenState extends ConsumerState<PublicMenuScreen> {
                     foregroundColor: theme.colorScheme.primary,
                   ),
                   child: Text(
-                    'Register your business',
+                    'Create your business account →',
                     style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        context.push('/terms-and-conditions');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize:
+                        MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Terms & Conditions',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '•',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+
+                    TextButton(
+                      onPressed: () {
+                        context.push('/privacy-policy');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize:
+                        MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '•',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+
+                    TextButton(
+                      onPressed: () {
+                        context.push('/contact-us');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize:
+                        MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Contact Us',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );

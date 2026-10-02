@@ -55,49 +55,61 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Catalog',
+          'Items',
           style: TextStyle(
             fontWeight: FontWeight.w700,
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Manage Categories',
+          TextButton.icon(
             onPressed: () {
-              context.push(
-                '/menu/categories',
-              );
+              context.push('/menu/categories');
             },
             icon: const Icon(
               Icons.category_outlined,
+              size: 19,
+            ),
+            label: const Text(
+              'Categories',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
-          IconButton(
-            tooltip: 'AI Import',
+          TextButton.icon(
             onPressed: () {
-              context.push(
-                '/ai-import',
-              );
+              context.push('/ai-import');
             },
             icon: const Icon(
               Icons.auto_awesome,
+              size: 19,
+            ),
+            label: const Text(
+              'AI Import',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
-          IconButton(
-            tooltip: 'Add Item',
+          TextButton.icon(
             onPressed: () {
-              context.push(
-                '/menu/add',
-              );
+              context.push('/menu/add');
             },
             icon: const Icon(
               Icons.add_circle_outline_rounded,
+              size: 19,
+            ),
+            label: const Text(
+              'Add Item',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
 
@@ -107,6 +119,24 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         notifier,
         showVegIndicator,
       ),
+
+      floatingActionButton: MediaQuery.of(context).size.width < 600
+          ? FloatingActionButton.extended(
+        onPressed: () {
+          context.push('/menu/add');
+        },
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Add Item',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      )
+          : null,
+
+      floatingActionButtonLocation:
+      FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -413,7 +443,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
                   Text(
                     state.errorMessage ??
-                        'Unable to load catalog.',
+                        'Unable to load Items.',
                     textAlign:
                     TextAlign.center,
                   ),

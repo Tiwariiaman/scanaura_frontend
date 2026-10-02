@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -372,6 +373,52 @@ class _RegisterScreenState
 
                     const SizedBox(height: 20),
 
+                const SizedBox(height: 14),
+
+                    Text.rich(
+                      TextSpan(
+                        text: 'By creating an account, you agree to ScanAura\'s ',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Terms & Conditions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                context.push('/terms-and-conditions');
+                              },
+                          ),
+                          const TextSpan(
+                            text: ' and ',
+                          ),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                context.push('/privacy-policy');
+                              },
+                          ),
+                          const TextSpan(
+                            text: '.',
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment:
                       MainAxisAlignment.center,
@@ -386,7 +433,7 @@ class _RegisterScreenState
                             context.go('/login');
                           },
                           child: const Text(
-                            'Sign in',
+                            'Login',
                           ),
                         ),
                       ],

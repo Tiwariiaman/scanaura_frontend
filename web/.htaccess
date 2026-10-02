@@ -9,10 +9,15 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
 
 # ============================================================
-# FRESH APPLICATION CODE
+# CACHE CONTROL
 # ============================================================
 
 <IfModule mod_headers.c>
+
+    # --------------------------------------------------------
+    # NEVER CACHE INDEX
+    # Ensures users always receive the latest Flutter build
+    # --------------------------------------------------------
 
     <FilesMatch "^index\.html$">
         Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
@@ -20,10 +25,22 @@ RewriteRule ^ index.html [L]
         Header always set Expires "0"
     </FilesMatch>
 
-    <FilesMatch "\.(js|wasm|json)$">
-        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-        Header always set Pragma "no-cache"
-        Header always set Expires "0"
+
+    # --------------------------------------------------------
+    # CACHE FLUTTER STATIC ASSETS
+    # --------------------------------------------------------
+
+    <FilesMatch "\.(js|wasm|json|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf)$">
+        Header always set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+
+    # --------------------------------------------------------
+    # NEVER CACHE ROBOTS / SITEMAP
+    # --------------------------------------------------------
+
+    <FilesMatch "^(robots\.txt|sitemap\.xml)$">
+        Header always set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
 
 </IfModule>

@@ -252,25 +252,28 @@ class MenuItemCard extends StatelessWidget {
   Widget _buildCompactTopRow(
       BuildContext context,
       ) {
+    final theme = Theme.of(context);
+
     return Row(
-      crossAxisAlignment:
-      CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: _buildTitle(
-            context,
+          child: _buildTitle(context),
+        ),
+
+        const SizedBox(width: 8),
+
+        IconButton(
+          tooltip: 'Delete item',
+          onPressed: onDelete,
+          icon: Icon(
+            Icons.delete_outline_rounded,
+            color: theme.colorScheme.error,
           ),
-        ),
-        const SizedBox(
-          width: 8,
-        ),
-        _buildPopupMenu(
-          context,
         ),
       ],
     );
   }
-
   // ============================================================
   // MAIN CONTENT
   // ============================================================
@@ -425,148 +428,41 @@ class MenuItemCard extends StatelessWidget {
   Widget _buildWideActions(
       BuildContext context,
       ) {
-    final theme =
-    Theme.of(context);
+    final theme = Theme.of(context);
 
     return SizedBox(
-      width: 150,
+      width: 220,
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisSize:
-            MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'Edit item',
-                onPressed: onEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                ),
+          // DELETE — separate top-right action
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              tooltip: 'Delete item',
+              onPressed: onDelete,
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: theme.colorScheme.error,
               ),
-              IconButton(
-                tooltip: 'Delete item',
-                onPressed: onDelete,
-                icon: const Icon(
-                  Icons
-                      .delete_outline_rounded,
-                ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // EDIT + AVAILABILITY — 50:50
+          Row(
+            children: [
+              Expanded(
+                child: _buildEditButton(context),
+              ),
+
+              const SizedBox(width: 8),
+
+              Expanded(
+                child: _buildAvailabilityButton(context),
               ),
             ],
-          ),
-
-          const SizedBox(
-            height: 8,
-          ),
-
-          InkWell(
-            borderRadius:
-            BorderRadius.circular(12),
-            onTap: () =>
-                onAvailabilityChanged(
-                  !item.available,
-                ),
-            child: Container(
-              width: double.infinity,
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 9,
-              ),
-              decoration:
-              BoxDecoration(
-                color: item.available
-                    ? theme
-                    .colorScheme
-                    .secondaryContainer
-                    : theme
-                    .colorScheme
-                    .errorContainer,
-                borderRadius:
-                BorderRadius.circular(
-                  12,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    item.available
-                        ? Icons
-                        .check_circle_outline_rounded
-                        : Icons
-                        .visibility_off_outlined,
-                    size: 19,
-                    color: item.available
-                        ? theme
-                        .colorScheme
-                        .onSecondaryContainer
-                        : theme
-                        .colorScheme
-                        .onErrorContainer,
-                  ),
-
-                  const SizedBox(
-                    width: 7,
-                  ),
-
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment:
-                      Alignment.centerLeft,
-                      child: Text(
-                        item.available
-                            ? 'Available'
-                            : 'Hidden',
-                        maxLines: 1,
-                        softWrap: false,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight:
-                          FontWeight.w700,
-                          color: item.available
-                              ? theme
-                              .colorScheme
-                              .onSecondaryContainer
-                              : theme
-                              .colorScheme
-                              .onErrorContainer,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    width: 8,
-                  ),
-
-                  Switch.adaptive(
-                    value: item.available,
-                    onChanged:
-                    onAvailabilityChanged,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
-          Text(
-            item.available
-                ? 'Visible to customers'
-                : 'Not visible to customers',
-            textAlign:
-            TextAlign.right,
-            style: TextStyle(
-              fontSize: 11,
-              color: theme
-                  .colorScheme
-                  .onSurfaceVariant,
-            ),
           ),
         ],
       ),
@@ -580,99 +476,114 @@ class MenuItemCard extends StatelessWidget {
   Widget _buildMobileAvailability(
       BuildContext context,
       ) {
-    final theme =
-    Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: _buildEditButton(context),
+        ),
 
-    final backgroundColor =
-    item.available
-        ? theme
-        .colorScheme
-        .secondaryContainer
-        : theme
-        .colorScheme
-        .errorContainer;
+        const SizedBox(width: 8),
 
-    final foregroundColor =
-    item.available
-        ? theme
-        .colorScheme
-        .onSecondaryContainer
-        : theme
-        .colorScheme
-        .onErrorContainer;
+        Expanded(
+          child: _buildAvailabilityButton(context),
+        ),
+      ],
+    );
+  }
 
-    return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 9,
-      ),
-      decoration:
-      BoxDecoration(
-        color: backgroundColor,
-        borderRadius:
-        BorderRadius.circular(
-          12,
+
+  Widget _buildEditButton(
+      BuildContext context,
+      ) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      height: 46,
+      child: OutlinedButton.icon(
+        onPressed: onEdit,
+        icon: const Icon(
+          Icons.edit_outlined,
+          size: 18,
+        ),
+        label: const Text(
+          'Edit',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          Icon(
-            item.available
-                ? Icons
-                .check_circle_outline_rounded
-                : Icons
-                .visibility_off_outlined,
-            size: 19,
-            color: foregroundColor,
-          ),
+    );
+  }
 
-          const SizedBox(
-            width: 8,
-          ),
+  Widget _buildAvailabilityButton(
+      BuildContext context,
+      ) {
+    final theme = Theme.of(context);
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.available
-                      ? 'Available'
-                      : 'Hidden',
-                  style: TextStyle(
-                    fontWeight:
-                    FontWeight.w700,
-                    color:
-                    foregroundColor,
-                  ),
-                ),
-                const SizedBox(
-                  height: 1,
-                ),
-                Text(
-                  item.available
-                      ? 'Customers can see this item'
-                      : 'Customers cannot see this item',
-                  maxLines: 1,
-                  overflow:
-                  TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color:
-                    foregroundColor,
-                  ),
-                ),
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        onAvailabilityChanged(
+          !item.available,
+        );
+      },
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+        ),
+        decoration: BoxDecoration(
+          color: item.available
+              ? theme.colorScheme.secondaryContainer
+              : theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              item.available
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.visibility_off_outlined,
+              size: 18,
+              color: item.available
+                  ? theme.colorScheme.onSecondaryContainer
+                  : theme.colorScheme.onErrorContainer,
             ),
-          ),
 
-          Switch.adaptive(
-            value: item.available,
-            onChanged:
-            onAvailabilityChanged,
-          ),
-        ],
+            const SizedBox(width: 6),
+
+            Expanded(
+              child: Text(
+                item.available
+                    ? 'Available'
+                    : 'Hidden',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: item.available
+                      ? theme.colorScheme.onSecondaryContainer
+                      : theme.colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+
+            Switch.adaptive(
+              value: item.available,
+              onChanged: onAvailabilityChanged,
+            ),
+          ],
+        ),
       ),
     );
   }

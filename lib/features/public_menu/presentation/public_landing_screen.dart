@@ -65,11 +65,10 @@ class _PublicLandingScreenState
     );
 
     final shareText =
-        'Check out $businessName on ScanAura.\n\n'
-        'Explore their digital '
-        '${terminology.collectionTitle.toLowerCase()} '
-        'and offerings:\n'
-        '$currentUrl';
+        'Check out $businessName.\n\n'
+        'Explore our digital presence and offerings:\n'
+        '$currentUrl\n\n'
+        'Powered by ScanAura';
 
     try {
       await SharePlus.instance.share(
@@ -222,11 +221,14 @@ class _PublicLandingScreenState
 
     final landing = state.landing;
 
+// 🔴 BUSINESS UNAVAILABLE → STOP LANDING PAGE
+    if (state.isBusinessUnavailable) {
+      return _buildMaintenancePage(context);
+    }
+
     if (landing == null) {
       return _Failure(
-        message: state.isBusinessUnavailable
-            ? 'This business page is unavailable right now.'
-            : 'We could not open this business page.',
+        message: 'We could not open this business page.',
         retry: () {
           ref
               .read(publicNotifierProvider.notifier)
@@ -258,6 +260,81 @@ class _PublicLandingScreenState
             onWhatsApp: _openWhatsApp,
             onOpenExternalLink: _openExternalLink,
             onShowMessage: _showMessage,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Maintaince Page
+
+  Widget _buildMaintenancePage(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 460,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color:
+                      theme.colorScheme.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.engineering_outlined,
+                      size: 44,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'This page is temporarily unavailable',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'This business\'s ScanAura page is currently under maintenance. Please check back later.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                      color:
+                      theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Text(
+                    'Powered by ScanAura',
+                    style: TextStyle(
+                      color:
+                      theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -532,16 +609,10 @@ class _LandingContent extends StatelessWidget {
 
         return Stack(
           children: [
-            RefreshIndicator(
-              color: theme.primary,
-              onRefresh: () async {
-                await Future<void>.delayed(
-                  const Duration(milliseconds: 100),
-                );
-              },
+            ScrollConfiguration(
+              behavior: const _PublicLandingScrollBehavior(),
               child: SingleChildScrollView(
-                physics:
-                const AlwaysScrollableScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
                   horizontalPadding,
                   14,
@@ -1436,6 +1507,18 @@ class _LandingContent extends StatelessWidget {
           ),
         ),
 
+        const SizedBox(height: 4),
+
+        Text(
+          'Own a business? Grow it with ScanAura.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: theme.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
         const SizedBox(height: 2),
 
         TextButton(
@@ -1444,20 +1527,18 @@ class _LandingContent extends StatelessWidget {
           },
           style: TextButton.styleFrom(
             foregroundColor: theme.primary,
-            padding:
-            const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 10,
               vertical: 5,
             ),
             minimumSize: Size.zero,
-            tapTargetSize:
-            MaterialTapTargetSize.shrinkWrap,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Register your business',
+                'Create your business account',
                 style: TextStyle(
                   color: theme.primary,
                   fontSize: 12.5,
@@ -1472,6 +1553,93 @@ class _LandingContent extends StatelessWidget {
               ),
             ],
           ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () {
+                context.push('/terms-and-conditions');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: theme.textTertiary,
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Terms & Conditions',
+                style: TextStyle(
+                  color: theme.textTertiary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+
+            Text(
+              '•',
+              style: TextStyle(
+                color: theme.textTertiary,
+                fontSize: 11,
+              ),
+            ),
+
+            TextButton(
+              onPressed: () {
+                context.push('/privacy-policy');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: theme.textTertiary,
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Privacy Policy',
+                style: TextStyle(
+                  color: theme.textTertiary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+
+            Text(
+              '•',
+              style: TextStyle(
+                color: theme.textTertiary,
+                fontSize: 11,
+              ),
+            ),
+
+            TextButton(
+              onPressed: () {
+                context.push('/contact-us');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: theme.textTertiary,
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Contact Us',
+                style: TextStyle(
+                  color: theme.textTertiary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -2484,4 +2652,16 @@ _PublicTerminology _terminologyFor(
         itemTitle: 'Item',
       );
   }
+}
+class _PublicLandingScrollBehavior
+    extends MaterialScrollBehavior {
+  const _PublicLandingScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }

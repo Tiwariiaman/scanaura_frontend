@@ -84,7 +84,11 @@ class AppRouter {
 
         final isPublicRoute =
             path == '/q' ||
-                path.startsWith('/q/');
+                path.startsWith('/q/') ||
+                path == '/contact-us' ||
+                path == '/terms-and-conditions' ||
+                path == '/privacy-policy' ||
+                path == '/refund-policy';
 
         final isAuthRoute =
             path == '/login' ||
@@ -274,10 +278,53 @@ class AppRouter {
             return LandingGate();
           },
         ),
+// ==========================================================
+// PUBLIC SUPPORT & LEGAL
+// ==========================================================
 
-        // ==========================================================
-        // PUBLIC QR
-        // ==========================================================
+        GoRoute(
+          path: '/contact-us',
+          builder: (
+              context,
+              state,
+              ) {
+            return const ContactUsScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/terms-and-conditions',
+          builder: (
+              context,
+              state,
+              ) {
+            return const ContactUsScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/privacy-policy',
+          builder: (
+              context,
+              state,
+              ) {
+            return const ContactUsScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/refund-policy',
+          builder: (
+              context,
+              state,
+              ) {
+            return const ContactUsScreen();
+          },
+        ),
+
+// ==========================================================
+// PUBLIC QR
+// ==========================================================
 
         GoRoute(
           path: '/q/:qrCode',
