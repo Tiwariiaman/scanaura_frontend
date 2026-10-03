@@ -50,7 +50,8 @@ class _PublicLandingScreenState
   // ===========================================================================
 
   Future<void> _sharePage() async {
-    final currentUrl = Uri.base.toString();
+    final currentUrl =
+        'https://api.scanaura.in/api/public/share/${widget.qrCode}';
 
     final landing =
         ref.read(publicNotifierProvider).landing;

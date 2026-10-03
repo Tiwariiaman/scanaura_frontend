@@ -167,7 +167,8 @@ class _QrScreenState extends ConsumerState<QrScreen> {
         '_',
       );
 
-      final publicUrl = _publicQrUrl(qr.qrCode);
+      final publicUrl =
+          'https://api.scanaura.in/api/public/share/${qr.qrCode}';
       final shareText = businessName != null &&
           businessName.isNotEmpty
           ? 'Hi! Check out $businessName on ScanAura.\n\n'
@@ -202,7 +203,8 @@ class _QrScreenState extends ConsumerState<QrScreen> {
         throw Exception('Digital QR not available.');
       }
 
-      final publicUrl = _publicQrUrl(qr.qrCode);
+      final publicUrl =
+          'https://api.scanaura.in/api/public/share/${qr.qrCode}';
 
       await Clipboard.setData(
         ClipboardData(text: publicUrl),
@@ -228,7 +230,8 @@ class _QrScreenState extends ConsumerState<QrScreen> {
         throw Exception('Digital QR not available.');
       }
 
-      final publicUrl = _publicQrUrl(qr.qrCode);
+      final publicUrl =
+          'https://api.scanaura.in/api/public/share/${qr.qrCode}';
 
       // Open the business page in a new browser tab.
       // This works naturally on Flutter Web.

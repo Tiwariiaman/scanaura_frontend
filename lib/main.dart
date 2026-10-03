@@ -13,21 +13,26 @@ import 'features/auth/presentation/providers/auth_state.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
   final container = ProviderContainer();
 
-  await container
-      .read(authNotifierProvider.notifier)
-      .initialize();
+  if (!kIsWeb) {
+    await container
+        .read(authNotifierProvider.notifier)
+        .initialize();
+  }
 
-  final preferences =
-  await SharedPreferences.getInstance();
+  bool introSeen = false;
 
-  final introSeen =
-      preferences.getBool(
-        'scanaura_intro_seen',
-      ) ??
-          false;
+  if (!kIsWeb) {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    introSeen =
+        preferences.getBool(
+          'scanaura_intro_seen',
+        ) ??
+            false;
+  }
 
   final authState =
   container.read(
