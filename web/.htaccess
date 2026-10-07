@@ -1,12 +1,19 @@
+# ============================================================
+# SCANAURA - FLUTTER WEB PRODUCTION
+# ============================================================
+
 RewriteEngine On
 
 # ============================================================
-# FLUTTER SPA ROUTING
+# FLUTTER WEB - SPA ROUTING
 # ============================================================
 
+# Serve existing files and directories normally.
+# Everything else goes to Flutter's index.html.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
+
 
 # ============================================================
 # CACHE CONTROL
@@ -15,32 +22,64 @@ RewriteRule ^ index.html [L]
 <IfModule mod_headers.c>
 
     # --------------------------------------------------------
-    # NEVER CACHE INDEX
-    # Ensures users always receive the latest Flutter build
+    # Flutter entry/startup files
+    #
+    # Always revalidate these so a new deployment is picked up.
     # --------------------------------------------------------
 
-    <FilesMatch "^index\.html$">
-        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    <FilesMatch "^(index\.html|flutter_bootstrap\.js)$">
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
         Header always set Pragma "no-cache"
         Header always set Expires "0"
     </FilesMatch>
 
 
     # --------------------------------------------------------
-    # CACHE FLUTTER STATIC ASSETS
+    # JavaScript / Dart application bundle
+    #
+    # Revalidate on every deployment.
     # --------------------------------------------------------
 
-    <FilesMatch "\.(js|wasm|json|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf)$">
-        Header always set Cache-Control "public, max-age=31536000, immutable"
+    <FilesMatch "\.(js)$">
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
     </FilesMatch>
 
 
     # --------------------------------------------------------
-    # NEVER CACHE ROBOTS / SITEMAP
+    # JSON
+    # --------------------------------------------------------
+
+    <FilesMatch "\.json$">
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
+    </FilesMatch>
+
+
+    # --------------------------------------------------------
+    # WASM
+    # --------------------------------------------------------
+
+    <FilesMatch "\.wasm$">
+        Header always set Cache-Control "public, max-age=604800, must-revalidate"
+    </FilesMatch>
+
+
+    # --------------------------------------------------------
+    # Static assets
+    #
+    # Images/fonts/icons can safely be cached.
+    # --------------------------------------------------------
+
+    <FilesMatch "\.(css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|otf)$">
+        Header always set Cache-Control "public, max-age=604800, must-revalidate"
+    </FilesMatch>
+
+
+    # --------------------------------------------------------
+    # SEO files
     # --------------------------------------------------------
 
     <FilesMatch "^(robots\.txt|sitemap\.xml)$">
-        Header always set Cache-Control "no-cache, must-revalidate"
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
     </FilesMatch>
 
 </IfModule>
